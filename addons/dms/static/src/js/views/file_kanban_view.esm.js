@@ -1,0 +1,20 @@
+// /** ********************************************************************************
+//     Copyright 2020 Creu Blanca
+//     Copyright 2017-2019 MuK IT GmbH
+//     Copyright 2024 Subteno - Timothée Vannier (https://www.subteno.com).
+//     License LGPL-3.0 or later (http://www.gnu.org/licenses/lgpl).
+//  **********************************************************************************/
+
+import {FileKanbanController} from "./file_kanban_controller.esm";
+import {FileKanbanRenderer} from "./file_kanban_renderer.esm";
+import {kanbanView} from "@web/views/kanban/kanban_view";
+import {registry} from "@web/core/registry";
+
+export const FileKanbanView = {
+    ...kanbanView,
+    Controller: FileKanbanController,
+    buttonTemplate: "dms.KanbanButtons",
+    Renderer: FileKanbanRenderer,
+};
+
+registry.category("views").add("file_kanban", FileKanbanView);

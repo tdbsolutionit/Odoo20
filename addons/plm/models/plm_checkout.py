@@ -1,0 +1,140 @@
+##############################################################################
+#
+#    OmniaSolutions, Your own solutions
+#    Copyright (C) 2010 OmniaSolutions (<https://www.omniasolutions.website>). All Rights Reserved
+#    $Id$
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Lesser General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Lesser General Public License for more details.
+#
+#    You should have received a copy of the GNU Lesser General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+#
+##############################################################################
+
+"""
+Created on 25 Aug 2016
+
+@author: Daniel Smerghetto
+"""
+import logging
+
+from odoo import _, models, fields, api
+from odoo.exceptions import UserError
+
+
+class PlmCheckout(models.Model):
+    _name = "plm.checkout"
+    _description = "Document that are locked from someone"
+
+    userid = fields.Many2one(
+        "res.users", "Related User", index=True, ondelete="cascade"
+    )
+    hostname = fields.Char("hostname", index=True, size=64)
+    hostpws = fields.Char("PWS Directory", index=True, size=1024)
+    documentid = fields.Many2one(
+        "ir.attachment", "Related Document", index=True, ondelete="cascade"
+    )
+    rel_doc_rev = fields.Integer(
+        related="documentid.engineering_revision", string="Revision", store=True
+    )
+
+    preview = fields.Binary(related="documentid.preview")
+
+    _documentid = models.Constraint(
+        "unique (documentid)", "The documentid must be unique !"
+    )
+
+    def name_get(self):
+        result = []
+        for r in self:
+            if not r.documentid or not r.userid:
+                name = "unknown"
+            else:
+                document_name = (
+                    r.documentid.name
+                    if r.documentid.engineering_code is False
+                    else r.documentid.engineering_code
+                )
+                name = "%s .. [%s]" % (document_name[:10], r.userid.name[:8])
+            result.append((r.id, name))
+        return result
+
+    @api.model
+    def _adjustRelations(self, childDocIds, userid=False):
+        docRelType = self.env["ir.attachment.relation"]
+        if userid:
+            docRelBrwsList = docRelType.search(
+                [("child_id", "in", childDocIds), ("userid", "=", False)]
+            )
+        else:
+            docRelBrwsList = docRelType.search([("child_id", "in", childDocIds)])
+        if docRelBrwsList:
+            values = {"userid": userid}
+            docRelBrwsList.write(values)
+
+    @api.model_create_multi
+    def create(self, vals):
+        docBrwsList = []
+        for vals_dict in vals:
+            documentid = vals_dict.get("documentid")
+            if not documentid:
+                raise UserError(_("Related Document is required to check-out a document."))
+            docBrws = self.env["ir.attachment"].browse(documentid)
+            values = {"engineering_writable": True}
+            if not docBrws.sudo(True).write(values):
+                msg = f"create : Unable to check-out the required document {docBrws.engineering_code} - {docBrws.engineering_revision}"
+                logging.warning(msg)
+                raise UserError(msg)
+            self._adjustRelations([docBrws.id])
+            docBrwsList.append(docBrws)
+        newCheckoutBrwsList = super().create(vals)
+        for docBrws, newCheckoutBrws in zip(docBrwsList, newCheckoutBrwsList):
+            newCheckoutBrws.documentid.assign_must_update_flag()
+            docBrws.message_post(body=_(f'Checked-Out ID {newCheckoutBrws.id}'))
+        return newCheckoutBrwsList
+
+    def unlink(self):
+        documentType = self.env["ir.attachment"]
+        docids = []
+        for checkObj in self:
+            if not checkObj.documentid:
+                continue
+            if checkObj.documentid.has_error:
+                raise UserError(
+                    f"Unable to check-in due to an error on saving document [{checkObj.documentid.engineering_code} rev {checkObj.documentid.engineering_revision}] with error {checkObj.documentid.getLastError()}"
+                )
+            checkObj.documentid.engineering_writable = False
+            values = {"engineering_writable": False}
+            docids.append(checkObj.documentid.id)
+            if not documentType.browse([checkObj.documentid.id]).write(values):
+                logging.warning(
+                    "unlink : Unable to check-in the document ("
+                    + str(checkObj.documentid.engineering_code)
+                    + "-"
+                    + str(checkObj.documentid.engineering_revision)
+                    + ").\n You can't change writable flag."
+                )
+                raise UserError(
+                    _(
+                        "Unable to Check-In the document ("
+                        + str(checkObj.documentid.engineering_code)
+                        + "-"
+                        + str(checkObj.documentid.engineering_revision)
+                        + ").\n You can't change writable flag."
+                    )
+                )
+        self._adjustRelations(docids, False)
+        dummy = super(PlmCheckout, self).unlink()
+        if dummy:
+            for doc_id in documentType.browse(docids):
+                doc_id.message_post(body=_("Checked-In"))
+                doc_id.assign_must_update_flag()
+        return dummy

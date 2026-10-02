@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="report_saleorder_document_inherit_tdb" inherit_id="sale.report_saleorder_document" priority="99">
+        <xpath expr="//t[@t-call='web.basic_layout']" position="replace">
+            <t t-call="web.basic_layout">
+                <t t-set="doc" t-value="doc.with_context(lang=doc.partner_id.lang)" />
+                <div class="page" style="font-family: Arial, Helvetica, sans-serif; font-size: 10px; line-height: 1.25; color: #000; padding: 0;">
+                    <style>
+                        table.o_ignore_layout_styling::before,
+                        table.o_ignore_layout_styling::after {
+                            display: none !important;
+                            content: none !important;
+                            border: none !important;
+                        }
+                    </style>
+                    
+                    <!-- 1. HEADER: LOGO TDB & THÔNG TIN CÔNG TY GỐC (HOÀN TOÀN KHÔNG KHUNG) -->
+                    <div style="width: 100%; margin-bottom: 4px; border: none !important; overflow: hidden;">
+                        <div style="float: left; width: 28%; padding: 0;">
+                            <img src="/tdb_sale_custom/static/src/img/tdb_logo.png" style="max-height: 48px; max-width: 100%;" alt="TDB SOLUTION"/>
+                        </div>
+                        <div style="float: right; width: 72%; padding: 0 0 0 10px;">
+                            <div style="font-weight: bold; font-size: 11.5px; text-transform: uppercase;">
+                                CÔNG TY TNHH ỨNG DỤNG KỸ THUẬT VÀ GIẢI PHÁP SỐ TDB
+                            </div>
+                            <div style="margin-top: 1px;">
+                                <span>[Taxcode]: <strong>0318137951</strong></span>
+                                <span style="margin-left: 20px;">[Website]: <strong>www.tdbsolution.com.vn</strong></span>
+                            </div>
+                            <div style="margin-top: 1px;">
+                                <span>[Address]: Số 26, Đường số 14, Khu dân cư Vạn Phúc, Phường Hiệp Bình, TP Hồ Chí Minh, Việt Nam</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="clear: both;"></div>
+
+                    <!-- 2. TIÊU ĐỀ BÁO GIÁ & SỐ ĐƠN / NGÀY THÁNG (HOÀN TOÀN KHÔNG KHUNG) -->
+                    <div style="width: 100%; margin-top: 10px; margin-bottom: 6px; border: none !important; overflow: hidden;">
+                        <div style="float: left; width: 60%; padding: 0;">
+                            <h2 style="font-size: 18px; font-weight: bold; margin: 0; text-transform: uppercase; letter-spacing: 0.5px;">
+                                BÁO GIÁ (QUOTATION)
+                            </h2>
+                        </div>
+                        <div style="float: right; width: 40%; text-align: center; padding: 0;">
+                            <div style="font-weight: bold; font-size: 11px;">
+                                <span t-field="doc.name"/>
+                            </div>
+                            <div style="border-bottom: 1px dotted #555; width: 100%; margin-bottom: 3px;"></div>
+                            <div style="font-size: 10px;">
+                                <span t-field="doc.date_order" t-options='{"widget": "date"}'/>
+                            </div>
+                            <div style="border-bottom: 1px dotted #555; width: 100%;"></div>
+                        </div>
+                    </div>
+                    <div style="clear: both;"></div>
+
+                    <!-- 3. THÔNG TIN KHÁCH HÀNG (DÒNG CHẤM DƯỚI, HOÀN TOÀN KHÔNG KHUNG Ô) -->
+                    <div style="width: 100%; margin-top: 6px; margin-bottom: 8px; font-size: 10px; border: none !important;">
+                        <div style="width: 100%; padding: 3px 0; overflow: hidden;">
+                            <div style="float: left; width: 16%; font-style: italic;">Kính gửi (To):</div>
+                            <div style="float: left; width: 84%; border-bottom: 1px dotted #888; min-height: 14px;">
+                                <strong t-field="doc.partner_id.name"/>
+                                &amp;nbsp;
+                            </div>
+                        </div>
+                        <div style="width: 100%; padding: 3px 0; overflow: hidden;">
+                            <div style="float: left; width: 16%; font-style: italic;">Công ty (Company):</div>
+                            <div style="float: left; width: 84%; border-bottom: 1px dotted #888; min-height: 14px;">
+                                <span t-if="doc.partner_id.parent_id" t-field="doc.partner_id.parent_id.name"/>
+                                <span t-elif="doc.partner_id.is_company" t-field="doc.partner_id.name"/>
+                                &amp;nbsp;
+                            </div>
+                        </div>
+                        <div style="width: 100%; padding: 3px 0; overflow: hidden;">
+                            <div style="float: left; width: 16%; font-style: italic;">Địa chỉ (Address):</div>
+                            <div style="float: left; width: 84%; border-bottom: 1px dotted #888; min-height: 14px;">
+                                <span t-if="doc.partner_id.street" t-field="doc.partner_id.contact_address"/>
+                                &amp;nbsp;
+                            </div>
+                        </div>
+                    </div>
+                    <div style="clear: both;"></div>
+
+                    <!-- DÒNG MỞ ĐẦU -->
+                    <div style="margin-top: 4px; margin-bottom: 6px; font-size: 10px;">
+                        <div>Dựa theo yêu cầu của quý khách, chúng tôi xin được gửi bản báo giá như sau:</div>
+                        <div style="font-style: italic; color: #444;">(Based on request, we would like to send the following quotation):</div>
+                    </div>
+
+                    <!-- 4. BẢNG CHI TIẾT SẢN PHẨM (EXCEL GRID ĐÓNG KHUNG ĐEN DUY NHẤT) -->
+                    <table class="o_main_table o_ignore_layout_styling" style="width: 100%; border-collapse: collapse; border: 1px solid #000; margin-bottom: 6px; font-size: 9.5px;">
+                        <thead>
+                            <tr style="background-color: #d9d9d9; text-align: center; font-weight: bold;">
+                                <th style="border: 1px solid #000; padding: 3px; width: 5%;">STT<br/>(No.)</th>
+                                <th style="border: 1px solid #000; padding: 3px; width: 14%;">Mã sản phẩm<br/>(Products Code)</th>
+                                <th style="border: 1px solid #000; padding: 3px; width: 35%;">Mô tả sản phẩm<br/>(Product Descriptions)</th>
+                                <th style="border: 1px solid #000; padding: 3px; width: 10%;">Đơn vị tính<br/>(Unit)</th>
+                                <th style="border: 1px solid #000; padding: 3px; width: 12%;">Đơn giá (VND)<br/>(Unit Price)</th>
+                                <th style="border: 1px solid #000; padding: 3px; width: 9%;">Số lượng<br/>(Quantity)</th>
+                                <th style="border: 1px solid #000; padding: 3px; width: 15%;">Thành tiền<br/>(Amount)</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-set="stt" t-value="1"/>
+                            <t t-foreach="doc.order_line" t-as="line">
+                                <tr t-if="not line.display_type">
+                                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">
+                                        <span t-out="'%02d' % stt"/>
+                                    </td>
+                                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">
+                                        <span t-field="line.product_id.default_code"/>
+                                    </td>
+                                    <td style="border: 1px solid #000; padding: 3px;">
+                                        <strong t-field="line.product_id.name"/><br/>
+                                        <small t-if="line.name and line.name != line.product_id.name" t-field="line.name" style="color: #555;"/>
+                                    </td>
+                                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">
+                                        <span t-field="line.product_uom_id.name"/>
+                                    </td>
+                                    <td style="border: 1px solid #000; padding: 3px; text-align: right;">
+                                        <span t-field="line.price_unit"/>
+                                    </td>
+                                    <td style="border: 1px solid #000; padding: 3px; text-align: center;">
+                                        <t t-if="line.product_uom_qty % 1 == 0">
+                                            <span t-out="'%02d' % int(line.product_uom_qty)"/>
+                                        </t>
+                                        <t t-else="">
+                                            <span t-field="line.product_uom_qty"/>
+                                        </t>
+                                    </td>
+                                    <td style="border: 1px solid #000; padding: 3px; text-align: right; font-weight: bold;">
+                                        <span t-out="'{:,.2f}'.format(line.price_subtotal).replace(',', 'X').replace('.', ',').replace('X', '.')"/> VND
+                                    </td>
+                                    <t t-set="stt" t-value="stt + 1"/>
+                                </tr>
+                            </t>
+                            
+                            <!-- HÀNG TỔNG (TOTAL) -->
+                            <tr>
+                                <td colspan="5" style="border: 1px solid #000; border-top: 2px solid #000; padding: 3px 6px; text-align: right; font-weight: bold;">
+                                    Tổng (Total)
+                                </td>
+                                <td colspan="2" style="border: 1px solid #000; border-top: 2px solid #000; padding: 3px 6px; text-align: right; font-weight: bold;">
+                                    <span t-out="'{:,.2f}'.format(doc.amount_untaxed).replace(',', 'X').replace('.', ',').replace('X', '.')"/> VND
+                                </td>
+                            </tr>
+                            <!-- HÀNG THUẾ GTGT (VAT) -->
+                            <tr>
+                                <td colspan="5" style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: bold;">
+                                    Thuế GTGT (VAT Amount) 8%
+                                </td>
+                                <td colspan="2" style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: bold;">
+                                    <span t-out="'{:,.2f}'.format(doc.amount_tax).replace(',', 'X').replace('.', ',').replace('X', '.')"/> VND
+                                </td>
+                            </tr>
+                            <!-- HÀNG TỔNG CỘNG THANH TOÁN -->
+                            <tr style="background-color: #f2f2f2;">
+                                <td colspan="5" style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: bold;">
+                                    Tổng cộng (Equivalent amount paid)
+                                </td>
+                                <td colspan="2" style="border: 1px solid #000; padding: 3px 6px; text-align: right; font-weight: bold; color: #b91c1c;">
+                                    <span t-out="'{:,.2f}'.format(doc.amount_total).replace(',', 'X').replace('.', ',').replace('X', '.')"/> VND
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- 5. ĐIỀU KHOẢN VÀ CHÚ Ý (LẤY ĐỘNG TỪ FORM ĐƠN HÀNG) -->
+                    <div style="font-size: 9.5px; margin-bottom: 6px; line-height: 1.4;">
+                        <span t-field="doc.note" name="order_note"/>
+                    </div>
+                    <t t-if="not doc.note">
+                        <div style="font-size: 9.5px; margin-bottom: 4px;">
+                            <div style="background-color: #d9d9d9; padding: 2px 6px; font-weight: bold;">
+                                1. Thông tin sản phẩm:
+                            </div>
+                            <div style="padding: 1px 8px; color: #333;">
+                                <div>1.1. Sản phẩm mới 100%, đúng theo tiêu chuẩn kỹ thuật của nhà sản xuất.</div>
+                                <div>1.2. Hỗ trợ kỹ thuật và hướng dẫn sử dụng trong suốt quá trình triển khai.</div>
+                                <div>1.3. Bảo hành theo chính sách tiêu chuẩn của TDB Solution.</div>
+                            </div>
+                        </div>
+
+                        <div style="font-size: 9.5px; margin-bottom: 4px;">
+                            <div style="background-color: #d9d9d9; padding: 2px 6px; font-weight: bold;">
+                                2. Điều khoản và phương thức thanh toán:
+                            </div>
+                            <div style="padding: 1px 8px;">
+                                <div style="font-weight: bold; margin-top: 1px;">2.1. Điều khoản thanh toán</div>
+                                <div style="margin-left: 8px;">
+                                    • Thanh toán lần 1: Thanh toán 50% giá trị đơn hàng trong vòng 07 ngày khi ký hợp đồng.<br/>
+                                    • Thanh toán lần 2: Thanh toán 50% giá trị đơn hàng trong vòng 07 ngày sau khi có biên bản nghiệm thu hoàn thành công việc.
+                                </div>
+                                <div style="font-weight: bold; margin-top: 2px;">2.2. Phương thức &amp; thông tin thanh toán: Chuyển khoản</div>
+                                <div style="margin-left: 8px;">
+                                    [Ngân hàng]: <strong>Ngân Hàng TMCP va PT VN CN Gia Định (BIDV)</strong><br/>
+                                    [Người thụ hưởng]: <strong>Công ty TNHH Ứng dụng kỹ thuật và Giải pháp số TDB</strong><br/>
+                                    [Số tài khoản]: <strong>8601216868</strong>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="font-size: 9.5px; margin-bottom: 4px;">
+                            <div style="background-color: #d9d9d9; padding: 2px 6px; font-weight: bold;">
+                                3. Thời gian thực hiện:
+                            </div>
+                            <div style="padding: 1px 8px;">
+                                3.1. Thời gian triển khai công việc: Dựa theo trao đổi trong hợp đồng.
+                            </div>
+                        </div>
+
+                        <div style="font-size: 9.5px; margin-bottom: 8px;">
+                            <div style="background-color: #d9d9d9; padding: 2px 6px; font-weight: bold;">
+                                4. Chú ý:
+                            </div>
+                            <div style="padding: 1px 8px;">
+                                <div><strong>4.1. [Xác nhận báo giá]:</strong> Vui lòng xác nhận báo giá này bằng việc gửi đơn đặt hàng cho chúng tôi qua email. Việc gửi xác nhận bằng đơn đặt hàng có nghĩa là: Khách hàng xác nhận đã đọc, hiểu rõ và đồng ý tuân theo những điều kiện được đính kèm trong báo giá và phụ lục báo giá.</div>
+                                <div><strong>4.2. [Hủy báo giá]:</strong> Sau khi ký xác nhận đặt hàng, đối phương tự ý hủy đơn hàng trước thì phải có trách nhiệm bồi thường 100% giá trị đơn hàng như đã thỏa thuận.</div>
+                                <div><strong>4.3. [Hiệu lực báo giá]:</strong> Báo giá này có hiệu lực trong vòng 15 ngày, được tính từ ngày phát hành.</div>
+                            </div>
+                        </div>
+                    </t>
+
+                    <!-- 6. KHU VỰC 3 CHỮ KÝ (CHUẨN 100% PDF: THANH XÁM TRÊN, KHÔNG KHUNG Ô, GẠCH CHẤM TÊN) -->
+                    <div style="width: 100%; margin-top: 14px; font-size: 10px; border: none !important; text-align: center; overflow: hidden;">
+                        <div style="width: 100%; background-color: #d9d9d9; overflow: hidden; padding: 4px 0;">
+                            <div style="float: left; width: 33%; font-weight: bold;">
+                                Giám đốc<br/><span style="font-style: italic; font-weight: normal; color: #333;">(Director)</span>
+                            </div>
+                            <div style="float: left; width: 34%; font-weight: bold;">
+                                Người báo giá<br/><span style="font-style: italic; font-weight: normal; color: #333;">(Quotation created by)</span>
+                            </div>
+                            <div style="float: left; width: 33%; font-weight: bold;">
+                                Khách hàng<br/><span style="font-style: italic; font-weight: normal; color: #333;">(Customer)</span>
+                            </div>
+                        </div>
+                        <div style="width: 100%; overflow: hidden; padding-top: 50px;">
+                            <div style="float: left; width: 33%;">
+                                <div style="font-weight: bold;">Hoàng Hải Bình</div>
+                                <div style="border-bottom: 1px dotted #555; width: 75%; margin: 2px auto 0 auto;"></div>
+                            </div>
+                            <div style="float: left; width: 34%;">
+                                <div style="font-weight: bold;"><span t-field="doc.user_id.name"/></div>
+                                <div style="border-bottom: 1px dotted #555; width: 75%; margin: 2px auto 0 auto;"></div>
+                                <div style="font-size: 9px; margin-top: 4px;">Phone: <strong t-field="doc.user_id.phone" t-if="doc.user_id.phone"/><strong t-field="doc.user_id.partner_id.mobile" t-elif="doc.user_id.partner_id.mobile"/><t t-else="">(+84) 365 619 518</t></div>
+                                <div style="font-size: 9px;">Email: <strong t-field="doc.user_id.email" t-if="doc.user_id.email"/><t t-else="">nam.cao@tdbsolution.com.vn</t></div>
+                            </div>
+                            <div style="float: left; width: 33%;">
+                                <div style="height: 14px;"></div>
+                                <div style="border-bottom: 1px dotted #555; width: 75%; margin: 2px auto 0 auto;"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div style="clear: both;"></div>
+
+                    <!-- 7. FOOTER CHÂN TRANG (CHUẨN 100% PDF VỚI ĐƯỜNG NÉT ĐỨT PHÍA TRÊN) -->
+                    <div style="width: 100%; margin-top: 30px; font-size: 9px; color: #444; text-align: center; overflow: hidden; border: none !important;">
+                        <div style="float: left; width: 30%; text-align: left;">
+                            <div style="border-top: 1px dashed #666; width: 60px; margin-bottom: 2px;"></div>
+                            <div>TDB Solution Co., Ltd</div>
+                        </div>
+                        <div style="float: left; width: 40%; text-align: center;">
+                            <div style="border-top: 1px dashed #666; width: 120px; margin: 0 auto 2px auto;"></div>
+                            <div>Page 1/1</div>
+                        </div>
+                        <div style="float: right; width: 30%; text-align: right;">
+                            <div style="border-top: 1px dashed #666; width: 80px; margin-left: auto; margin-bottom: 2px;"></div>
+                            <div>www.tdbsolution.com.vn</div>
+                        </div>
+                    </div>
+                    <div style="clear: both;"></div>
+
+                </div>
+            </t>
+        </xpath>
+    </template>
+</odoo>

@@ -1,0 +1,911 @@
+# -*- coding: utf-8 -*-
+##############################################################################
+#
+#    OmniaSolutions, ERP-PLM-CAD Open Source Solutions
+#    Copyright (C) 2011-2022 https://OmniaSolutions.website
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Lesser General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Lesser General Public License for more details.
+#
+#    You should have received a copy of the GNU Lesser General Public License
+#    along with this prograIf not, see <http://www.gnu.org/licenses/>.
+#
+##############################################################################
+"""
+Created on 28 Sep 2022
+
+@author: mboscolo
+"""
+import logging
+
+import psycopg2
+
+from odoo import models, fields, api, _
+from datetime import datetime
+
+#
+from odoo.exceptions import UserError, ValidationError
+
+#
+_logger = logging.getLogger(__name__)
+#
+START_STATUS = "draft"
+CONFIRMED_STATUS = "confirmed"
+RELEASED_STATUS = "released"
+OBSOLATED_STATUS = "obsoleted"
+UNDER_MODIFY_STATUS = "undermodify"
+USED_STATES = [
+    (START_STATUS, "Draft"),
+    (CONFIRMED_STATUS, "Confirmed"),
+    (RELEASED_STATUS, "Released"),
+    (UNDER_MODIFY_STATUS, "Under Modify"),
+    (OBSOLATED_STATUS, "Obsoleted"),
+]
+
+#
+RELEASED_STATUSES = [RELEASED_STATUS, UNDER_MODIFY_STATUS]
+#
+PLM_NO_WRITE_STATE = [
+    CONFIRMED_STATUS,
+    RELEASED_STATUS,
+    UNDER_MODIFY_STATUS,
+    OBSOLATED_STATUS,
+]
+#
+LOWERCASE_LETTERS = [chr(i) for i in range(ord("a"), ord("z") + 1)]
+#
+UPPERCASE_LETTERS = [chr(i) for i in range(ord("A"), ord("Z") + 1)]
+
+
+#
+def convert_to_letter(l, n):
+    n_o_w = len(l)
+    if n > n_o_w - 1:
+        out = l[n_o_w - 1]
+        out += convert_to_letter(n - n_o_w, l)
+    else:
+        out = l[n]
+    return out
+
+
+#
+class RevisionBaseMixin(models.AbstractModel):
+    _name = "revision.plm.mixin"
+    _inherit = ["mail.thread", "mail.activity.mixin"]
+    _description = "Revision Mixin"
+
+    engineering_code = fields.Char(string="Engineering Code")
+    engineering_code_archived = fields.Char(
+        string="Archived Engineering Code",
+        copy=False,
+        help="The code this record carried when it was archived. An archived "
+        "record gives its code back, so that a new one may take it; "
+        "reactivating the record takes the code again, unless somebody else "
+        "has it by then.",
+    )
+    engineering_revision = fields.Integer(
+        string="Engineering Revision index", default=0
+    )
+    engineering_revision_letter = fields.Char(
+        string="Engineering Revision letter", default="A"
+    )
+    engineering_branch_revision = fields.Integer(
+        string="Engineering Branch index", default=0
+    )
+    engineering_branch_revision_letter = fields.Char(
+        string="Engineering Sub Revision letter", default="A"
+    )
+    engineering_state = fields.Selection(
+        USED_STATES, string="Engineering Status", default="draft", tracking=True
+    )
+    # workflow filed to manage revision information
+    engineering_release_date = fields.Datetime(string="Release date", tracking=True)
+    engineering_release_user = fields.Many2one("res.users", string="Release User")
+    engineering_workflow_date = fields.Datetime(string="Workflow date", tracking=True)
+    engineering_workflow_user = fields.Many2one("res.users", string="Workflow User")
+    engineering_writable = fields.Boolean("Writable", default=True)
+    engineering_code_editable = fields.Boolean(
+        "Engineering Code Editable", default=True
+    )
+    engineering_revision_user = fields.Many2one("res.users", string="User Revision")
+    engineering_revision_date = fields.Datetime(string="Datetime Revision")
+    engineering_branch_parent_id = fields.Integer("Parent branch")
+    engineering_sub_revision_letter = fields.Char(string="Sub revision path")
+    engineering_revision_count = fields.Integer(compute="_engineering_revision_count")
+
+    @api.constrains("engineering_code", "engineering_revision")
+    def _check_engineering_constraints(self):
+        """method used checks eng code and eng revision both should not same value or duplicate combination."""
+        for rec in self:
+            if rec.engineering_code:
+                domain = [
+                    ("engineering_code", "=", rec.engineering_code),
+                    ("engineering_revision", "=", rec.engineering_revision),
+                    ("id", "!=", rec.id),
+                ]
+                # An engineering code is unique in the whole database, whatever
+                # company holds it: look past the record rules.
+                if self.sudo().search_count(domain):
+                    raise ValidationError(
+                        _(
+                            "This Engineering Code and Revision combination already exists: '%s' - Rev %s"
+                        )
+                        % (rec.engineering_code, rec.engineering_revision)
+                    )
+
+    @api.model
+    def _normalize_engineering_code(self, vals):
+        """'' and '-' once stood for "no code", to skip the checks while cloning
+        and revising. A code is either set or False now, so that the single
+        database rule, a set code is unique per revision, holds."""
+        if vals.get("engineering_code") in ("", "-"):
+            vals["engineering_code"] = False
+        return vals
+
+    @api.model
+    def _refuse_engineering_code_in_use(self, vals_list):
+        """Refuse a code and revision already in use, before the insert: the
+        unique index would only raise an IntegrityError. The code may belong to a
+        company the user cannot see, so the search looks past the record rules,
+        and the message does not say where it is."""
+        for vals in vals_list:
+            code = vals.get("engineering_code")
+            if not code:
+                continue
+            revision = vals.get("engineering_revision", 0)
+            if self.sudo().search_count(
+                [
+                    ("engineering_code", "=", code),
+                    ("engineering_revision", "=", revision),
+                ],
+                limit=1,
+            ):
+                raise UserError(
+                    _(
+                        "Engineering code %(code)s revision %(revision)s is already in use.",
+                        code=code,
+                        revision=revision,
+                    )
+                )
+
+    def init(self):
+        """One record per engineering code and revision in the whole database,
+        whatever the company: two companies cannot create the same code.
+
+        A database holding duplicates cannot take the index. The update goes on
+        without it, and the duplicates are logged to be fixed; the next update
+        creates the index.
+        """
+        if self._name == "revision.plm.mixin":
+            return
+        self._drop_legacy_engineering_constraint()
+        unique_name = "unique_index_%s" % self._table
+        # An archived record is out of the way: write() moves its code to
+        # engineering_code_archived, and the index leaves it alone in any case.
+        # search_count, which the checks in create and write go through, skips
+        # the archived records too, so the rule reads the same from both sides.
+        condition = "engineering_code IS NOT NULL"
+        if "active" in self._fields:
+            condition += " AND active"
+        try:
+            with self.env.cr.savepoint(flush=False):
+                self.env.cr.execute(
+                    """
+                    CREATE UNIQUE INDEX IF NOT EXISTS {unique_name}
+                    ON {table_name} (engineering_code, engineering_revision)
+                    WHERE {condition}
+                    """.format(
+                        unique_name=unique_name,
+                        table_name=self._table,
+                        condition=condition,
+                    )
+                )
+        except psycopg2.IntegrityError:
+            self.env.cr.execute(
+                """
+                SELECT engineering_code, engineering_revision, count(*)
+                  FROM {table_name}
+                 WHERE {condition}
+              GROUP BY engineering_code, engineering_revision
+                HAVING count(*) > 1
+              ORDER BY engineering_code, engineering_revision
+                """.format(table_name=self._table, condition=condition)
+            )
+            _logger.error(
+                "%s not created: %s holds engineering codes used more than once "
+                "for the same revision. Fix them and update the module again:\n%s",
+                unique_name,
+                self._table,
+                "\n".join(
+                    "%s rev %s: %s records" % row for row in self.env.cr.fetchall()
+                ),
+            )
+
+    def _drop_legacy_engineering_constraint(self):
+        """Drop the unique table constraint an older version of the module left.
+
+        product_template_partnumber_uniq, UNIQUE (engineering_code,
+        engineering_revision), is declared nowhere any more: _reflect_constraints
+        only knows the constraints a model declares, so Odoo neither recreates it
+        nor removes it. Databases installed years ago still carry it, one of them
+        with no ir_model_constraint row at all, which puts it out of reach of
+        anything working from the metadata.
+
+        It says almost what the partial index says, since Postgres keeps NULLs
+        distinct, which is why it went unnoticed. But it is a second rule the code
+        knows nothing about, and whatever reaches the table without passing
+        create() answers with a raw IntegrityError instead of the message naming
+        the code already in use.
+        """
+        self.env.cr.execute(
+            """
+            SELECT c.conname
+              FROM pg_constraint c
+             WHERE c.conrelid = %s::regclass
+               AND c.contype = 'u'
+               AND (SELECT array_agg(a.attname::text ORDER BY a.attname)
+                      FROM pg_attribute a
+                     WHERE a.attrelid = c.conrelid
+                       AND a.attnum = ANY(c.conkey))
+                   = ARRAY['engineering_code', 'engineering_revision']
+            """,
+            (self._table,),
+        )
+        for (conname,) in self.env.cr.fetchall():
+            self.env.cr.execute(
+                'ALTER TABLE "%s" DROP CONSTRAINT "%s"' % (self._table, conname)
+            )
+            _logger.info(
+                "%s: %s dropped, the unique constraint of an older version;"
+                " unique_index_%s is the rule now",
+                self._table,
+                conname,
+                self._table,
+            )
+
+    def _engineering_revision_count(self):
+        """
+        get All version product_tempate based on this one
+        """
+        for obj in self:
+            if obj.engineering_code:
+                obj.engineering_revision_count = self.search_count(
+                    [("engineering_code", "=", obj.engineering_code)]
+                )
+            else:
+                obj.engineering_revision_count = 0
+
+    def _mark_workflow_release_now(self):
+        """
+        mark the object to be released if is in the proper status
+        """
+        for obj in self:
+            if obj.engineering_state == RELEASED_STATUS:
+                obj.engineering_writable = False
+                obj.engineering_release_date = datetime.now()
+                obj.engineering_release_user = self.env.uid
+            elif obj.engineering_state == OBSOLATED_STATUS:
+                obj.engineering_writable = False
+            else:
+                obj.engineering_writable = True
+
+    def _mark_worklow_user_date(self):
+        for obj in self:
+
+            obj.engineering_workflow_date = datetime.now()
+            obj.engineering_workflow_user = self.env.uid
+            obj._mark_workflow_release_now()
+
+    def action_from_draft_to_confirmed(self):
+        for obj in self:  # self:
+            obj._mark_worklow_user_date()
+            obj.engineering_state = CONFIRMED_STATUS
+
+    def action_from_confirmed_to_draft(self):
+        for obj in self:
+            obj.engineering_state = START_STATUS
+            obj._mark_worklow_user_date()
+
+    def action_from_confirmed_to_released(self):
+        for obj in self:
+            obj.engineering_state = RELEASED_STATUS
+            obj._mark_worklow_user_date()
+            obj._mark_obsolete_previous()
+
+    def action_from_released_to_obsoleted(self):
+        self._mark_obsolare()
+
+    def action_from_undermodify_to_obsoleted(self):
+        self._mark_obsolare()
+
+    def _refuse_reactivate_unless_obsoleted(self):
+        """Reactivate brings an obsoleted revision back into use, nothing else:
+        on any other state it would release the record skipping the release."""
+        not_obsoleted = self.filtered(
+            lambda r: r.engineering_state != OBSOLATED_STATUS
+        )
+        if not_obsoleted:
+            raise UserError(
+                _(
+                    "Only an obsoleted record can be reactivated: %s",
+                    ", ".join(
+                        "%s revision %s" % (r.engineering_code, r.engineering_revision)
+                        for r in not_obsoleted
+                    ),
+                )
+            )
+
+    def action_from_obsoleted_to_released(self):
+        """Reactivate: the record is back in use, released as it was.
+
+        Only while no newer revision of its code is in use: an obsoleted
+        revision was replaced, and bringing it back would leave the code with
+        two valid revisions. The release date and user are those of the first
+        release, so they are not marked again.
+        """
+        for obj in self:
+            newer = (
+                obj.sudo()
+                .search(
+                    [
+                        ("engineering_code", "=", obj.engineering_code),
+                        ("engineering_revision", ">", obj.engineering_revision),
+                        ("engineering_state", "in", RELEASED_STATUSES),
+                    ]
+                )
+                .filtered(lambda r: not r.engineering_branch_parent_id)
+            )
+            if newer:
+                raise UserError(
+                    _(
+                        "%(code)s revision %(rev)s cannot be reactivated: a newer "
+                        "revision of the same code is released.",
+                        code=obj.engineering_code,
+                        rev=obj.engineering_revision,
+                    )
+                )
+            obj.engineering_state = RELEASED_STATUS
+            obj.engineering_workflow_date = datetime.now()
+            obj.engineering_workflow_user = self.env.uid
+
+    def action_un_release(self):
+        if not self.env.user.has_group("plm.group_plm_admin_unrelease"):
+            raise UserError(
+                "You are not allowed to perform such an action ask to your PLM admin"
+            )
+        for obj in self:
+            body = """
+                FORCE draft action from super plm admin user !!!
+                data could be not as expected !!!
+            """
+            obj.message_post(body=body)
+            obj.with_context(check=False).engineering_state = START_STATUS
+
+    def action_un_release_release(self):
+        if not self.env.user.has_group("plm.group_plm_admin_unrelease"):
+            raise UserError(
+                "You are not allowed to perform such an action ask to your PLM admin"
+            )
+        for obj in self:
+            body = """
+                FORCE release action from super plm admin user !!!
+                data could be not as expected !!!
+            """
+            obj.message_post(body=body)
+            obj.with_context(check=False).engineering_state = RELEASED_STATUS
+
+    def _mark_obsolare(self):
+        for obj in self:
+            obj.engineering_state = OBSOLATED_STATUS
+            obj._mark_worklow_user_date()
+
+    def _mark_under_modifie(self):
+        for obj in self:
+            obj.engineering_state = UNDER_MODIFY_STATUS
+            obj._mark_worklow_user_date()
+
+    def _mark_under_modifie_previous(self):
+        for obj in self:
+            if obj.engineering_revision in [False, 0]:
+                continue
+            obj_previus_version = obj.get_previus_version()
+            obj_previus_version._mark_under_modifie()
+            obj.message_post(
+                body=_(
+                    "New version created from Code %s Rev. %s"
+                    % (
+                        obj_previus_version.engineering_code,
+                        obj_previus_version.engineering_revision,
+                    )
+                )
+            )
+
+    def _mark_obsolete_previous(self):
+        for obj in self:
+            if obj.engineering_revision in [False, 0]:
+                continue
+            obj_previus_version = obj.get_previus_version()
+            obj_previus_version._mark_obsolare()
+
+    def before_move_to_state(self, from_state, to_state):
+        """
+        technical function for workflow customization
+        :from_state state that came from
+        :to_state state to go
+        """
+        self.ensure_one()
+
+    def move_to_state(self, state):
+        for obj in self:
+            before_state = obj.engineering_state
+            if before_state == state:
+                logging.warning(
+                    "[%s] Moving %s to %s nothing to perform"
+                    % (obj.engineering_code, state, state)
+                )
+                continue
+            function_name = "action_from_%s_to_%s" % (before_state, state)
+            try:
+                obj.before_move_to_state(before_state, state)
+            except Exception as ex:
+                raise UserError("Error on custom function Before Move to state %s" % ex)
+            f = getattr(obj, function_name)
+            f()
+            try:
+                obj.after_move_to_state(before_state, state)
+            except Exception as ex:
+                raise UserError("Error on custom function After Move to state %s" % ex)
+
+    def after_move_to_state(self, from_state, to_state):
+        """
+        technical function for workflow customization
+        :from_state state that came from
+        :to_state state to go
+        """
+        self.ensure_one()
+
+    def is_released(self):
+        self.ensure_one()
+        return self.engineering_state in [RELEASED_STATUS, UNDER_MODIFY_STATUS]
+
+    def is_releaseble(self):
+        self.ensure_one()
+        return self.engineering_state == RELEASED_STATUS
+
+    def new_version(self):
+        """
+        create a new version
+        """
+        for obj in self:
+            if not obj.is_releaseble():
+                raise UserError(
+                    _(
+                        "Unable to revise a %s in status %s that different from released"
+                        % (obj.engineering_code, obj.engineering_revision)
+                    )
+                )
+            obj_new = obj._new_version()
+            obj_new._mark_under_modifie_previous()
+            """
+            "1" relased
+            "2"
+            #
+            "1.0.3" released
+            "1.0.4" draft mettere un campo che indica che una nuova versione e'
+             stata fatta <div>
+            "2"
+            #
+            "1.0.3" released
+            "1.0.4" draft mettere un campo che indica che una nuova versione e'
+             stata fatta <div>
+            "2"
+            "3"
+            "3.0" ->release che deriva da 1.0.4 con replace del content del
+            file o delle info ??
+
+            """
+
+    def _new_version(self, extra_values=None):
+        self.ensure_one()
+        # The number follows every revision of the code, not only the ones the
+        # record rules let this user see.
+        obj_latest = self.sudo().get_latest_version()
+        new_revision_index = obj_latest.engineering_revision + 1
+        write_context = {
+            "name": self.name,
+            "engineering_code": self.engineering_code,
+            "engineering_revision": new_revision_index,
+            "engineering_revision_letter": self.get_revision_letter(new_revision_index),
+            "engineering_state": START_STATUS,
+        }
+        write_context.update(extra_values or {})
+        obj_new = self.with_context(copy_context=write_context).copy(write_context)
+        return obj_new
+
+    def new_branch(self):
+        """
+        Make a new branch of the current object
+        es:
+            product_1 -> revision branch 0
+            to
+            product_1 -> revision branch 0.0
+        """
+        self._new_branch()
+
+    def new_branch_version(self):
+        """
+        make a new version branch of the current prduct
+        es:
+            product_1-> revision branch 0
+            to
+            product_1-> revision branch 1
+        """
+        self._new_branch_version()
+
+    def _new_branch_version(self):
+        self.ensure_one()
+        obj_latest = self.get_latest_version()
+        new_eng_revision = obj_latest.engineering_revision + 1
+        new_branch_revision = (
+            self.get_latest_level_branch_revision().engineering_branch_revision + 1
+        )
+        path = ".".join(self.engineering_sub_revision_letter.split(".")[:-1])
+        return self.copy(
+            {
+                "engineering_revision": new_eng_revision,
+                "engineering_code": obj_latest.engineering_code,
+                "engineering_branch_revision": new_branch_revision,
+                "engineering_sub_revision_letter": "%s.%s"
+                % (path, new_branch_revision),
+                "engineering_state": START_STATUS,
+            }
+        )
+
+    def _new_branch(self):
+        self.ensure_one()
+        if not self.engineering_branch_parent_id:
+            parnet_path = self.engineering_revision
+        else:
+            parnet_path = self.engineering_sub_revision_letter
+        # Passed to the copy rather than written after it: the revision chain
+        # check in create must already see that this record is a branch.
+        self._new_version(
+            {
+                "engineering_branch_revision": 0,
+                "engineering_branch_parent_id": self.id,
+                "engineering_sub_revision_letter": "%s.0" % parnet_path,
+            }
+        )
+
+    def get_engineering_branch_parent(self):
+        self.ensure_one()
+        return self.browse(self.engineering_branch_parent_id)
+
+    def get_revision_letter(self, engineering_revision=False):
+        self.ensure_one()
+        if engineering_revision:
+            return convert_to_letter(UPPERCASE_LETTERS, engineering_revision)
+        return convert_to_letter(UPPERCASE_LETTERS, self.engineering_revision)
+
+    def children_branch(self):
+        self.ensure_one()
+        return self.search(
+            [("engineering_branch_parent_id", "=", self.id)],
+            order="engineering_branch_revision desc",
+        )
+
+    def get_latest_level_branch_revision(self):
+        if self.engineering_branch_parent_id:
+            for children in self.search(
+                [
+                    (
+                        "engineering_branch_parent_id",
+                        "=",
+                        self.engineering_branch_parent_id,
+                    )
+                ],
+                order="engineering_branch_revision desc",
+            ):
+                return children
+        return []
+
+    def copy(self, default=None):
+        default = default or {}
+        if "engineering_state" not in default:
+            default["engineering_state"] = START_STATUS
+        if "engineering_code" not in default:
+            default["engineering_code"] = False
+        if "engineering_revision" not in default:
+            default["engineering_revision"] = 0
+            default["engineering_revision_letter"] = self.get_revision_letter(0)
+        return super(RevisionBaseMixin, self).copy(default)
+
+    def get_latest_version(self):
+        """
+        get the latest version of this object
+        """
+        self.ensure_one()
+        return self.search(
+            [("engineering_code", "=", self.engineering_code)],
+            order="engineering_revision DESC",
+            limit=1,
+        )
+
+    def get_previus_version(self):
+        """The nearest lower revision of the same code, not strictly rev - 1:
+        a history recovered from a CAD can have gaps (3 in the db, 5 saved).
+        """
+        self.ensure_one()
+        return self.search(
+            [
+                ("engineering_code", "=", self.engineering_code),
+                ("engineering_revision", "<", self.engineering_revision),
+            ],
+            order="engineering_revision DESC",
+            limit=1,
+        )
+
+    def get_next_version(self):
+        self.ensure_one()
+        return self.search(
+            [
+                ("engineering_code", "=", self.engineering_code),
+                ("engineering_revision", "=", self.engineering_revision + 1),
+            ],
+            limit=1,
+        )
+
+    def get_released(self):
+        self.ensure_one()
+        return self.search(
+            [
+                ("engineering_code", "=", self.engineering_code),
+                ("engineering_state", "in", [UNDER_MODIFY_STATUS, RELEASED_STATUS]),
+            ]
+        )
+
+    def get_all_revision(self):
+        self.ensure_one()
+        return self.search(
+            [("engineering_code", "=", self.engineering_code)],
+            order="engineering_revision DESC",
+        )
+
+    def get_last_version(self, engineering_code):
+        """
+        Get the latest version of the part named
+        :engineering_code Last version of the object
+        """
+        return self.search(
+            [("engineering_code", "=", engineering_code)],
+            order="engineering_revision DESC",
+            limit=1
+            )
+
+    def _move_engineering_code_on_archive(self, active):
+        """Archiving hands the code back, reactivating takes it again.
+
+        A record nobody works on any more should not keep a code locked away:
+        archiving moves it to engineering_code_archived, so a new record may use
+        it. Reactivating puts it back, unless somebody took it meanwhile, which
+        has to be said out loud rather than leaving the record with no code.
+
+        Every way of archiving goes through write(), the button and the mass
+        action included, which is why this hangs there and not off an action.
+        """
+        for record in self:
+            if active and record.engineering_code_archived:
+                taken = self.sudo().search_count(
+                    [
+                        ("engineering_code", "=", record.engineering_code_archived),
+                        ("engineering_revision", "=", record.engineering_revision),
+                        ("id", "!=", record.id),
+                    ],
+                    limit=1,
+                )
+                if taken:
+                    raise UserError(
+                        _(
+                            "%(code)s revision %(revision)s belongs to another "
+                            "record now, so this one cannot take its code back. "
+                            "Ask for assistance before going on: the two have to "
+                            "be told apart before this one is used again.",
+                            code=record.engineering_code_archived,
+                            revision=record.engineering_revision,
+                        )
+                    )
+                super(RevisionBaseMixin, record).write(
+                    {
+                        "engineering_code": record.engineering_code_archived,
+                        "engineering_code_archived": False,
+                    }
+                )
+            elif not active and record.engineering_code:
+                super(RevisionBaseMixin, record).write(
+                    {
+                        "engineering_code_archived": record.engineering_code,
+                        "engineering_code": False,
+                    }
+                )
+
+    def write(self, vals):
+        if "active" in vals and "active" in self._fields:
+            self._move_engineering_code_on_archive(vals["active"])
+        vals = self._normalize_engineering_code(vals)
+        if "engineering_code" in vals and vals["engineering_code"] not in [
+            False,
+            "-",
+            "",
+        ]:
+            vals["engineering_code_editable"] = False
+        else:
+            for record in self:
+                if record.engineering_code and record.engineering_code_editable:
+                    vals["engineering_code_editable"] = False
+        return super(RevisionBaseMixin, self).write(vals)
+
+    @api.model_create_multi
+    def create(self, vals):
+        for record_val in vals:
+            self._normalize_engineering_code(record_val)
+        self._refuse_engineering_code_in_use(vals)
+        for record_val in vals:
+            if "engineering_code" in record_val and record_val[
+                "engineering_code"
+            ] not in [False, "-", ""]:
+                record_val["engineering_code_editable"] = False
+        records = super(RevisionBaseMixin, self).create(vals)
+        records._fix_previous_revisions_state()
+        return records
+
+    def _refuse_revision_chain_if_checked_out(self):
+        """Hook: only documents can be checked out, see ir.attachment."""
+
+    def _fix_previous_revisions_state(self):
+        """Whoever creates a revision (new_version, the CAD client, a historical
+        import) leaves the chain of that code consistent.
+
+        A draft below it means the code was never settled: the new revision
+        would stand on nothing, so it is refused. Everything above draft is
+        released ex officio, then the nearest lower revision goes under
+        modification and every older one is obsoleted.
+
+        Branches are left out: they are parallel lines of one code, not a
+        sequence, and their rules are still to be designed (see CLAUDE.md).
+        """
+        for record in self:
+            if not record.engineering_code or not record.engineering_revision:
+                continue
+            if record.engineering_branch_parent_id:
+                continue
+            older = record.search(
+                [
+                    ("engineering_code", "=", record.engineering_code),
+                    ("engineering_revision", "<", record.engineering_revision),
+                    ("id", "!=", record.id),
+                ],
+                order="engineering_revision DESC",
+            ).filtered(lambda r: not r.engineering_branch_parent_id)
+            if not older:
+                continue
+            drafts = older.filtered(lambda r: r.engineering_state == START_STATUS)
+            if drafts:
+                raise UserError(
+                    _(
+                        "Cannot create %(code)s revision %(rev)s: revisions %(drafts)s "
+                        "are still in draft. Release or remove them first.",
+                        code=record.engineering_code,
+                        rev=record.engineering_revision,
+                        drafts=", ".join(
+                            str(rev) for rev in drafts.mapped("engineering_revision")
+                        ),
+                    )
+                )
+            older._refuse_revision_chain_if_checked_out()
+            for confirmed in older.filtered(
+                lambda r: r.engineering_state == CONFIRMED_STATUS
+            ):
+                confirmed.action_from_confirmed_to_released()
+                confirmed.message_post(
+                    body=_(
+                        "Released ex officio: revision %s of the same code was created",
+                        record.engineering_revision,
+                    )
+                )
+            previous, rest = older[0], older[1:]
+            if previous.engineering_state == RELEASED_STATUS:
+                previous._mark_under_modifie()
+            rest.filtered(
+                lambda r: r.engineering_state in (RELEASED_STATUS, UNDER_MODIFY_STATUS)
+            )._mark_obsolare()
+
+    def get_display_notification(self, message):
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "message": message,
+                "sticky": False,
+                "type": "info",
+            },
+        }
+
+    def translate_plm_m2o_name(self, objs, field_name, field_value):
+        if field_value:
+            for obj in objs:
+                field_def = obj.fields_get(field_name)
+                relation = field_def.get(field_name, {}).get("relation", "")
+                if not relation:
+                    logging.warning(
+                        "PLM Many2one relation on field %s not found" % field_name
+                    )
+                    continue
+                object_browse_id = None
+                for object_browse_id in self.env[relation].search(
+                    [("name", "=", field_value)]
+                ):
+                    break
+                if not object_browse_id:
+                    object_browse_id = self.env[relation].create({"name": field_value})
+                return object_browse_id.id
+        return field_value
+
+    @api.model
+    def get_all_translation(self, object_id, fields):
+        """
+        get all field translated in all available languages
+        """
+        out = {}
+        obj = self.env[self._name].search([("id", "=", object_id)])
+        if obj:
+            for field_name in fields:
+                for code in (
+                    self.env["res.lang"].search([("active", "=", True)]).mapped("code")
+                ):
+                    propKey = f"{field_name}@-@-@{code}"
+                    out[propKey] = getattr(obj.with_context(lang=code), field_name)
+        return out
+
+    @api.model
+    def get_possible_status(self):
+        out = []
+        for model_id in (
+            self.env["ir.model"].sudo().search([("model", "=", self._name)])
+        ):
+            for filed_id in (
+                self.env["ir.model.fields"]
+                .sudo()
+                .search(
+                    [("model_id", "=", model_id.id), ("name", "=", "engineering_state")]
+                )
+            ):
+                for ir_model_fields_selection in (
+                    self.env["ir.model.fields.selection"]
+                    .sudo()
+                    .search([("field_id", "=", filed_id.id)])
+                ):
+
+                    out.append(
+                        (
+                            ir_model_fields_selection.name,
+                            ir_model_fields_selection.value,
+                        )
+                    )
+        return out
+
+    @api.model
+    def search_last_revision(self,
+                             engineering_code):
+        for item in self.search([('engineering_code', '=', engineering_code)],
+                                order='engineering_revision DESC',
+                                limit=1):
+            return (item.engineering_code,
+                    item.engineering_revision)
+        return False, False

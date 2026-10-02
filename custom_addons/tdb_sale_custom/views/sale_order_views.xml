@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_inherit_tdb" model="ir.ui.view">
+        <field name="name">sale.order.form.inherit.tdb</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <!-- Nút 1: Ở Báo giá (draft/sent) -> Bấm để chuyển sang Đơn đặt hàng -->
+            <xpath expr="//header/button[@name='action_confirm'][1]" position="before">
+                <button
+                    string="Đặt hàng"
+                    name="action_place_order"
+                    type="object"
+                    class="btn-primary"
+                    invisible="state not in ('draft', 'sent')"/>
+            </xpath>
+
+            <!-- Nút 2: Ở Đơn đặt hàng (order_placed) -> Xem lại rồi bấm Xác nhận đơn bán hàng -->
+            <xpath expr="//header/button[@name='action_confirm'][1]" position="attributes">
+                <attribute name="invisible">state != 'order_placed'</attribute>
+                <attribute name="string">Xác nhận đơn bán hàng</attribute>
+            </xpath>
+
+            <!-- Ẩn nút Preview cũ mặc định -->
+            <xpath expr="//header/button[@name='action_preview_sale_order']" position="attributes">
+                <attribute name="invisible">1</attribute>
+            </xpath>
+
+            <!-- Cập nhật thanh tiến trình trạng thái bao gồm order_placed -->
+            <xpath expr="//field[@name='state']" position="attributes">
+                <attribute name="statusbar_visible">draft,sent,order_placed,sale</attribute>
+            </xpath>
+
+            <!-- Nút mở popup Điều khoản & Điều kiện mặc định -->
+            <xpath expr="//group[@name='note_group']//field[@name='note']" position="before">
+                <div class="mb-2">
+                    <button name="action_open_terms_modal" 
+                            type="object" 
+                            string="Điều khoản &amp; Điều kiện mặc định" 
+                            icon="fa-pencil-square-o" 
+                            class="btn btn-outline-primary"/>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- POPUP XEM TRƯỚC BÁO GIÁ ĐƠN HÀNG (MODAL EXTRA-LARGE) -->
+    <record id="view_sale_order_preview_modal" model="ir.ui.view">
+        <field name="name">sale.order.preview.modal</field>
+        <field name="model">sale.order</field>
+        <field name="arch" type="xml">
+            <form string="Báo giá đơn hàng" class="o_sale_preview_box">
+                <field name="preview_html" widget="html" nolabel="1" readonly="1" class="d-block w-100 m-0 p-0"/>
+                <footer>
+                    <button string="Đóng" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- SERVER ACTION ĐỂ MỞ POPUP TRỰC TIẾP KHI ẤN IN BÁO GIÁ Ở MENU ACTION / PRINT -->
+    <record id="action_print_saleorder_modal" model="ir.actions.server">
+        <field name="name">Báo giá đơn hàng (TDB)</field>
+        <field name="model_id" ref="sale.model_sale_order"/>
+        <field name="binding_model_id" ref="sale.model_sale_order"/>
+        <field name="binding_type">report</field>
+        <field name="binding_view_types">form</field>
+        <field name="state">code</field>
+        <field name="code">
+if record:
+    action = record.action_preview_sale_order()
+elif records:
+    action = records[0].action_preview_sale_order()
+        </field>
+    </record>
+
+    <!-- GIAO DIỆN POPUP CHỈNH SỬA ĐIỀU KHOẢN -->
+    <record id="view_sale_order_terms_modal" model="ir.ui.view">
+        <field name="name">sale.order.terms.modal</field>
+        <field name="model">sale.order</field>
+        <field name="arch" type="xml">
+            <form string="Chỉnh sửa Điều khoản &amp; Điều kiện">
+                <style>
+                    .o-wysiwyg {
+                        border: 1px solid #ced4da !important;
+                        border-radius: 6px !important;
+                        overflow: hidden !important;
+                        background-color: #fff !important;
+                    }
+                    .o-we-toolbar {
+                        border-bottom: 1px solid #dee2e6 !important;
+                        background-color: #f8f9fa !important;
+                        padding: 4px 8px !important;
+                    }
+                    .note-editable {
+                        padding: 12px 16px !important;
+                        min-height: 350px !important;
+                    }
+                </style>
+                <div class="text-muted small mb-2">
+                    <i class="fa fa-info-circle me-1 text-primary"/> 
+                    Bạn có thể chỉnh sửa các điều khoản dưới đây theo yêu cầu của khách hàng. Nội dung này sẽ được in trực tiếp lên bản in báo giá.
+                </div>
+                <!-- Khung soạn thảo văn bản to, rộng rãi có thanh công cụ cố định trên đỉnh trong popup -->
+                <field name="note" widget="html" default_focus="1" class="w-100" options="{'collaborative': false, 'top_toolbar': true}" placeholder="Nhập các điều khoản tại đây..."/>
+                <footer>
+                    <button string="Lưu &amp; Áp dụng" type="object" name="action_save_terms_modal" class="btn-primary"/>
+                    <button string="Đóng" special="cancel" class="btn-secondary"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

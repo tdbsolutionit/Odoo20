@@ -1,0 +1,407 @@
+<div class="container">
+    <div class="oe_styling_v8">
+        <div class="container p-3 mb-3">
+            <div class="row">
+                <div class="container pt-0 px-4 pb-5">
+                <div class="row">
+                    <div class="col-12">
+                        <img src="cover.png" style="width:100%; height:auto"/>
+                    </div>
+                </div>
+
+<!-- OVERVIEW -->
+                    <div class="row " id="overview">
+                        <div class="col-12 px-4">
+                            <h2 class="font-weight-bold"
+                                style="font-family:'Montserrat', sans-serif !important; font-size:2rem; color:#CC0000">
+                                Overview
+                            </h2>
+                            <hr style="border: 2px solid #000000 !important; background-color: #000000 !important; width: 50px !important; margin-left: 0 !important; margin-top: 8px;">
+                            <h3 class="oe_slogan">Integrates CAD Packages into Odoo, extending product, B.O.M and document capability.</h3>
+                        </div>
+                    </div>
+                    <div class="row ">
+                        <div class="col-12 px-4">
+                            <h2>The module is developed and maintained by <b>OmniaSolutions</b>, Further information at <b style="color:#CC0000">www.omniasolutions.website</b></h2>
+                        </div>
+                    </div>
+
+                    <!-- CAD CLIENT DOWNLOAD -->
+                    <div class="row" id="cad_client_download" style="margin-top: 3rem;">
+                        <div class="col-sm-12 col-md-12 col-lg-12 px-4">
+                            <h2 class="font-weight-bold"
+                                style="font-family:'Montserrat', sans-serif !important; font-size:2rem; color:#CC0000">
+                                Download the CAD Client
+                            </h2>
+                            <hr style="border: 2px solid #000000 !important; background-color: #000000 !important; width: 50px !important; margin-left: 0 !important; margin-top: 8px;">
+                            <p style="font-size:18px; text-align:justify; margin-top:16px">
+                                The OdooPLM client application bridges your CAD editor and your Odoo instance.
+                                It is available on SourceForge.
+                            </p>
+                            <div class="oe_centeralign" style="margin-top:20px">
+                            <div class="oe_spaced" style="display:inline-block; min-width:300px; margin:10px 12px; padding:14px 22px; border:2px solid #000000; border-radius:10px; text-align:center; vertical-align:top">
+                                <span style="font-size:15px; color:#000000">Download the CAD client</span><br/>
+                                    <b style="font-size:17px; color:#CC0000">sourceforge.net/projects/openerpplm</b>
+                                    </div>
+                                    </div>
+                    </div>
+
+                    <!-- DOCKER -->
+                    <!-- The Apps store rewrites every <a> of a module description into a
+                         <span>, so a link here would look clickable and do nothing: the
+                         addresses are printed as text instead. Inline styles, the bootstrap
+                         grid and the oe_ classes are kept by the store, and the only two
+                         colours in this page are the company ones, #CC0000 and #000000. -->
+                    <div class="row" id="docker" style="margin-top: 3rem;">
+                        <div class="col-sm-12 col-md-12 col-lg-12 px-4">
+                            <h2 class="font-weight-bold"
+                                style="font-family:'Montserrat', sans-serif !important; font-size:2rem; color:#CC0000">
+                                Run it with Docker
+                            </h2>
+                            <hr style="border: 2px solid #000000 !important; background-color: #000000 !important; width: 50px !important; margin-left: 0 !important; margin-top: 8px;">
+                            <p style="font-size:18px; text-align:justify; margin-top:16px">
+                                OdooPLM is published as a ready to run Docker image, on GitHub Container Registry
+                                and on Docker Hub. A single command gives you Odoo with the whole community PLM
+                                suite in the addons path, a PostgreSQL database and a working PLM server on the
+                                first boot &mdash; no database wizard, no dependency installation.
+                            </p>
+                            <div class="oe_spaced"
+                                 style="border:2px solid #000000; padding:18px 22px; border-radius:10px; font-family:monospace; font-size:15px; line-height:1.7; color:#000000; overflow-x:auto">
+                                <!-- no 20.0 image yet: the official odoo image has no 20.0 tag -->
+                                git clone --branch 19.0 https://github.com/OmniaGit/DockerOdooPLM.git<br/>
+                                cd DockerOdooPLM<br/>
+                                docker compose up
+                            </div>
+                            <div class="row" style="margin-top:24px">
+                                <div class="col-6">
+                                    <h3 class="oe_slogan" style="color:#000000; text-align:left; font-size:1.3rem">Two variants</h3>
+                                    <p style="font-size:18px; text-align:justify">
+                                        <b>full</b> carries the CAD conversion stack, for batch STEP to 3MF, STL
+                                        and PNG conversion. <b>slim</b> leaves it out, for the teams that do not
+                                        convert. Both ship every community PLM module in the addons path.
+                                    </p>
+                                </div>
+                                <div class="col-6">
+                                    <h3 class="oe_slogan" style="color:#000000; text-align:left; font-size:1.3rem">Demo images</h3>
+                                    <p style="font-size:18px; text-align:justify">
+                                        Each variant also has a <b>demo</b> tag that boots already populated: a
+                                        sample product over three BOM levels, its 3D models, ballooned assembly
+                                        drawings and the spare parts manual that prints from them.
+                                    </p>
+                                </div>
+                            </div>
+                            <p style="font-size:18px; text-align:justify">
+                                The images are rebuilt every week, against both the PLM sources and the official
+                                Odoo image, and every build is started and verified before it is published.
+                            </p>
+                            <div class="oe_centeralign" style="margin-top:24px">
+                            <div class="oe_spaced" style="display:inline-block; min-width:300px; margin:10px 12px; padding:14px 22px; border:2px solid #000000; border-radius:10px; text-align:center; vertical-align:top">
+                                <span style="font-size:15px; color:#000000">Images and Compose stack</span><br/>
+                                    <b style="font-size:17px; color:#CC0000">github.com/OmniaGit/DockerOdooPLM</b>
+                                    </div>
+                                    <div class="oe_spaced" style="display:inline-block; min-width:300px; margin:10px 12px; padding:14px 22px; border:2px solid #000000; border-radius:10px; text-align:center; vertical-align:top">
+                                        <span style="font-size:15px; color:#000000">How it is built, and what is inside</span><br/>
+                                            <b style="font-size:17px; color:#CC0000">odooplm.omniasolutions.website/blog</b>
+                                            </div>
+                                            </div>
+                                            </div>
+                                            </div>
+
+                    <!-- FEATURES -->
+                    <div class="row" id="features" style="margin-top: 3rem;">
+                        <div class="col-sm-12 col-md-12 col-lg-12 px-4">
+                            <h2 class="font-weight-bold"
+                                style="font-family:'Montserrat', sans-serif !important; font-size:2rem; color:#CC0000">
+                                Features
+                            </h2>
+                            <hr style="border: 2px solid #000000 !important; background-color: #000000 !important; width: 50px !important; margin-left: 0 !important; margin-top: 8px;">
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="oe_picture">
+                                        <div style="position:relative; width:100%; float:right">
+                                            <img class="dashboard" src="odoo_PLM10.png" style="width:100%; height:auto; border-radius:20px">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <p style="font-size:18px; text-align:justify; margin-top:20px; margin-right:50px">
+                                        This application enables a group of people to intelligently and efficiently manage 3D Models and 2D Drawings, directly from CAD editors.
+                                        Helps to share 2D documents using PDF embedded. Puts your engineering decisions, models and drawings into Odoo.
+                                    </p>
+                                    <p style="font-size:18px; text-align:justify; margin-top:40px; margin-right:50px">
+                                        It helps to work on Concurrent Engineering managing access policies on documents.
+                                        Moreover, it adds many reports and views on Bill of Materials or related to them. 
+                                    </p>
+                                    <div class="oe_centeralign" style="margin-top:40px">
+                                    <div class="oe_spaced" style="display:inline-block; min-width:300px; margin:10px 12px; padding:14px 22px; border:2px solid #000000; border-radius:10px; text-align:center; vertical-align:top">
+                                        <span style="font-size:15px; color:#000000">Try it online</span><br/>
+                                            <b style="font-size:17px; color:#CC0000">odoo.sh/project/odooplm/builds</b>
+                                            </div>
+                                            </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- CAD Integrations -->
+                    <div class="row" id="CAD_Integrations" style="margin-top: 3rem;">
+                        <div class="col-sm-12 col-md-12 col-lg-12 px-4">
+                            <h2 class="font-weight-bold"
+                                style="font-family:'Montserrat', sans-serif !important; font-size:2rem; color:#CC0000">
+                                CAD Integrations
+                            </h2>
+                            <hr style="border: 2px solid #000000 !important; background-color: #000000 !important; width: 50px !important; margin-left: 0 !important; margin-top: 8px;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="oe_span12">
+                                        <img class="menu" src="menu.png" style="width:100%; display:block; margin-left:auto; margin-right:auto">
+                                            <div style="margin: 25px">
+                                                <p style="font-size:18px; text-align: center">
+                                                    Fully Integrated on main commercial CAD/CAE Packages with a menu of commands.
+                                                    <br>Allows to assign Product informations to 3D Models / 2D Drawings, reads the BoM directly from graphic hierarchy structure.
+                                                </p>
+                                            </div>
+                                        </div>
+
+                                            <div class="oe_span" style="width:20%">
+                                                <div>
+                                                    <div class="icona" style="text-align:center">
+                                                        <img src="solidworks.png" class="cad_icon" style="width:60%; height:60%; border:2px solid lightgrey; border-radius:50%; padding:10px">
+                                                    </div>
+                                                    <div style="text-align:center; font-size:20px">
+                                                        <p>SolidWorks</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="oe_span" style="width:20%">
+                                                <div>
+                                                    <div class="icona" style="text-align:center">
+                                                        <img src="thinkdesign.png" class="cad_icon" style="width:60%; height:60%; border:2px solid lightgrey; border-radius:50%; padding:10px">
+                                                    </div>
+                                                    <div style="text-align:center; font-size:20px">
+                                                        <p>ThinkDesign</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="oe_span" style="width:20%">
+                                                <div>
+                                                    <div class="icona" style="text-align:center">
+                                                        <img src="solidedge.png" class="cad_icon" style="width:60%; height:60%; border:2px solid lightgrey; border-radius:50%; padding:10px">
+                                                    </div>
+                                                    <div style="text-align:center; font-size:20px">
+                                                        <p>Solid Edge</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="oe_span" style="width:20%">
+                                                <div>
+                                                    <div class="icona" style="text-align:center">
+                                                        <img src="autocad.png" class="cad_icon" style="width:60%; height:60%; border:2px solid lightgrey; border-radius:50%; padding:10px">
+                                                    </div>
+                                                    <div style="text-align:center; font-size:20px">
+                                                        <p>AutoCad</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="oe_span" style="width:20%">
+                                                <div>
+                                                    <div class="icona" style="text-align:center">
+                                                        <img src="inventor.png" class="cad_icon" style="width:60%; height:60%; border:2px solid lightgrey; border-radius:50%; padding:10px">
+                                                    </div>
+                                                    <div style="text-align:center; font-size:20px">
+                                                        <p>Inventor</p>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Full Cad search view -->
+                    <div class="row" id="full_cad_search_view" style="margin-top: 3rem;">
+                        <div class="col-sm-12 col-md-12 col-lg-12 px-4">
+                            <h2 class="font-weight-bold"
+                                style="font-family:'Montserrat', sans-serif !important; font-size:2rem; color:#CC0000">
+                                Full Cad search view
+                            </h2>
+                            <hr style="border: 2px solid #000000 !important; background-color: #000000 !important; width: 50px !important; margin-left: 0 !important; margin-top: 8px;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="oe_span12">
+                                        <p class="oe_centeralign" style="font-size:18px">Allows you to search product inside the Cad application, giving you a powerfull searching tool.</p>
+                                        <img class="cad_search" src="cad_client_save.png" style="width:85%; display:block; margin-left:auto; margin-right:auto; border:2px solid lightgrey; border-radius:15px">
+                                        <div style="width:80%; margin-left:auto; margin-right:auto; margin-top:30px">
+                                            <ul style="display:inline-block">
+                                                <li>Search on product</li>
+                                                <li>Search on Exploded Bom</li>
+                                                <li>Search on Imploded Bom</li>
+                                                <li>Search Check-out Document</li>
+                                            </ul>
+                                            <ul style="display:inline-block; float:right">
+                                                <li>Open different versions of the same product</li>
+                                                <li>Froze assembly into a separete folder</li>
+                                                <li>Immediate preview</li>
+                                                <li>Product Linked Documents</li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product LifeCycle Management -->
+                    <div class="row" id="Product_LifeCycle_Management" style="margin-top: 3rem;">
+                        <div class="col-sm-12 col-md-12 col-lg-12 px-4">
+                            <h2 class="font-weight-bold"
+                                style="font-family:'Montserrat', sans-serif !important; font-size:2rem; color:#CC0000">
+                                Product LifeCycle Management
+                            </h2>
+                            <hr style="border: 2px solid #000000 !important; background-color: #000000 !important; width: 50px !important; margin-left: 0 !important; margin-top: 8px;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="oe_span12">
+                                        <p style="font-size:18px; text-align: center">
+                                            Manages fundamental revisions of Products and Documents.
+                                            Integrates CAD Packages into Odoo extending product revision and B.O.M. capability.
+                                            Allows to manage LifeCycle of Products and Documents, integrating it with standard Workflow tools.<br>              
+                                            Helps to describe history of changes maintaining BoM through revisions. 
+                                        </p>
+                                    </div>
+                              
+                                    <div class="oe_span" style="width:30%">
+                                        <h3 style="text-align:center">Old Revision</h3>
+                                        <img class="oe_picture" src="Revision_0.png" style="border-radius: 15px;">
+                                    </div>
+
+                                    <div class="oe_span" style="width:10%; margin-top:10%; text-align:center; opacity:0.4">
+                                        <img src="double_arrow.png" style="width:50%">
+                                    </div>
+
+                                    <div class="oe_span" style="width:20%">
+                                        <h3 style="text-align:center">ECR-ECO</h3>
+                                        <img class="oe_picture" src="ecr-eco_icon.png" style="width:100%; border-radius:45%; display: block; margin-left: auto; margin-right: auto">
+                                    </div>
+
+                                    <div class="oe_span" style="width:10%; margin-top:10%; text-align:center; opacity:0.4">
+                                        <img src="double_arrow.png" style="width:50%"> 
+                                    </div>        
+
+                                    <div class="oe_span" style="width:30%">
+                                        <h3 style="text-align:center">New Revision</h3>
+                                        <img class="oe_picture" src="Revision_1.png" style="border-radius: 15px;">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Odoo Improvments -->
+                    <div class="row" id="Odoo_Improvments" style="margin-top: 3rem;">
+                        <div class="col-sm-12 col-md-12 col-lg-12 px-4">
+                            <h2 class="font-weight-bold"
+                                style="font-family:'Montserrat', sans-serif !important; font-size:2rem; color:#CC0000">
+                                Odoo Improvments
+                            </h2>
+                            <hr style="border: 2px solid #000000 !important; background-color: #000000 !important; width: 50px !important; margin-left: 0 !important; margin-top: 8px;">
+                        </div>
+                    </div>
+
+                    <!-- Product Kanban View -->
+                    <div class="row" id="Product_Kanban_View" style="margin-top: 3rem;">
+                        <div class="col-sm-12 col-md-12 col-lg-12 px-4">
+                            <h2 class="font-weight-bold"
+                                style="font-family:'Montserrat', sans-serif !important; font-size:2rem; color:#CC0000">
+                                Product Kanban View
+                            </h2>
+                            <hr style="border: 2px solid #000000 !important; background-color: #000000 !important; width: 50px !important; margin-left: 0 !important; margin-top: 8px;">
+                            <div class="row">
+                                <div class="oe_span6">
+                                    <img class="image" src="engineering_parts_1.png" style="width:70%; display:inline-block; border:2px solid lightgrey; border-radius:15px; float:right">
+                                </div>    
+                                <ul class="oe_span6" style="display:inline-block; text-align:center">    
+                                    <li style="border:2px solid #000000; background-color:transparent; width:70%; color:#CC0000; font-weight:600; margin:10px 0; border-radius:10px; list-style-type:none; padding:5px">Kanban View with Document Icons</li>
+                                    <li style="border:2px solid #000000; background-color:transparent; width:70%; color:#CC0000; font-weight:600; margin:30px 0; border-radius:10px; list-style-type:none; padding:5px">Revision Index</li> 
+                                    <li style="border:2px solid #000000; background-color:transparent; width:70%; color:#CC0000; font-weight:600; margin:10px 0; border-radius:10px; list-style-type:none; padding:5px">Revision Status</li>
+                                </ul>    
+                                <ul class="oe_span6" style="display:inline-block; text-align:center; margin-top:30px">    
+                                    <li style="border:2px solid #000000; background-color:transparent; width:70%; color:#CC0000; font-weight:600; margin:10px 0; border-radius:10px; list-style-type:none; padding:5px; float:right">Revision WorkFlow</li>
+                                    <li style="border:2px solid #000000; background-color:transparent; width:70%; color:#CC0000; font-weight:600; margin:30px 0; border-radius:10px; list-style-type:none; padding:5px; float:right">Fast build in actions for printing</li>
+                                    <li style="border:2px solid #000000; background-color:transparent; width:70%; color:#CC0000; font-weight:600; margin:10px 0; border-radius:10px; list-style-type:none; padding:5px; float:right">Fast build in actions for exploring boms</li>
+                                </ul>
+                                <div class="oe_span6" style="margin-top:30px">
+                                    <img class="image" src="engineering_parts_2.png" style="width:70%; display:inline-block; border:2px solid lightgrey; border-radius:15px">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Document View with tumbnails -->
+                    <div class="row" id="Document_View_with_tumbnails" style="margin-top: 3rem;">
+                        <div class="col-sm-12 col-md-12 col-lg-12 px-4">
+                            <h2 class="font-weight-bold"
+                                style="font-family:'Montserrat', sans-serif !important; font-size:2rem; color:#CC0000">
+                                Document View with tumbnails
+                            </h2>
+                            <hr style="border: 2px solid #000000 !important; background-color: #000000 !important; width: 50px !important; margin-left: 0 !important; margin-top: 8px;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <div class="oe_picture" style="max-height:500px">
+                                        <img src="kanban_documents.png" style="width:100%; display:block; margin-left:auto; margin-right:auto; border:2px solid lightgrey; border-radius:10px">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BoM Enhancements -->
+                    <div class="row" id="BoM_Enhancements" style="margin-top: 3rem;">
+                        <div class="col-sm-12 col-md-12 col-lg-12 px-4">
+                            <h2 class="font-weight-bold"
+                                style="font-family:'Montserrat', sans-serif !important; font-size:2rem; color:#CC0000">
+                                BoM Enhancements
+                            </h2>
+                            <hr style="border: 2px solid #000000 !important; background-color: #000000 !important; width: 50px !important; margin-left: 0 !important; margin-top: 8px;">
+                            <div class="row">
+                                <div class="col-12">
+                                    <p style="font-size:18px; margin-top:16px">             
+                                        Implements several special BoM reports.
+                                        BoMs can be printed with different styles: One Level, All Levels, Only Leaves.<br>  
+                                        Comparing BoMs helps to understand differences between them.
+                                        </p>
+                                    <div class="oe_picture">
+                                        <img src="Compare_Bom.png" style="width:100%; display:block; margin-left:auto; margin-right:auto; border:2px solid lightgrey; border-radius:10px; margin-top:20px">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <h2 class="oe_slogan">
+                            <img src="odooPLM_logo.png" class="img img-responsive" style="width:40%"/>
+                            <br/><br/>
+                            <span style="color:#000000">Get Help &amp; Support</span>
+                        </h2>
+                        <div class="oe_slogan oe_spaced text-center">
+                        <div class="oe_spaced" style="display:inline-block; min-width:300px; margin:10px 12px; padding:14px 22px; border:2px solid #000000; border-radius:10px; text-align:center; vertical-align:top">
+                            <span style="font-size:15px; color:#000000">Website</span><br/>
+                                <b style="font-size:17px; color:#CC0000">odooplm.omniasolutions.website</b>
+                                </div>
+                                <div class="oe_spaced" style="display:inline-block; min-width:300px; margin:10px 12px; padding:14px 22px; border:2px solid #000000; border-radius:10px; text-align:center; vertical-align:top">
+                                    <span style="font-size:15px; color:#000000">Contact us</span><br/>
+                                        <b style="font-size:17px; color:#CC0000">www.omniasolutions.website/#contact</b>
+                                        </div>
+                                        <div class="oe_spaced" style="display:inline-block; min-width:300px; margin:10px 12px; padding:14px 22px; border:2px solid #000000; border-radius:10px; text-align:center; vertical-align:top">
+                                            <span style="font-size:15px; color:#000000">Request new features</span><br/>
+                                                <b style="font-size:17px; color:#CC0000">github.com/OmniaGit/odooplm/issues</b>
+                                                </div>
+                                                </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </div>

@@ -1,0 +1,24 @@
+// Custom large preview popup for Sale Order
+.modal:has(.o_sale_preview_box),
+.modal-dialog:has(.o_sale_preview_box) {
+    max-width: 95vw !important;
+    width: 95vw !important;
+    min-width: 95vw !important;
+    margin: 2.5vh auto !important;
+
+    .modal-content {
+        height: 94vh !important;
+        max-height: 94vh !important;
+        border-radius: 8px !important;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    .modal-body {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .modal-footer {
+        padding: 8px 20px !important;
+    }
+}

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<templates xml:space="preserve">
+    <t t-inherit="html_editor.Wysiwyg" t-inherit-mode="extension">
+        <xpath expr="//LocalOverlayContainer" position="before">
+            <t t-if="this.showStationaryToolbar and this.toolbarProps">
+                <Toolbar t-props="this.toolbarProps"/>
+            </t>
+        </xpath>
+    </t>
+
+    <t t-inherit="html_editor.FontSizeSelector" t-inherit-mode="extension">
+        <xpath expr="//Dropdown" position="replace">
+            <div class="d-inline-flex align-items-center">
+                <button type="button" class="btn btn-light o_font_size_btn_minus"
+                        title="Giảm cỡ chữ"
+                        t-on-click.prevent.stop="() => this.stepFontSize(-1)">
+                    −
+                </button>
+                <Dropdown state="this.dropdown" menuClass="'o_font_size_selector_menu'" menuRef="this.menuRef" focusToggleOnClosed="false" onStateChanged.bind="this.onDropdownStateChanged">
+                    <button t-ref="this.fontSizeSelector" class="btn btn-light o_font_size_input_box" t-att-title="this.props.title" name="font_size" t-att-disabled="this.props.isDisabled">
+                        <IframeInput
+                            iframeRef="this.iframeContentRef"
+                            inputRef="this.fontSizeInputRef"
+                            value="this.state.displayName || 11"
+                            inputAttrs="{ name: 'font_size_input', type: 'number', min: 1, max: this.props.maxFontSize }"
+                            iframeClass="'o_font_size_selector_iframe'"
+                            inputStyle="`font-family: ${this.fontFamily}; font-size: 13px; font-weight: 500; text-align: center;`"
+                            onBlur.bind="this.props.onBlur"
+                            onClick.bind="this.onClickFontSizeInput"
+                            onInput.bind="this.debouncedCustomFontSizeInput"
+                            onKeydown.bind="this.onKeyDownFontSizeInput"
+                        />
+                    </button>
+                    <t t-set-slot="content">
+                        <div data-prevent-closing-overlay="true">
+                            <t t-foreach="this.items" t-as="item" t-key="item_index">
+                                <DropdownItem onSelected="() => this.onSelected(item)" t-on-pointerdown.prevent="() => {}">
+                                    <t t-out="item.name"/>
+                                </DropdownItem>
+                            </t>
+                        </div>
+                    </t>
+                </Dropdown>
+                <button type="button" class="btn btn-light o_font_size_btn_plus"
+                        title="Tăng cỡ chữ"
+                        t-on-click.prevent.stop="() => this.stepFontSize(1)">
+                    +
+                </button>
+            </div>
+        </xpath>
+    </t>
+</templates>

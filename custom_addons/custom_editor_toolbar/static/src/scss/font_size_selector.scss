@@ -1,0 +1,144 @@
+.o_font_size_selector_menu {
+    --dropdown-min-width: none;
+}
+.o-we-font-size-item-bg {
+    background-color: #dee2e6;
+}
+.o_font_size_selector_iframe {
+    width: 30px !important;
+    height: 22px !important;
+    border: none !important;
+    display: block !important;
+}
+.o_font_size_btn_minus,
+.o_font_size_btn_plus {
+    border: none !important;
+    background: transparent !important;
+    color: #495057 !important;
+    padding: 0 4px !important;
+    height: 28px !important;
+    min-width: 20px !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    line-height: 1 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    border-radius: 4px !important;
+    box-shadow: none !important;
+
+    &:hover {
+        background-color: #e9ecef !important;
+        color: #212529 !important;
+    }
+}
+.o_font_size_input_box {
+    border: 1px solid #ced4da !important;
+    border-radius: 4px !important;
+    background: #ffffff !important;
+    padding: 0 !important;
+    height: 26px !important;
+    width: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    margin: 0 2px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: none !important;
+
+    &:hover, &:focus {
+        border-color: #86b7fe !important;
+        background: #ffffff !important;
+    }
+}
+
+// ============================================================================
+// Định dạng giao diện Toolbar cố định (Stationary Toolbar) trong Popup & Modal
+// Khớp 100% với giao diện thanh công cụ chuẩn (Image 1)
+// ============================================================================
+.o-we-toolbar {
+    &.border-bottom {
+        background-color: #ffffff !important;
+        border-bottom: 1px solid #dee2e6 !important;
+        padding: 4px 8px !important;
+        min-height: 38px !important;
+
+        // Ẩn vạch ngăn cách trước nhóm nút đầu tiên
+        > span.o-we-toolbar-vertical-separator:first-child {
+            display: none !important;
+        }
+
+        .btn-group {
+            margin: 0 1px !important;
+            display: inline-flex !important;
+            align-items: center !important;
+        }
+
+        .btn-light {
+            border: 1px solid transparent;
+            border-radius: 4px;
+            padding: 2px 6px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            background: transparent;
+            color: #212529;
+
+            &:hover {
+                background-color: #f1f3f5 !important;
+                border-color: #dee2e6 !important;
+            }
+
+            &.active {
+                background-color: #e2e8f0 !important;
+                border-color: #cbd5e1 !important;
+                color: #0f172a !important;
+            }
+        }
+
+        .o-we-toolbar-vertical-separator {
+            width: 1px !important;
+            height: 18px !important;
+            background-color: #dee2e6 !important;
+            margin: 0 6px !important;
+            display: inline-block !important;
+            vertical-align: middle !important;
+        }
+
+        button[name="font_type"] {
+            border: none !important;
+            background-color: #e9ecef !important;
+            color: #212529 !important;
+            border-radius: 4px !important;
+            padding: 2px 10px !important;
+            height: 28px !important;
+            font-size: 13px !important;
+            font-weight: 600 !important;
+            display: inline-flex !important;
+            align-items: center !important;
+            justify-content: center !important;
+
+            &:hover {
+                background-color: #dee2e6 !important;
+            }
+        }
+
+        button[name="font_family"] {
+            border: none !important;
+            background-color: transparent !important;
+            color: #212529 !important;
+            border-radius: 4px !important;
+            padding: 2px 8px !important;
+            height: 28px !important;
+            font-size: 13px !important;
+            font-weight: 500 !important;
+
+            &:hover {
+                background-color: #f1f3f5 !important;
+            }
+        }
+    }
+}

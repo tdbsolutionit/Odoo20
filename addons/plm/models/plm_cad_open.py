@@ -1,0 +1,157 @@
+# -*- coding: utf-8 -*-
+##############################################################################
+#
+#    OmniaSolutions, ERP-PLM-CAD Open Source Solutions
+#    Copyright (C) 2011-2019 https://OmniaSolutions.website
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU Lesser General Public License as
+#    published by the Free Software Foundation, either version 3 of the
+#    License, or (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU Lesser General Public License for more details.
+#
+#    You should have received a copy of the GNU Lesser General Public License
+#    along with this prograIf not, see <http://www.gnu.org/licenses/>.
+#
+##############################################################################
+"""
+Created on Sep 7, 2019
+
+@author: dsmerghetto
+"""
+import logging
+from odoo import models, fields, api
+from odoo.tools import DEFAULT_SERVER_DATETIME_FORMAT
+
+class PlmCadOpen(models.Model):
+    _name = "plm.cad.open"
+    _description = "Opens made by the client"
+    _order = "id DESC"
+
+    plm_backup_doc_id = fields.Many2one(
+        "plm.backupdoc", "Backup Document Reference", index=True
+    )
+    userid = fields.Many2one("res.users", "Related User", index=True)
+    document_id = fields.Many2one("ir.attachment", "Related Document", index=True)
+    rel_doc_rev = fields.Integer(
+        related="document_id.engineering_revision", string="Revision", store=True
+    )
+    engineering_code = fields.Char(related='document_id.engineering_code', string="Code", store=True)
+    pws_path = fields.Char('PWS Path', index=True)
+    hostname = fields.Char('Hostname', index=True)
+    operation_type = fields.Char('Operation Type', index=True)
+    dbThread = fields.Char("Related Db Thread", index=True)
+
+    def get_full_location(self):
+        return {
+            'pws_path': self.pws_path,
+            'hostname': self.hostname,
+            'operation_type': self.operation_type,
+            'write_date': self.writr_date.strftime(DEFAULT_SERVER_DATETIME_FORMAT)
+        }
+
+    @api.model
+    def isClientFileUpdated(self,
+                            doc_id,
+                            user_id):
+        last_cad_open = False
+        for last_cad_open in self.search([
+            ('engineering_code', '=', doc_id.engineering_code),
+            ('operation_type', '=', ['open', 'save']),
+        ], order='create_date DESC', limit=1):
+            break
+        if last_cad_open:
+            if last_cad_open.userid.id == user_id.id and \
+                last_cad_open.rel_doc_rev == doc_id.engineering_revision:
+                return True
+            else:
+                write_date = last_cad_open.write_date
+                if self.search_count([('engineering_code', '=', doc_id.engineering_code),
+                                      ('rel_doc_rev', '!=', doc_id.engineering_revision),
+                                      ('operation_type', '=', ['save']),
+                                      ('userid', '!=', user_id.id),
+                                      ('write_date', '>', write_date),
+                                      ]):
+                    return True
+                if self.search_count([('engineering_code', '=', doc_id.engineering_code),
+                                      ('rel_doc_rev', '!=', doc_id.engineering_revision),
+                                      ('operation_type', '=', ['open']),
+                                      ('userid', '=', user_id.id),
+                                      ('write_date', '>', write_date),
+                                      ]):
+                    return True
+                return False
+        else:
+            return True
+
+    @api.model
+    def getLastCadOpenByUser(self, doc_id, user_id):
+        for plm_cad_open in self.search(
+            [
+                ("document_id", "=", doc_id.id),
+                ('operation_type', '=', 'open'),
+                ("userid", "=", user_id.id),
+            ],
+            order="create_date DESC",
+            limit=1,
+        ):
+            return plm_cad_open
+        return self
+
+    @api.model
+    def getLastCadSave(self, doc_id):
+        for plm_cad_open in self.search(
+            [
+                ("document_id", "=", doc_id.id),
+                ("operation_type", "=", "save"),
+            ],
+            order="create_date DESC",
+            limit=1,
+        ):
+            return plm_cad_open
+        return self
+
+    @api.model
+    def run_clean_cad_open_bck_scheduler(self):
+        logging.info("Start Cad open Clean Scheduler")
+        rel_dict = {}
+        cad_open_ids = self.search(args=[], order="create_date desc")
+        for index, cad_open_id in enumerate(cad_open_ids):
+            if index % 1000 == 0:
+                self.env.cr.commit()
+            doc_id = cad_open_id.document_id.id
+            if doc_id not in rel_dict:
+                rel_dict[doc_id] = []
+            if cad_open_id.operation_type not in rel_dict[doc_id]:
+                rel_dict[doc_id].append(cad_open_id.operation_type)
+            else:
+                self.env["plm.cad.open.bck"].create(
+                    {
+                        "plm_backup_doc_id": cad_open_id.plm_backup_doc_id.id,
+                        "userid": cad_open_id.userid.id,
+                        "document_id": cad_open_id.document_id.id,
+                        "pws_path": cad_open_id.pws_path,
+                        "hostname": cad_open_id.hostname,
+                        "operation_type": cad_open_id.operation_type,
+                    }
+                )
+                cad_open_id.unlink()
+        logging.info("End Cad open Clean Scheduler")
+
+    def name_get(self):
+        result = []
+        for r in self:
+            if r.document_id and r.userid:
+                name = "%s - R:%s - [%s]" % (
+                    r.document_id.engineering_code,
+                    r.document_id.engineering_revision,
+                    r.userid.display_name,
+                )
+            else:
+                name = "Error"
+            result.append((r.id, name))
+        return result

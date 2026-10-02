@@ -1,0 +1,36 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Docker and local development environment files
+Dockerfile
+compose.yaml
+config/
+image.png
+huong_dan_lay_module.md
+postgres-data/
+odoo-data/
+
+# Old directories
+shared-addons/
+shared_addons/
+
+# Trong thư mục addons: Bỏ qua toàn bộ module gốc có sẵn của Odoo
+addons/*
+
+# NHƯNG GIỮ LẠI các module bạn đã tải về (dms, plm)
+!addons/dms/
+!addons/plm/
+!addons/README.md
+
+# Logs and OS files
+*.log
+.DS_Store
+Thumbs.db
