@@ -22,3 +22,19 @@
         padding: 8px 20px !important;
     }
 }
+
+// Full page preview styling (Hình 2 layout for Sale Order Print Preview)
+.o_form_view:has(.o_sale_preview_box),
+.o_form_renderer:has(.o_sale_preview_box),
+.o_form_nosheet:has(.o_sale_preview_box),
+.o_sale_preview_box {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+
+    .o_field_html {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+}

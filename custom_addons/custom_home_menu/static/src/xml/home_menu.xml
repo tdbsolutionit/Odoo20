@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <!-- 1. Kế thừa web.NavBar để thêm lớp phủ màn hình chính Home Menu -->
+    <t t-inherit="web.NavBar" t-inherit-mode="extension">
+        <xpath expr="//header" position="attributes">
+            <attribute name="t-att-class">{'o_navbar_home_menu_active': this.state.isHomeMenuOpened}</attribute>
+        </xpath>
+        <xpath expr="//nav" position="after">
+            <t t-if="this.state.isHomeMenuOpened">
+                <div class="o_home_menu_overlay" t-on-click.self="() => this.toggleHomeMenu(false)">
+                    <div class="o_home_menu_container">
+                        <!-- Hộp tìm kiếm -->
+                        <div class="o_home_menu_search_box">
+                            <i class="oi me-2 text-white-50" data-icon="search"/>
+                            <input type="text"
+                                   class="o_home_menu_search_input"
+                                   placeholder="Tìm kiếm ứng dụng..."
+                                   t-att-value="this.state.searchQuery"
+                                   t-on-input="(ev) => { this.state.searchQuery = ev.target.value; }"
+                                   t-on-keydown="(ev) => this.onSearchKeyDown(ev)"
+                                   autofocus="1"/>
+                            <i t-if="this.state.searchQuery"
+                               class="oi ms-2 text-white-50 cursor-pointer"
+                               data-icon="close"
+                               t-on-click="() => { this.state.searchQuery = ''; }"/>
+                        </div>
+
+                        <!-- Lưới ứng dụng -->
+                        <div class="o_home_menu_apps_grid">
+                            <t t-foreach="this.displayedApps" t-as="app" t-key="app.id">
+                                <a class="o_home_menu_app_card"
+                                   t-att-title="app.name"
+                                   t-att-href="this.getMenuItemHref(app)"
+                                   t-on-click.prevent="() => this.onAppClick(app)">
+                                    <div class="o_home_menu_app_icon_wrapper">
+                                        <img class="o_home_menu_app_icon"
+                                             t-att-src="this.getAppIcon(app)"
+                                             t-att-alt="app.name"/>
+                                    </div>
+                                    <div class="o_home_menu_app_name">
+                                        <t t-out="app.name"/>
+                                    </div>
+                                </a>
+                            </t>
+                        </div>
+                    </div>
+                </div>
+            </t>
+        </xpath>
+    </t>
+
+    <!-- 2. Kế thừa web.NavBar.AppsMenu để đổi nút thành nút 9 chấm -->
+    <t t-inherit="web.NavBar.AppsMenu" t-inherit-mode="extension">
+        <xpath expr="//div[hasclass('o_navbar_apps_menu')]" position="replace">
+            <div t-if="!this.isScopedApp" class="o_navbar_apps_menu">
+                <button class="o_home_menu_toggle_btn btn btn-link text-reset border-0 shadow-none d-flex align-items-center justify-content-center p-2"
+                        data-hotkey="h"
+                        title="Home Menu"
+                        data-available-offline=""
+                        t-on-click="() => this.toggleHomeMenu()">
+                    <t t-if="this.state.isHomeMenuOpened">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="text-white">
+                            <polyline points="9 18 15 12 9 6"></polyline>
+                        </svg>
+                    </t>
+                    <t t-else="">
+                        <i class="oi fs-5" data-icon="apps"/>
+                    </t>
+                </button>
+            </div>
+        </xpath>
+    </t>
+
+</templates>

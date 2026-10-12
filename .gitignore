@@ -6,6 +6,10 @@ __pycache__/
 # IDE and Editor files
 .vscode/
 .idea/
+.agents/
+.stubs/
+jsconfig.json
+pyrightconfig.json
 *.swp
 *.swo
 

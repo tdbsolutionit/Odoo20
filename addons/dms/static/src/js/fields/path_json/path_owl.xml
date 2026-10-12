@@ -5,8 +5,9 @@
 -->
 <templates xml:space="preserve" id="template">
     <t t-name="dms.DmsPathField">
-        <t t-set="path_length" t-value="data.length - 1" />
-        <t t-foreach="data" t-as="elem" t-key="elem_index" style="display: inline">
+        <t t-set="path_list" t-value="this.data || []" />
+        <t t-set="path_length" t-value="path_list.length - 1" />
+        <t t-foreach="path_list" t-as="elem" t-key="elem_index" style="display: inline">
             <t t-if="elem_index !== path_length">
                 <span style="display: inline" t-if="elem_index !== 0">/</span>
                 <a

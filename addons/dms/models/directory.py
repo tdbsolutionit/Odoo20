@@ -13,7 +13,7 @@ from collections import defaultdict
 from typing import Literal  # noqa # pylint: disable=unused-import
 
 from odoo import _, api, fields, models, tools
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.osv.expression import AND, OR
 from odoo.tools import consteq, human_size
 
@@ -51,6 +51,118 @@ class DmsDirectory(models.Model):
         A root directory has a settings object, while a directory with a set
         parent inherits the settings form its parent.""",
     )
+    default_allow_download = fields.Boolean(
+        string="Mặc định cho phép tải về",
+        default=True,
+        help="Nếu bỏ chọn, mọi tệp tin tải lên thư mục này sẽ mặc định không cho phép nhân viên tải về máy.",
+    )
+    is_sharing = fields.Boolean(
+        string="Phòng ban Chia sẻ (Dùng chung)",
+        default=False,
+        compute="_compute_is_sharing",
+        store=True,
+        readonly=False,
+        recursive=True,
+        tracking=True,
+        help="Nếu bật, tất cả nhân viên trong công ty đều được xem thư mục này. Chỉ Sếp/Admin và người được chỉ định quản lý mới được đăng tải, sửa, xóa.",
+    )
+    available_leader_ids = fields.Many2many(
+        comodel_name="res.users",
+        compute="_compute_available_leader_ids",
+        string="Nhân viên thuộc phòng ban",
+        help="Danh sách nhân viên thuộc các nhóm truy cập của phòng ban này.",
+    )
+    leader_ids = fields.Many2many(
+        comodel_name="res.users",
+        relation="dms_directory_leader_rel",
+        column1="directory_id",
+        column2="user_id",
+        string="Trưởng phòng / Quản lý",
+        domain="[('id', 'in', available_leader_ids)]",
+        tracking=True,
+        help="Trưởng phòng hoặc người được Sếp/Admin giao quyền quản lý thư mục này. Người này có quyền đăng tải, chỉnh sửa, xóa và cấu hình quyền tải về cho các tệp tin trong thư mục.",
+    )
+    can_manage_directory = fields.Boolean(
+        string="Có quyền quản lý thư mục",
+        compute="_compute_can_manage_directory",
+        help="Xác định người dùng hiện tại có quyền quản lý cấu hình thư mục này hay không.",
+    )
+
+    @api.depends("parent_id.is_sharing")
+    def _compute_is_sharing(self):
+        for record in self:
+            if record.parent_id and record.parent_id.is_sharing:
+                record.is_sharing = True
+            elif not record.is_sharing:
+                record.is_sharing = False
+
+    def _is_sharing_directory(self):
+        """Kiểm tra thư mục này (hoặc thư mục cha của nó) có phải là phòng ban Chia sẻ không."""
+        curr = self.sudo()
+        while curr:
+            if curr.is_sharing:
+                return True
+            curr = curr.parent_id
+        return False
+
+    def _is_user_leader(self, user=None):
+        """Kiểm tra user có phải là Trưởng phòng / Quản lý của thư mục này hoặc thư mục cha không."""
+        user = user or self.env.user
+        if not user:
+            return False
+        if user._is_superuser() or user.has_group("base.group_system"):
+            return True
+        curr = self.sudo()
+        user_id = user.id
+        while curr:
+            if user_id in curr.leader_ids.ids:
+                return True
+            curr = curr.parent_id
+        return False
+
+    @api.depends("group_ids.users", "group_ids.explicit_user_ids", "complete_group_ids.users", "complete_group_ids.explicit_user_ids")
+    def _compute_available_leader_ids(self):
+        root_user = self.env.ref("base.user_root", raise_if_not_found=False)
+        root_id = root_user.id if root_user else 1
+        for record in self:
+            groups = record.complete_group_ids or record.group_ids
+            if groups:
+                users = groups.mapped("users") | groups.mapped("explicit_user_ids")
+                record.available_leader_ids = users.filtered(lambda u: u.active and u.id != root_id)
+            else:
+                record.available_leader_ids = self.env["res.users"].search([("share", "=", False), ("id", "!=", root_id)])
+
+    @api.constrains("leader_ids", "group_ids", "complete_group_ids")
+    def _check_leader_ids_in_groups(self):
+        for record in self:
+            groups = record.complete_group_ids or record.group_ids
+            if groups and record.leader_ids:
+                allowed_users = groups.mapped("users") | groups.mapped("explicit_user_ids")
+                invalid = record.leader_ids - allowed_users
+                if invalid:
+                    names = ", ".join(invalid.mapped("name"))
+                    raise ValidationError(
+                        _("Người dùng '%s' không thuộc nhóm thành viên của phòng ban '%s'! Vui lòng chỉ chọn nhân viên thuộc phòng ban này làm Trưởng phòng / Quản lý.")
+                        % (names, record.name)
+                    )
+
+    @api.depends("leader_ids", "parent_id")
+    def _compute_can_manage_directory(self):
+        user = self.env.user
+        is_admin = user._is_superuser() or user.has_group("base.group_system")
+        for record in self:
+            record.can_manage_directory = is_admin or record._is_user_leader(user)
+
+    def write(self, vals):
+        user = self.env.user
+        is_admin = user._is_superuser() or user.has_group("base.group_system")
+        if ("leader_ids" in vals or "is_sharing" in vals) and not is_admin:
+            raise AccessError(_("Chỉ Quản trị viên (Admin/Sếp) mới có quyền thay đổi Trưởng phòng/Quản lý hoặc cấu hình Phòng ban Chia sẻ!"))
+        if "default_allow_download" in vals:
+            for record in self:
+                if not record.can_manage_directory:
+                    raise AccessError(_("Bạn không có quyền thay đổi cấu hình tải về mặc định của thư mục này! Chỉ Trưởng phòng hoặc Quản trị viên mới có quyền."))
+        return super().write(vals)
 
     # Override acording to defined in AbstractDmsMixin
     storage_id = fields.Many2one(
@@ -708,6 +820,13 @@ class DmsDirectory(models.Model):
         Cannot rely on DB backend's cascade because subfolder and subfile unlinks
         must check custom permissions implementation.
         """
+        user = self.env.user
+        is_admin = user._is_superuser() or user.has_group("base.group_system")
+        for record in self:
+            if record.is_root_directory and not is_admin:
+                raise AccessError(_("Không thể xóa thư mục gốc của phòng ban!"))
+            if not record.can_manage_directory:
+                raise AccessError(_("Chỉ Trưởng phòng hoặc Quản trị viên mới có quyền xóa thư mục!"))
         self.file_ids.unlink()
         if self.child_directory_ids:
             self.child_directory_ids.unlink()

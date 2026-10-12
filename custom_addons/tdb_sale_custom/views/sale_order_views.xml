@@ -37,7 +37,6 @@
                     <button name="action_open_terms_modal" 
                             type="object" 
                             string="Điều khoản &amp; Điều kiện mặc định" 
-                            icon="fa-pencil-square-o" 
                             class="btn btn-outline-primary"/>
                 </div>
             </xpath>

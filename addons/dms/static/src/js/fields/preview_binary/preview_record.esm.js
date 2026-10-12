@@ -5,34 +5,28 @@
 import {BinaryField} from "@web/views/fields/binary/binary_field";
 import {_t} from "@web/core/l10n/translation";
 import {registry} from "@web/core/registry";
-import {standardFieldProps} from "@web/views/fields/standard_field_props";
-import {useFileViewer} from "@web/core/file_viewer/file_viewer_hook";
 import {useService} from "@web/core/utils/hooks";
 
 export class PreviewRecordField extends BinaryField {
+    static template = "dms.FilePreviewField";
+
     setup() {
         super.setup();
-        this.store = useService("mail.store");
-        this.fileViewer = useFileViewer();
+        this.action = useService("action");
     }
 
     onFilePreview() {
-        const self = this;
-        const attachment = this.store.Attachment.insert({
-            id: self.props.record.resId,
-            filename: self.props.record.data.display_name || "",
-            name: self.props.record.data.display_name || "",
-            mimetype: self.props.record.data.mimetype,
-            model_name: self.props.record.resModel,
+        this.action.doAction({
+            name: this.props.record.data.display_name || this.props.record.data.name || _t("Xem trước tài liệu"),
+            type: "ir.actions.act_window",
+            res_model: this.props.record.resModel || "dms.file",
+            res_id: this.props.record.resId,
+            view_mode: "form",
+            views: [[false, "form"]],
+            target: "current",
         });
-        this.fileViewer.open(attachment);
     }
 }
-
-PreviewRecordField.template = "dms.FilePreviewField";
-PreviewRecordField.props = {
-    ...standardFieldProps,
-};
 
 const previewRecordField = {
     component: PreviewRecordField,

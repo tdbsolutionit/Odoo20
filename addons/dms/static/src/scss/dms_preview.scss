@@ -1,0 +1,68 @@
+// Custom large preview popup for DMS Files
+.modal:has(.o_dms_preview_box),
+.modal-dialog:has(.o_dms_preview_box) {
+    max-width: 95vw !important;
+    width: 95vw !important;
+    min-width: 95vw !important;
+    margin: 2.5vh auto !important;
+
+    .modal-content {
+        height: 94vh !important;
+        max-height: 94vh !important;
+        border-radius: 8px !important;
+        box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45) !important;
+    }
+
+    .modal-body {
+        padding: 0 !important;
+        margin: 0 !important;
+        overflow: hidden !important;
+    }
+
+    .modal-footer {
+        padding: 8px 20px !important;
+    }
+}
+
+// Full page preview styling (Hình 2 layout)
+.o_form_view:has(.o_dms_preview_box),
+.o_form_renderer:has(.o_dms_preview_box),
+.o_form_nosheet:has(.o_dms_preview_box),
+.o_dms_preview_box {
+    padding: 0 !important;
+    margin: 0 !important;
+    width: 100% !important;
+
+    .o_field_html {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100% !important;
+    }
+}
+
+// Kanban Card dropdown menu width, left spacing and nowrap styling
+.o-dropdown--kanban-record-menu,
+.dropdown-menu:has(.o_kanban_card_manage_title),
+.o_kanban_record .dropdown-menu,
+.o_kanban_card .dropdown-menu {
+    min-width: 330px !important;
+    width: auto !important;
+    max-width: 450px !important;
+    padding: 10px 14px 10px 18px !important;
+    white-space: nowrap !important;
+    overflow-x: hidden !important;
+
+    .container {
+        min-width: 290px !important;
+        padding-left: 8px !important;
+        padding-right: 8px !important;
+    }
+
+    div[name="card_menu_Operations"] {
+        padding-left: 6px !important;
+    }
+
+    a, span, h5, div {
+        white-space: nowrap !important;
+    }
+}

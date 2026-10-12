@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_dms_file_date_filter_wizard_form" model="ir.ui.view">
+        <field name="name">dms.file.date.filter.wizard.form</field>
+        <field name="model">dms.file.date.filter.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Lọc tệp tin theo khoảng thời gian">
+                <sheet>
+                    <div class="alert alert-info py-2 px-3 mb-3 d-flex align-items-center" role="alert">
+                        <i class="fa fa-calendar-check-o fa-2x me-3 text-info" />
+                        <div>
+                            <strong>Tìm kiếm tệp theo ngày tháng</strong>
+                            <div class="text-muted small">
+                                Chọn mốc thời gian bắt đầu và kết thúc để lọc nhanh các tệp tin trong hệ thống.
+                            </div>
+                        </div>
+                    </div>
+
+                    <group>
+                        <group string="Tiêu chí lọc thời gian">
+                            <field name="filter_target" widget="radio" options="{'horizontal': true}" />
+                            <field name="quick_range" />
+                        </group>
+                        <group string="Khoảng thời gian (Ngày / Tháng / Năm)">
+                            <field name="date_from" placeholder="Chọn ngày bắt đầu (dd/mm/yyyy)..." />
+                            <field name="date_to" placeholder="Chọn ngày kết thúc (dd/mm/yyyy)..." />
+                        </group>
+                    </group>
+
+                    <group string="Phạm vi tìm kiếm (Tùy chọn)">
+                        <group>
+                            <field name="directory_id" options="{'no_create': True}" placeholder="Tất cả các phòng ban / thư mục..." />
+                            <field name="include_subdirectories" invisible="not directory_id" />
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button
+                        name="action_apply_filter"
+                        type="object"
+                        string="Áp dụng lọc"
+                        class="btn-primary"
+                    />
+                    <button
+                        name="action_clear_filter"
+                        type="object"
+                        string="Xóa bộ lọc (Xem tất cả)"
+                        class="btn-outline-secondary ms-2"
+                    />
+                    <button string="Đóng" special="cancel" class="btn-light ms-2" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dms_file_date_filter_wizard" model="ir.actions.act_window">
+        <field name="name">Lọc tệp tin theo thời gian</field>
+        <field name="res_model">dms.file.date.filter.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

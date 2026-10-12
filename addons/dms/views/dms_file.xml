@@ -109,101 +109,131 @@
                 <field name="is_lock_editor" />
                 <field name="permission_write" />
                 <field name="permission_unlink" />
+                <field name="can_download" />
+                <field name="can_manage_download" />
+                <field name="is_downloadable" />
                 <field name="write_date" />
                 <templates>
                     <t t-name="menu">
-                        <div class="container">
+                        <div class="container px-3 py-2" style="min-width: 310px;">
                             <div class="row">
-                                <div name="card_menu_Operations" class="col-6">
+                                <div name="card_menu_Operations" class="col-7 pe-2 ps-2">
                                     <h5
                                         role="menuitem"
-                                        class="o_kanban_card_manage_title"
+                                        class="o_kanban_card_manage_title text-nowrap fw-bold mb-2"
                                     >
                                         <span>Operations</span>
                                     </h5>
                                     <div
                                         role="menuitem"
-                                        t-if="record.permission_write.raw_value and !record.is_locked.raw_value"
+                                        t-if="record.can_manage_download.raw_value and record.is_downloadable.raw_value"
+                                        class="text-nowrap mb-1"
                                     >
-                                        <a name="lock" type="object">
-                                            <i class="fa fa-lock" />
+                                        <a name="action_toggle_downloadable" type="object" class="text-danger text-nowrap text-decoration-none">
+                                            <i class="fa fa-lock me-1" />
+                                            Khóa tải về
+                                        </a>
+                                    </div>
+                                    <div
+                                        role="menuitem"
+                                        t-if="record.can_manage_download.raw_value and !record.is_downloadable.raw_value"
+                                        class="text-nowrap mb-1"
+                                    >
+                                        <a name="action_toggle_downloadable" type="object" class="text-success text-nowrap text-decoration-none">
+                                            <i class="fa fa-unlock me-1" />
+                                            Cho phép tải về
+                                        </a>
+                                    </div>
+                                    <div
+                                        role="menuitem"
+                                        t-if="record.permission_write.raw_value and !record.is_locked.raw_value"
+                                        class="text-nowrap mb-1"
+                                    >
+                                        <a name="lock" type="object" class="text-nowrap text-decoration-none">
+                                            <i class="fa fa-lock me-1" />
                                             Lock
                                         </a>
                                     </div>
                                     <div
                                         role="menuitem"
-                                        t-if="record.is_locked.raw_value  and record.is_lock_editor.raw_value"
+                                        t-if="record.is_locked.raw_value and record.is_lock_editor.raw_value"
+                                        class="text-nowrap mb-1"
                                     >
-                                        <a name="unlock" type="object">
-                                            <i class="fa fa-unlock-alt" />
+                                        <a name="unlock" type="object" class="text-nowrap text-decoration-none">
+                                            <i class="fa fa-unlock-alt me-1" />
                                             Unlock
                                         </a>
                                     </div>
                                     <div
                                         role="menuitem"
                                         t-if="record.permission_write.raw_value and record.active.raw_value and (!record.is_locked.raw_value or (record.is_locked.raw_value and record.is_lock_editor.raw_value))"
+                                        class="text-nowrap mb-1"
                                     >
-                                        <a name="toggle_active" type="object">
-                                            <i class="fa fa-archive" />
+                                        <a name="toggle_active" type="object" class="text-nowrap text-decoration-none">
+                                            <i class="fa fa-archive me-1" />
                                             Archive
                                         </a>
                                     </div>
                                     <div
                                         role="menuitem"
                                         t-if="record.permission_write.raw_value and !record.active.raw_value and (!record.is_locked.raw_value or (record.is_locked.raw_value and record.is_lock_editor.raw_value))"
+                                        class="text-nowrap mb-1"
                                     >
-                                        <a name="toggle_active" type="object">
-                                            <i class="fa fa-archive" />
+                                        <a name="toggle_active" type="object" class="text-nowrap text-decoration-none">
+                                            <i class="fa fa-archive me-1" />
                                             Unarchive
                                         </a>
                                     </div>
-                                    <div role="menuitem">
+                                    <div role="menuitem" t-if="record.can_download.raw_value" class="text-nowrap mb-1">
                                         <a
-                                            t-attf-href="/web/content?id=#{record.id.raw_value}&amp;field=content&amp;model=dms.file&amp;filename_field=name&amp;download=true"
+                                            t-attf-href="/dms/file/#{record.id.raw_value}/download"
+                                            class="text-nowrap fw-semibold text-primary text-decoration-none"
                                         >
-                                            <i class="fa fa-download" />
+                                            <i class="fa fa-download me-1" />
                                             Download
                                         </a>
                                     </div>
                                 </div>
-                                <div class="col-6 o_kanban_manage_actions">
+                                <div class="col-5 ps-2 o_kanban_manage_actions">
                                     <h5
                                         role="menuitem"
-                                        class="o_kanban_card_manage_title"
+                                        class="o_kanban_card_manage_title text-nowrap fw-bold mb-2"
                                     >
                                         <span>Actions</span>
                                     </h5>
-                                    <div role="menuitem">
-                                        <a type="open">
-                                            <i class="fa fa-external-link" />
+                                    <div role="menuitem" class="text-nowrap mb-1">
+                                        <a type="open" class="text-nowrap text-decoration-none">
+                                            <i class="fa fa-external-link me-1" />
                                             Open
                                         </a>
                                     </div>
                                     <div
                                         role="menuitem"
                                         t-if="record.permission_write.raw_value"
+                                        class="text-nowrap mb-1"
                                     >
-                                        <a type="edit">
-                                            <i class="fa fa-pencil-square-o" />
+                                        <a type="edit" class="text-nowrap text-decoration-none">
+                                            <i class="fa fa-pencil-square-o me-1" />
                                             Edit
                                         </a>
                                     </div>
                                     <div
                                         role="menuitem"
                                         t-if="record.permission_unlink.raw_value and (!record.is_locked.raw_value or (record.is_locked.raw_value and record.is_lock_editor.raw_value))"
+                                        class="text-nowrap mb-1"
                                     >
-                                        <a type="delete">
-                                            <i class="fa fa-trash-o" />
+                                        <a type="delete" class="text-danger text-nowrap text-decoration-none">
+                                            <i class="fa fa-trash-o me-1" />
                                             Delete
                                         </a>
                                     </div>
                                 </div>
                             </div>
-                            <div class="o_kanban_card_manage_actions row">
+                            <div class="o_kanban_card_manage_actions row mt-2 pt-2 border-top">
                                 <div
                                     role="menuitem"
                                     aria-haspopup="true"
-                                    class="col-6"
+                                    class="col-12"
                                     t-if="record.permission_write.raw_value"
                                 >
                                     <field name="color" widget="kanban_color_picker" />
@@ -218,10 +248,14 @@
                             >
                                 <div class="col-3">
                                     <a
-                                        class="h-100 d-block o_kanban_dms_file_preview"
+                                        type="object"
+                                        name="action_preview_file"
+                                        class="h-100 d-block o_kanban_dms_file_preview cursor-pointer"
                                         t-att-data-id="record.id.raw_value"
                                         t-att-id="record.id.raw_value"
                                         t-att-name="record.name.raw_value"
+                                        title="Xem trước tài liệu"
+                                        role="button"
                                     >
                                         <img
                                             t-att-src="record.icon_url.raw_value"
@@ -230,16 +264,62 @@
                                         />
                                     </a>
                                 </div>
-                                <div class="col-9">
-                                    <field name="name" class="fw-bold" />
+                                <div class="col-9 ps-2">
+                                    <field name="name" class="fw-bold d-block text-truncate" />
                                     <field
                                         name="tag_ids"
                                         widget="many2many_tags"
                                         options="{'color_field': 'color'}"
                                     />
-                                    <field name="write_date" widget="date" />
+                                    <div class="text-muted small">
+                                        <field name="write_date" widget="date" />
+                                    </div>
+                                    <div class="text-secondary small d-flex align-items-center text-truncate" title="Người đăng tải">
+                                        <i class="fa fa-user me-1 text-muted" />
+                                        <field name="create_uid" class="text-truncate" />
+                                    </div>
                                 </div>
-                                <footer class="mt-auto pt-0 ms-1">
+                                <footer class="mt-auto pt-0 ms-1 d-flex align-items-center">
+                                    <button
+                                        name="action_preview_file"
+                                        type="object"
+                                        class="btn btn-sm btn-link p-0 text-primary text-decoration-none o_dms_preview_btn"
+                                        title="Xem trước tài liệu"
+                                    >
+                                        <i class="fa fa-eye me-1"/>Xem trước
+                                    </button>
+                                    <button
+                                        name="action_toggle_downloadable"
+                                        type="object"
+                                        t-if="record.can_manage_download.raw_value and record.is_downloadable.raw_value"
+                                        class="btn btn-sm btn-outline-success p-0 px-2 ms-2 text-decoration-none"
+                                        title="Đang cho phép tải về. Nhấp để khóa tải về."
+                                    >
+                                        <i class="fa fa-check-circle me-1"/>Cho tải
+                                    </button>
+                                    <button
+                                        name="action_toggle_downloadable"
+                                        type="object"
+                                        t-if="record.can_manage_download.raw_value and !record.is_downloadable.raw_value"
+                                        class="btn btn-sm btn-outline-danger p-0 px-2 ms-2 text-decoration-none"
+                                        title="Đang khóa tải về. Nhấp để cho phép tải về."
+                                    >
+                                        <i class="fa fa-lock me-1"/>Khóa tải
+                                    </button>
+                                    <span
+                                        t-if="!record.can_manage_download.raw_value and record.is_downloadable.raw_value"
+                                        class="badge text-bg-success ms-2"
+                                        title="Tệp này được phép tải về"
+                                    >
+                                        <i class="fa fa-check-circle me-1"/>Cho tải
+                                    </span>
+                                    <span
+                                        t-if="!record.can_manage_download.raw_value and !record.is_downloadable.raw_value"
+                                        class="badge text-bg-danger ms-2"
+                                        title="Tệp này bị khóa tải về"
+                                    >
+                                        <i class="fa fa-lock me-1"/>Khóa tải
+                                    </span>
                                     <div class="d-flex ms-auto oe_kanban_bottom_right">
                                         <span
                                             t-if="record.is_locked.raw_value"
@@ -300,6 +380,7 @@
                 <field name="directory_id" optional="hide" />
                 <field name="root_directory_id" optional="hide" />
                 <field name="write_date" />
+                <field name="create_uid" string="Người đăng tải" optional="show" widget="many2one_avatar_user" />
                 <field name="human_size" string="Size" />
                 <field name="mimetype" />
                 <field name="category_id" column_invisible="1" />
@@ -307,6 +388,30 @@
                     name="tag_ids"
                     widget="many2many_tags"
                     options="{'color_field': 'color', 'no_create_edit': True}"
+                />
+                <field name="can_download" column_invisible="True" />
+                <field name="can_manage_download" column_invisible="True" />
+                <field
+                    name="is_downloadable"
+                    widget="boolean_toggle"
+                    readonly="not can_manage_download"
+                    optional="show"
+                    string="Cho phép tải về"
+                />
+                <button
+                    name="action_preview_file"
+                    type="object"
+                    icon="fa-eye"
+                    title="Xem trước"
+                    string="Xem trước"
+                />
+                <button
+                    name="action_download_file"
+                    type="object"
+                    icon="fa-download"
+                    title="Tải về"
+                    string="Tải về"
+                    invisible="not can_download"
                 />
             </list>
         </field>
@@ -338,6 +443,22 @@
         <field name="arch" type="xml">
             <form string="Files">
                 <header>
+                    <button
+                        class="oe_highlight"
+                        name="action_preview_file"
+                        type="object"
+                        string="Xem trước"
+                        icon="fa-eye"
+                        invisible="not content"
+                    />
+                    <button
+                        name="action_download_file"
+                        type="object"
+                        string="Tải về"
+                        icon="fa-download"
+                        class="btn-secondary"
+                        invisible="not can_download or not content"
+                    />
                     <button
                         class="oe_highlight"
                         name="lock"
@@ -398,7 +519,7 @@
                     </div>
                     <group name="content">
                         <group>
-                            <field name="content" filename="name" />
+                            <field name="content" filename="name" widget="preview_binary" />
                         </group>
                         <group>
                             <field name="extension" />
@@ -429,6 +550,13 @@
                                 widget="many2many_tags"
                                 placeholder="Tags..."
                                 options="{'color_field': 'color', 'no_create_edit': True}"
+                            />
+                            <field name="can_download" invisible="1" />
+                            <field name="can_manage_download" invisible="1" />
+                            <field
+                                name="is_downloadable"
+                                widget="boolean_toggle"
+                                readonly="not can_manage_download"
                             />
                         </group>
                     </group>
@@ -634,5 +762,57 @@
         <field name="code">
             action = model.action_wizard_dms_file_move()
         </field>
+    </record>
+
+    <!-- POPUP XEM TRƯỚC TÀI LIỆU (MODAL 95VW) -->
+    <record id="view_dms_file_preview_modal" model="ir.ui.view">
+        <field name="name">dms.file.preview.modal</field>
+        <field name="model">dms.file</field>
+        <field name="arch" type="xml">
+            <form string="Xem trước tài liệu" class="o_dms_preview_box">
+                <field name="can_download" invisible="1"/>
+                <field name="preview_html" widget="html" nolabel="1" readonly="1" class="d-block w-100 m-0 p-0"/>
+                <footer>
+                    <button name="action_download_file" type="object" string="Tải về" class="btn-outline-primary" invisible="not can_download"/>
+                    <button string="Đóng" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- SERVER ACTION XEM TRƯỚC TÀI LIỆU TRONG MENU ACTION -->
+    <record id="action_dms_file_preview_server" model="ir.actions.server">
+        <field name="name">Xem trước tài liệu</field>
+        <field name="model_id" ref="dms.model_dms_file"/>
+        <field name="binding_model_id" ref="dms.model_dms_file"/>
+        <field name="binding_view_types">list,form</field>
+        <field name="state">code</field>
+        <field name="code">
+if record:
+    action = record.action_preview_file()
+elif records:
+    action = records[0].action_preview_file()
+        </field>
+    </record>
+
+    <!-- SERVER ACTIONS CHO PHÉP / KHÓA TẢI VỀ HÀNG LOẠT -->
+    <record id="action_dms_file_bulk_allow_download" model="ir.actions.server">
+        <field name="name">Cho phép tải về</field>
+        <field name="model_id" ref="dms.model_dms_file"/>
+        <field name="binding_model_id" ref="dms.model_dms_file"/>
+        <field name="binding_view_types">list</field>
+        <field name="group_ids" eval="[(4, ref('dms.group_dms_user'))]"/>
+        <field name="state">code</field>
+        <field name="code">records.action_bulk_allow_download()</field>
+    </record>
+
+    <record id="action_dms_file_bulk_disallow_download" model="ir.actions.server">
+        <field name="name">Khóa tải về</field>
+        <field name="model_id" ref="dms.model_dms_file"/>
+        <field name="binding_model_id" ref="dms.model_dms_file"/>
+        <field name="binding_view_types">list</field>
+        <field name="group_ids" eval="[(4, ref('dms.group_dms_user'))]"/>
+        <field name="state">code</field>
+        <field name="code">records.action_bulk_disallow_download()</field>
     </record>
 </odoo>

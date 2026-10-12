@@ -1,0 +1,355 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Kế thừa Form view dms.file -->
+    <record id="view_dms_file_form_inherit_tdb" model="ir.ui.view">
+        <field name="name">dms.file.form.inherit.tdb</field>
+        <field name="model">dms.file</field>
+        <field name="inherit_id" ref="dms.view_dms_file_form" />
+        <field name="arch" type="xml">
+            <xpath expr="//header" position="inside">
+                <button
+                    name="action_restore_file"
+                    type="object"
+                    string="Khôi phục tệp tin"
+                    class="oe_highlight btn-success"
+                    invisible="not is_in_recycle_bin"
+                />
+                <button
+                    name="action_permanent_delete"
+                    type="object"
+                    string="Xóa vĩnh viễn"
+                    class="btn-danger"
+                    confirm="Bạn có chắc chắn muốn xóa vĩnh viễn tệp tin này? Thao tác này không thể hoàn tác!"
+                    invisible="not is_in_recycle_bin"
+                />
+            </xpath>
+            <xpath expr="//sheet" position="before">
+                <field name="is_in_recycle_bin" invisible="1" />
+            </xpath>
+            <xpath expr="//sheet" position="inside">
+                <widget
+                    name="web_ribbon"
+                    title="Thùng Rác"
+                    bg_color="bg-danger"
+                    invisible="not is_in_recycle_bin"
+                />
+            </xpath>
+            <xpath expr="//field[@name='is_downloadable']" position="attributes">
+                <attribute name="invisible">is_in_recycle_bin</attribute>
+            </xpath>
+            <xpath expr="//page[@name='page_meta']" position="before">
+                <page name="page_recycle_bin" string="Thông tin xóa" invisible="not is_in_recycle_bin">
+                    <group>
+                        <group string="Chi tiết xóa">
+                            <field name="deleted_uid" widget="many2one_avatar_user" readonly="1" />
+                            <field name="deleted_date" readonly="1" />
+                            <field name="original_directory_id" readonly="1" />
+                        </group>
+                    </group>
+                </page>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Kế thừa List / Tree view dms.file -->
+    <record id="view_dms_file_tree_inherit_tdb" model="ir.ui.view">
+        <field name="name">dms.file.list.inherit.tdb</field>
+        <field name="model">dms.file</field>
+        <field name="inherit_id" ref="dms.view_dms_file_tree" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='create_uid']" position="after">
+                <field name="is_in_recycle_bin" column_invisible="True" />
+                <field name="deleted_uid" string="Người xóa" optional="show" widget="many2one_avatar_user" invisible="not is_in_recycle_bin" />
+                <field name="deleted_date" string="Thời gian xóa" optional="show" invisible="not is_in_recycle_bin" />
+                <field name="original_directory_id" string="Thư mục ban đầu" optional="show" invisible="not is_in_recycle_bin" />
+            </xpath>
+            <xpath expr="//button[@name='action_preview_file']" position="before">
+                <button
+                    name="action_restore_file"
+                    type="object"
+                    string="Khôi phục"
+                    title="Khôi phục tệp tin về thư mục ban đầu"
+                    class="btn-success"
+                    invisible="not is_in_recycle_bin"
+                />
+                <button
+                    name="action_permanent_delete"
+                    type="object"
+                    string="Xóa vĩnh viễn"
+                    title="Xóa vĩnh viễn khỏi CSDL"
+                    confirm="Bạn có chắc chắn muốn xóa vĩnh viễn tệp tin này khỏi CSDL?"
+                    invisible="not is_in_recycle_bin"
+                />
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Kế thừa Kanban view dms.file -->
+    <record id="view_dms_file_kanban_inherit_tdb" model="ir.ui.view">
+        <field name="name">dms.file.kanban.inherit.tdb</field>
+        <field name="model">dms.file</field>
+        <field name="inherit_id" ref="dms.view_dms_file_kanban" />
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='name']" position="after">
+                <field name="is_in_recycle_bin" />
+                <field name="is_deleted" />
+                <field name="deleted_uid" />
+                <field name="deleted_user_name" />
+                <field name="deleted_date" />
+                <field name="original_directory_id" />
+            </xpath>
+            <xpath expr="//div[hasclass('text-secondary')]" position="after">
+                <div t-if="record.is_in_recycle_bin.raw_value" class="text-danger small d-flex align-items-center text-truncate mt-1" title="Người đã xóa">
+                    <i class="fa fa-trash-o me-1 text-danger" />
+                    <span>Đã xóa bởi: </span>
+                    <strong class="ms-1 text-truncate"><field name="deleted_user_name" /></strong>
+                </div>
+                <div t-if="record.is_in_recycle_bin.raw_value and record.original_directory_id.raw_value" class="text-muted small d-flex align-items-center text-truncate" title="Thư mục ban đầu">
+                    <i class="fa fa-folder-o me-1 text-muted" />
+                    <field name="original_directory_id" class="text-truncate" />
+                </div>
+            </xpath>
+            <!-- Thay thế hoàn toàn footer thẻ Kanban để sắp xếp thứ tự nút chuẩn và đẩy icon avatar sang góc phải -->
+            <xpath expr="//footer" position="replace">
+                <footer class="mt-auto pt-0 ms-1 d-flex align-items-center w-100">
+                    <!-- Nút Xem trước (luôn ở đầu bên trái) -->
+                    <button
+                        name="action_preview_file"
+                        type="object"
+                        class="btn btn-sm btn-link p-0 text-primary text-decoration-none o_dms_preview_btn text-nowrap"
+                        title="Xem trước tài liệu"
+                    >
+                        <i class="fa fa-eye me-1"/>Xem trước
+                    </button>
+
+                    <!-- KHI TRONG THÙNG RÁC: Hiện nút Khôi phục & Xóa vĩnh viễn (TUYỆT ĐỐI KHÔNG hiện nút Cho tải / Khóa tải) -->
+                    <t t-if="record.is_in_recycle_bin.raw_value">
+                        <button
+                            name="action_restore_file"
+                            type="object"
+                            class="btn btn-sm btn-outline-success p-0 px-2 ms-2 text-decoration-none text-nowrap"
+                            title="Khôi phục tệp tin về thư mục ban đầu"
+                        >
+                            <i class="fa fa-undo me-1"/>Khôi phục
+                        </button>
+                        <button
+                            name="action_permanent_delete"
+                            type="object"
+                            class="btn btn-sm btn-outline-danger p-0 px-2 ms-2 text-decoration-none text-nowrap"
+                            title="Xóa vĩnh viễn khỏi CSDL"
+                            confirm="Bạn có chắc muốn xóa vĩnh viễn tệp này?"
+                        >
+                            <i class="fa fa-trash me-1"/>Xóa vĩnh viễn
+                        </button>
+                    </t>
+
+                    <!-- KHI Ở PHÒNG BAN THƯỜNG: Hiện nút Cho tải / Khóa tải -->
+                    <t t-if="!record.is_in_recycle_bin.raw_value">
+                        <button
+                            name="action_toggle_downloadable"
+                            type="object"
+                            t-if="record.can_manage_download.raw_value and record.is_downloadable.raw_value"
+                            class="btn btn-sm btn-outline-success p-0 px-2 ms-2 text-decoration-none text-nowrap"
+                            title="Đang cho phép tải về. Nhấp để khóa tải về."
+                        >
+                            <i class="fa fa-check-circle me-1"/>Cho tải
+                        </button>
+                        <button
+                            name="action_toggle_downloadable"
+                            type="object"
+                            t-if="record.can_manage_download.raw_value and !record.is_downloadable.raw_value"
+                            class="btn btn-sm btn-outline-danger p-0 px-2 ms-2 text-decoration-none text-nowrap"
+                            title="Đang khóa tải về. Nhấp để cho phép tải về."
+                        >
+                            <i class="fa fa-lock me-1"/>Khóa tải
+                        </button>
+                        <span
+                            t-if="!record.can_manage_download.raw_value and record.is_downloadable.raw_value"
+                            class="badge text-bg-success ms-2 text-nowrap"
+                            title="Tệp này được phép tải về"
+                        >
+                            <i class="fa fa-check-circle me-1"/>Cho tải
+                        </span>
+                        <span
+                            t-if="!record.can_manage_download.raw_value and !record.is_downloadable.raw_value"
+                            class="badge text-bg-danger ms-2 text-nowrap"
+                            title="Tệp này bị khóa tải về"
+                        >
+                            <i class="fa fa-lock me-1"/>Khóa tải
+                        </span>
+                    </t>
+
+                    <!-- Icon Avatar Admin / Người đăng tải: Luôn nằm ở góc bên phải ngoài cùng nhờ ms-auto -->
+                    <div class="d-flex ms-auto oe_kanban_bottom_right align-items-center justify-content-end">
+                        <span
+                            t-if="record.is_locked.raw_value"
+                            class="o_dms_file_kanban_lock me-1"
+                        >
+                            <i
+                                t-attf-class="fa #{(record.is_locked.raw_value and !record.is_lock_editor.raw_value) ? 'fa-lock' : ''} #{((record.is_locked.raw_value and record.is_lock_editor.raw_value)) ? 'fa-unlock-alt' : ''}"
+                                t-att-title="record.locked_by.value"
+                            />
+                        </span>
+                        <img
+                            t-attf-src="/web/image/res.users/#{record.create_uid.raw_value}/avatar_128"
+                            t-att-alt="record.create_uid.value"
+                            class="oe_kanban_avatar rounded-circle"
+                            style="width: 22px; height: 22px; object-fit: cover;"
+                            t-att-title="record.create_uid.value"
+                        />
+                    </div>
+                </footer>
+            </xpath>
+            <xpath expr="//div[@name='card_menu_Operations']//div[a[@name='action_toggle_downloadable']][1]" position="attributes">
+                <attribute name="t-if">!record.is_in_recycle_bin.raw_value and record.can_manage_download.raw_value and record.is_downloadable.raw_value</attribute>
+            </xpath>
+            <xpath expr="//div[@name='card_menu_Operations']//div[a[@name='action_toggle_downloadable']][2]" position="attributes">
+                <attribute name="t-if">!record.is_in_recycle_bin.raw_value and record.can_manage_download.raw_value and !record.is_downloadable.raw_value</attribute>
+            </xpath>
+            <xpath expr="//div[@name='card_menu_Operations']//div[a[contains(@t-attf-href, '/download')]]" position="attributes">
+                <attribute name="t-if">!record.is_in_recycle_bin.raw_value and record.can_download.raw_value</attribute>
+            </xpath>
+            <xpath expr="//div[@name='card_menu_Operations']" position="inside">
+                <div role="menuitem" t-if="record.is_in_recycle_bin.raw_value" class="text-nowrap mb-1">
+                    <a name="action_restore_file" type="object" class="text-success text-nowrap text-decoration-none">
+                        <i class="fa fa-undo me-1" />
+                        Khôi phục
+                    </a>
+                </div>
+                <div role="menuitem" t-if="record.is_in_recycle_bin.raw_value" class="text-nowrap mb-1">
+                    <a name="action_permanent_delete" type="object" class="text-danger text-nowrap text-decoration-none">
+                        <i class="fa fa-trash me-1" />
+                        Xóa vĩnh viễn
+                    </a>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- Kế thừa Search view dms.file: Tinh gọn, rõ ràng, tìm kiếm thông minh -->
+    <record id="search_dms_file_inherit_tdb" model="ir.ui.view">
+        <field name="name">dms.file.search.inherit.tdb</field>
+        <field name="model">dms.file</field>
+        <field name="inherit_id" ref="dms.search_dms_file" />
+        <field name="arch" type="xml">
+            <!-- 1. Thanh Search Bar: Tìm kiếm trực tiếp cả tên file, người đăng tải, người đã xóa (hỗ trợ 1 ký tự, không phân biệt hoa thường) -->
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="string">Tên tệp, Người đăng, Người xóa</attribute>
+                <attribute name="filter_domain">['|', '|', ('name', 'ilike', self), ('uploader_name', 'ilike', self), ('deleted_user_name', 'ilike', self)]</attribute>
+            </xpath>
+            <xpath expr="//field[@name='name']" position="after">
+                <field
+                    name="uploader_name"
+                    string="Người đăng tải"
+                    filter_domain="['|', ('uploader_name', 'ilike', self), ('create_uid.login', 'ilike', self)]"
+                />
+                <field
+                    name="deleted_user_name"
+                    string="Người đã xóa"
+                    filter_domain="['|', ('deleted_user_name', 'ilike', self), ('deleted_uid.login', 'ilike', self)]"
+                />
+                <field
+                    name="directory_id"
+                    string="Phòng ban / Thư mục"
+                    filter_domain="[('directory_id.name', 'ilike', self)]"
+                />
+                <field
+                    name="original_directory_id"
+                    string="Phòng ban ban đầu (File đã xóa)"
+                    filter_domain="[('original_directory_id.name', 'ilike', self)]"
+                />
+                <field name="create_date" string="Thời gian đăng tải" />
+                <field name="deleted_date" string="Thời gian xóa" />
+            </xpath>
+
+            <!-- 2. Dọn dẹp các bộ lọc không cần thiết (All Files, Archived, Write Date, Create Date cũ theo quý) -->
+            <xpath expr="//filter[@name='all']" position="replace" />
+            <xpath expr="//filter[@name='filter_active']" position="replace" />
+            <xpath expr="//filter[@name='filter_create']" position="replace" />
+            <xpath expr="//filter[@name='filter_write']" position="replace" />
+
+            <xpath expr="//filter[@name='filter_user']" position="attributes">
+                <attribute name="string">Tệp của tôi</attribute>
+            </xpath>
+
+            <!-- 3. Thêm các bộ lọc thời gian đăng tải & xóa chuẩn xác (Hôm nay, 7 ngày trước, 30 ngày trước, Tháng này) -->
+            <xpath expr="//filter[@name='filter_user']" position="after">
+                <separator />
+                <!-- Nhóm Đăng tải -->
+                <filter
+                    string="Đăng tải: Hôm nay"
+                    name="filter_create_today"
+                    domain="[('create_date', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')), ('create_date', '&lt;=', context_today().strftime('%Y-%m-%d 23:59:59'))]"
+                />
+                <filter
+                    string="Đăng tải: 7 ngày trước"
+                    name="filter_create_7_days"
+                    domain="[('create_date', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d 00:00:00'))]"
+                />
+                <filter
+                    string="Đăng tải: 30 ngày trước"
+                    name="filter_create_30_days"
+                    domain="[('create_date', '&gt;=', (context_today() - datetime.timedelta(days=30)).strftime('%Y-%m-%d 00:00:00'))]"
+                />
+                <filter
+                    string="Đăng tải: Tháng này"
+                    name="filter_create_this_month"
+                    domain="[('create_date', '&gt;=', context_today().strftime('%Y-%m-01 00:00:00'))]"
+                />
+                <separator />
+                <!-- Nhóm Đã xóa -->
+                <filter
+                    string="Đã xóa: Hôm nay"
+                    name="filter_deleted_today"
+                    domain="[('deleted_date', '&gt;=', context_today().strftime('%Y-%m-%d 00:00:00')), ('deleted_date', '&lt;=', context_today().strftime('%Y-%m-%d 23:59:59'))]"
+                />
+                <filter
+                    string="Đã xóa: 7 ngày trước"
+                    name="filter_deleted_7_days"
+                    domain="[('deleted_date', '&gt;=', (context_today() - datetime.timedelta(days=7)).strftime('%Y-%m-%d 00:00:00'))]"
+                />
+                <filter
+                    string="Đã xóa: 30 ngày trước"
+                    name="filter_deleted_30_days"
+                    domain="[('deleted_date', '&gt;=', (context_today() - datetime.timedelta(days=30)).strftime('%Y-%m-%d 00:00:00'))]"
+                />
+                <filter
+                    string="Đã xóa: Tháng này"
+                    name="filter_deleted_this_month"
+                    domain="[('deleted_date', '&gt;=', context_today().strftime('%Y-%m-01 00:00:00'))]"
+                />
+                <separator />
+                <!-- Nhóm Trạng thái -->
+                <filter
+                    string="Tệp trong Thùng Rác"
+                    name="filter_in_recycle_bin"
+                    domain="[('is_in_recycle_bin', '=', True)]"
+                />
+                <filter
+                    string="Tệp đang hoạt động (Chưa xóa)"
+                    name="filter_active_files"
+                    domain="[('is_deleted', '=', False)]"
+                />
+            </xpath>
+
+            <!-- 4. Dọn dẹp mục Nhóm theo: Xóa Color, Category, Storage; Giữ Thư mục, Người đăng, Người xóa, Tháng, Ngày -->
+            <xpath expr="//filter[@name='group_color']" position="replace" />
+            <xpath expr="//filter[@name='group_category']" position="replace" />
+            <xpath expr="//filter[@name='group_storage']" position="replace" />
+            <xpath expr="//group/separator" position="replace" />
+
+            <xpath expr="//filter[@name='group_directory']" position="attributes">
+                <attribute name="string">Phòng ban / Thư mục</attribute>
+            </xpath>
+            <xpath expr="//filter[@name='group_directory']" position="after">
+                <separator />
+                <filter name="group_uploader" string="Người đăng tải" domain="[]" context="{'group_by':'create_uid'}" />
+                <filter name="group_deleter" string="Người đã xóa" domain="[]" context="{'group_by':'deleted_uid'}" />
+                <filter name="group_original_directory" string="Phòng ban ban đầu (File đã xóa)" domain="[]" context="{'group_by':'original_directory_id'}" />
+                <separator />
+                <filter name="group_create_date" string="Thời gian đăng tải" domain="[]" context="{'group_by':'create_date'}" />
+                <filter name="group_deleted_date" string="Thời gian xóa" domain="[]" context="{'group_by':'deleted_date'}" />
+            </xpath>
+        </field>
+    </record>
+</odoo>

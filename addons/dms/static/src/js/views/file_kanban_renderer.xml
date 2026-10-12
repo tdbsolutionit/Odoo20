@@ -30,7 +30,7 @@
                 <button
                     type="button"
                     class="d-inline d-md-none btn btn-primary mx-1"
-                    t-on-click.prevent="uploadDocument"
+                    t-on-click.prevent="() => this.uploadDocument()"
                 >
                     Scan
                 </button>
@@ -41,16 +41,25 @@
                     t-ref="this.fileInput"
                     multiple="1"
                     accept="*"
-                    t-on-change="onChangeFileInput"
+                    t-on-change="(ev) => this.onChangeFileInput(ev)"
                 />
                 <button
                     type="button"
                     class="d-none d-md-inline btn btn-primary mx-1"
-                    t-on-click.prevent="uploadDocument"
+                    t-on-click.prevent="() => this.uploadDocument()"
                 >
                     Upload
                 </button>
             </t>
+            <button
+                type="button"
+                class="btn btn-secondary mx-1"
+                t-on-click.prevent="() => this.openDateFilterWizard()"
+                title="Lọc tệp tin theo khoảng thời gian (Từ ngày - Đến ngày)"
+            >
+                <i class="fa fa-calendar-check-o me-1" />
+                Lọc thời gian
+            </button>
         </xpath>
     </t>
 </templates>

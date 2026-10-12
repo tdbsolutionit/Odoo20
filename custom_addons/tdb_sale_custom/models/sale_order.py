@@ -30,7 +30,7 @@ class SaleOrder(models.Model):
             ts = int(fields.Datetime.now().timestamp())
             pdf_url = f"/report/pdf/sale.report_saleorder/{order.id}?v={ts}"
             order.preview_html = (
-                f'<iframe src="{pdf_url}" style="width: 100%; height: 86vh; border: none; display: block;"></iframe>'
+                f'<iframe src="{pdf_url}" style="width: 100%; height: 86vh; border: none; display: block; background: #525659;"></iframe>'
             )
 
     def action_preview_sale_order(self):
@@ -38,15 +38,13 @@ class SaleOrder(models.Model):
         view_id = self.env.ref("tdb_sale_custom.view_sale_order_preview_modal", raise_if_not_found=False)
         view_id_val = view_id.id if view_id else False
         return {
-            "name": "Báo giá đơn hàng",
+            "name": f"{self.name} - Báo giá đơn hàng",
             "type": "ir.actions.act_window",
             "res_model": "sale.order",
             "res_id": self.id,
             "view_mode": "form",
             "views": [(view_id_val, "form")],
-            "target": "new",
-            "context": {"dialog_size": "extra-large"},
-            "url": f"/report/pdf/sale.report_saleorder/{self.id}",
+            "target": "current",
         }
 
     def action_open_terms_modal(self):

@@ -6,7 +6,7 @@
 
 from logging import getLogger
 
-from odoo import api, fields, models
+from odoo import SUPERUSER_ID, api, fields, models
 from odoo.exceptions import AccessError
 from odoo.osv.expression import (
     FALSE_DOMAIN,
@@ -116,14 +116,14 @@ class DmsSecurityMixin(models.AbstractModel):
         ]
         domains = []
         # Get all used related records
-        related_groups = self.sudo().read_group(
+        related_groups = self.sudo()._read_group(
             domain=inherited_access_domain + [("res_model", "!=", False)],
-            fields=["res_id:array_agg"],
             groupby=["res_model"],
+            aggregates=["res_id:array_agg"],
         )
-        for group in related_groups:
+        for res_model, res_ids in related_groups:
             try:
-                model = self.env[group["res_model"]]
+                model = self.env[res_model]
             except KeyError:
                 # The model might not be registered.
                 # This is normal if you are upgrading the database.
@@ -131,7 +131,7 @@ class DmsSecurityMixin(models.AbstractModel):
                 # These records will be accessible by DB users only.
                 domains.append(
                     [
-                        ("res_model", "=", group["res_model"]),
+                        ("res_model", "=", res_model),
                         (True, "=", self.env.user.has_group("base.group_user")),
                     ]
                 )
@@ -143,10 +143,10 @@ class DmsSecurityMixin(models.AbstractModel):
                 continue
             domains.append([("res_model", "=", model._name), ("res_id", "=", False)])
             # Check record access in batch too
-            res_ids = [i for i in group["res_id"] if i]  # Hack to remove None res_id
+            clean_res_ids = [i for i in (res_ids or []) if i]  # Hack to remove None res_id
             # Apply exists to skip records that do not exist. (e.g. a res.partner
             # deleted by database).
-            model_records = model.browse(res_ids).exists()
+            model_records = model.browse(clean_res_ids).exists()
             related_ok = model_records._filtered_access(operation)
             if not related_ok:
                 continue
@@ -159,13 +159,19 @@ class DmsSecurityMixin(models.AbstractModel):
     @api.model
     def _get_access_groups_query(self, operation):
         """Return the query to select access groups."""
+        if self.env.su or self.env.user.has_group("base.group_system"):
+            return SQL("(SELECT id FROM dms_directory)")
+
         operation_check = {
             "create": "AND dag.perm_inclusive_create",
             "read": "",
             "unlink": "AND dag.perm_inclusive_unlink",
             "write": "AND dag.perm_inclusive_write",
         }[operation]
-        select = f"""(
+
+        uid = int(self.env.uid or 0)
+        select_parts = [
+            f"""
             SELECT
                 dir_group_rel.aid
             FROM
@@ -175,13 +181,69 @@ class DmsSecurityMixin(models.AbstractModel):
                 INNER JOIN dms_access_group_users_rel AS users
                     ON users.gid = dag.id
             WHERE
-                users.uid = %s {operation_check}
-            )"""
-        sql = SQL(
-            select,
-            self.env.uid,
-        )
-        return sql
+                users.uid = {uid} {operation_check}
+            """
+        ]
+
+        # Leader thư mục có toàn quyền trên thư mục và tất cả thư mục con
+        try:
+            self.env.cr.execute(
+                "SELECT 1 FROM information_schema.tables WHERE table_name = 'dms_directory_leader_rel'"
+            )
+            has_leader_table = bool(self.env.cr.fetchone())
+        except Exception:
+            has_leader_table = False
+
+        if has_leader_table:
+            select_parts.append(
+                f"""
+                SELECT
+                    child.id
+                FROM
+                    dms_directory child
+                    INNER JOIN dms_directory parent
+                        ON child.parent_path LIKE CONCAT(parent.parent_path, '%%')
+                    INNER JOIN dms_directory_leader_rel lrel
+                        ON lrel.directory_id = parent.id
+                WHERE
+                    lrel.user_id = {uid}
+                """
+            )
+
+        # Phòng ban Chia Sẻ (Sharing - is_sharing):
+        # - Tệp tin (dms.file): Mọi nhân viên nội bộ (base.group_user) đều có quyền Xem, Tải lên (create), Sửa (write), Xóa (unlink)
+        # - Thư mục (dms.directory): Nhân viên nội bộ có quyền xem và tạo thư mục con, nhưng không được xóa hoặc đổi cấu hình thư mục gốc
+        if self.env.user.has_group("base.group_user"):
+            is_file_model = self._name == "dms.file"
+            allow_sharing = False
+            if is_file_model:
+                allow_sharing = True
+            elif operation in ("read", "create"):
+                allow_sharing = True
+
+            if allow_sharing:
+                try:
+                    self.env.cr.execute(
+                        "SELECT 1 FROM information_schema.columns WHERE table_name = 'dms_directory' AND column_name = 'is_sharing'"
+                    )
+                    has_is_sharing_col = bool(self.env.cr.fetchone())
+                except Exception:
+                    has_is_sharing_col = False
+
+                if has_is_sharing_col:
+                    select_parts.append(
+                        """
+                        SELECT
+                            id
+                        FROM
+                            dms_directory
+                        WHERE
+                            is_sharing = TRUE
+                        """
+                    )
+
+        sql_text = f"({' UNION '.join(select_parts)})"
+        return SQL(sql_text)
 
     @api.model
     def _get_domain_by_access_groups(self, operation):
@@ -204,14 +266,15 @@ class DmsSecurityMixin(models.AbstractModel):
     def _get_permission_domain(self, operator, value, operation):
         """Abstract logic for searching computed permission fields."""
         _self = self
-        # HACK ir.rule domain is always computed with sudo, so if this check is
-        # true, we can assume safely that you're checking permissions
-        if self.env.su and value == self.env.uid:
-            _self = self.sudo(False)
-            value = bool(value)
-        # Tricky one, to know if you want to search
-        # positive or negative access
-        positive = (operator not in NEGATIVE_TERM_OPERATORS) == bool(value)
+        if self.env.uid != SUPERUSER_ID:
+            _self = self.with_user(self.env.uid)
+
+        # Determine positive vs negative access
+        truthy_val = bool(value)
+        if isinstance(value, (list, tuple, set)) or hasattr(value, "__iter__"):
+            truthy_val = any(value)
+        positive = (operator not in NEGATIVE_TERM_OPERATORS) == truthy_val
+
         if _self.env.su:
             # You're SUPERUSER_ID
             return TRUE_DOMAIN if positive else FALSE_DOMAIN
@@ -254,26 +317,15 @@ class DmsSecurityMixin(models.AbstractModel):
             return self
         return super().filtered_domain(domain)
 
-    def _filtered_access_no_recursion(self, operation: str):
-        """This method is just the same as _filtered_access
-        but it can not be called withoud super due to
-        recursion error.
-        """
-        if self and not self.env.su and (result := self._check_access(operation)):
-            return self - result[0]
-        return self
-
     def _filtered_access(self, operation):
-        # Only kept to not break inheritance; see next comment
-        result = super()._filtered_access(operation)
-        # HACK Always fall back to applying rules by SQL.
-        # Upstream `_filtered_access()` doesn't use computed fields
-        # search methods. Thus, it will take the `[('permission_{operation}',
-        # '=', user.id)]` rule literally. Obviously that will always fail
-        # because `self[f"permission_{operation}"]` will always be a `bool`,
-        # while `user.id` will always be an `int`.
-        result |= self._filtered_access_no_recursion(operation)
-        return result
+        if not self or self.env.su:
+            return self
+        sql = self._get_access_groups_query(operation)
+        self.env.cr.execute(sql)
+        allowed_dir_ids = {row[0] for row in self.env.cr.fetchall()}
+        if self._name == "dms.directory":
+            return self.filtered(lambda r: r.id in allowed_dir_ids)
+        return self.filtered(lambda r: getattr(r, self._directory_field).id in allowed_dir_ids)
 
     def _check_access_dms_record(self, operation: str) -> tuple | None:
         """Specific method "similar" to _check_access() but with a different

@@ -1,0 +1,167 @@
+// ============================================================================
+// Enterprise Style Home Menu (9 Chấm) SCSS
+// ============================================================================
+
+// Ẩn các thành phần navbar khi mở Home Menu
+.o_navbar.o_navbar_home_menu_active {
+    .o_menu_brand,
+    .o_navbar_breadcrumbs,
+    .o_menu_sections,
+    .o_menu_systray {
+        visibility: hidden !important;
+        pointer-events: none !important;
+    }
+}
+
+// Nút 9 chấm toggle
+.o_home_menu_toggle_btn {
+    cursor: pointer;
+    line-height: 1;
+
+    &:hover {
+        background-color: rgba(255, 255, 255, 0.1);
+        border-radius: 6px;
+    }
+}
+
+// Lớp phủ toàn màn hình (Overlay)
+.o_home_menu_overlay {
+    position: fixed;
+    top: var(--o-navbar-height, 46px);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #16191c;
+    z-index: 1045;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    padding-top: 6vh;
+    animation: o_home_menu_appear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes o_home_menu_appear {
+    from {
+        opacity: 0;
+        transform: scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.o_home_menu_container {
+    width: 100%;
+    max-width: 960px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 20px 60px 20px;
+}
+
+// Hộp tìm kiếm ứng dụng
+.o_home_menu_search_box {
+    width: 100%;
+    max-width: 360px;
+    margin-bottom: 44px;
+    display: flex;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 24px;
+    padding: 7px 16px;
+    backdrop-filter: blur(8px);
+    transition: all 0.2s ease;
+
+    &:focus-within {
+        background: rgba(255, 255, 255, 0.14);
+        border-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.1);
+    }
+}
+
+.o_home_menu_search_input {
+    background: transparent;
+    border: none;
+    outline: none;
+    color: #ffffff;
+    font-size: 14px;
+    width: 100%;
+
+    &::placeholder {
+        color: rgba(255, 255, 255, 0.45);
+    }
+}
+
+// Lưới danh sách ứng dụng
+.o_home_menu_apps_grid {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 36px 42px;
+    width: 100%;
+}
+
+.o_home_menu_app_card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 96px;
+    cursor: pointer;
+    text-decoration: none !important;
+    user-select: none;
+    transition: transform 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+
+    &:hover {
+        transform: translateY(-5px);
+        text-decoration: none !important;
+    }
+}
+
+.o_home_menu_app_icon_wrapper {
+    width: 72px;
+    height: 72px;
+    border-radius: 16px;
+    background: #252830;
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.4), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 10px;
+    transition: all 0.22s ease;
+
+    .o_home_menu_app_card:hover & {
+        background: #2f3440;
+        box-shadow: 0 12px 26px rgba(0, 0, 0, 0.55), inset 0 1px 1px rgba(255, 255, 255, 0.2);
+        filter: brightness(1.08);
+    }
+}
+
+.o_home_menu_app_icon {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    border-radius: 8px;
+}
+
+.o_home_menu_app_name {
+    margin-top: 10px;
+    color: #e4e7eb;
+    font-size: 13.5px;
+    font-weight: 500;
+    text-align: center;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    transition: color 0.2s ease;
+
+    .o_home_menu_app_card:hover & {
+        color: #ffffff;
+        font-weight: 600;
+    }
+}

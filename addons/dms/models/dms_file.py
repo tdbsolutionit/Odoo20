@@ -8,12 +8,15 @@ import base64
 import hashlib
 import json
 import logging
+import os
+import subprocess
+import tempfile
 from collections import defaultdict
 
 from PIL import Image
 
 from odoo import _, api, fields, models, tools
-from odoo.exceptions import UserError, ValidationError
+from odoo.exceptions import AccessError, UserError, ValidationError
 from odoo.osv import expression
 from odoo.tools import consteq, human_size
 from odoo.tools.mimetypes import guess_mimetype
@@ -21,6 +24,22 @@ from odoo.tools.mimetypes import guess_mimetype
 from ..tools import file
 
 _logger = logging.getLogger(__name__)
+
+OFFICE_EXTENSIONS = {
+    # Word
+    "doc", "docx", "dot", "dotx", "odt", "rtf",
+    # Excel
+    "xls", "xlsx", "xlsm", "xlt", "xltx", "ods", "csv", "tsv",
+    # PowerPoint
+    "ppt", "pptx", "pps", "ppsx", "pot", "potx", "odp",
+}
+
+EXCEL_EXTENSIONS = {
+    "xls", "xlsx", "xlsm", "xlt", "xltx", "ods", "csv", "tsv"
+}
+
+PDF_PREVIEW_DIR = "/tmp/odoo_dms_pdf_cache"
+
 
 
 class DMSFile(models.Model):
@@ -132,6 +151,91 @@ class DMSFile(models.Model):
     )
     content_file = fields.Binary(attachment=True, prefetch=False)
 
+    preview_html = fields.Html(
+        string="Bản xem trước",
+        compute="_compute_preview_html",
+        sanitize=False,
+    )
+    is_downloadable = fields.Boolean(
+        string="Cho phép tải về",
+        default=True,
+        tracking=True,
+        help="Nếu bỏ chọn, chỉ Leader hoặc Sếp/Admin mới được tải tệp này về máy. Các thành viên khác chỉ được xem trước.",
+    )
+    is_sharing = fields.Boolean(
+        string="Phòng ban Chia sẻ",
+        related="directory_id.is_sharing",
+        store=True,
+        index="btree",
+    )
+    can_download = fields.Boolean(
+        string="Được phép tải về",
+        compute="_compute_can_download",
+        help="Xác định người dùng hiện tại có quyền tải tệp tin này về máy hay không.",
+    )
+    can_manage_download = fields.Boolean(
+        string="Có quyền sửa cấu hình tải về",
+        compute="_compute_can_manage_download",
+        help="Chỉ Leader của phòng ban hoặc Sếp/Admin mới có quyền bật/tắt quyền tải về.",
+    )
+
+    @api.depends("is_downloadable", "directory_id", "directory_id.is_sharing", "directory_id.leader_ids")
+    def _compute_can_download(self):
+        user = self.env.user
+        is_admin = user._is_superuser() or user.has_group("base.group_system")
+        for record in self:
+            # 1. Sếp / Admin luôn luôn tải được tất cả các file
+            if is_admin:
+                record.can_download = True
+                continue
+
+            dir_rec = record.directory_id
+            is_sharing = dir_rec._is_sharing_directory() if dir_rec else False
+            if is_sharing:
+                # Tại phòng ban Chia Sẻ (Sharing):
+                # File nào tắt "Cho phép tải về" -> Ai cũng chỉ được xem trước, không ai được tải về (trừ Sếp/Admin)
+                record.can_download = bool(record.is_downloadable)
+            else:
+                # Tại các phòng ban thông thường:
+                # Leader của phòng ban đó được tải tất cả file trong ban mình
+                is_leader = dir_rec._is_user_leader(user) if dir_rec else False
+                if is_leader:
+                    record.can_download = True
+                else:
+                    record.can_download = bool(record.is_downloadable)
+
+    @api.depends("directory_id", "directory_id.is_sharing", "directory_id.leader_ids")
+    def _compute_can_manage_download(self):
+        user = self.env.user
+        is_admin = user._is_superuser() or user.has_group("base.group_system")
+        for record in self:
+            if is_admin:
+                record.can_manage_download = True
+                continue
+            dir_rec = record.directory_id
+            if not dir_rec:
+                record.can_manage_download = False
+                continue
+            is_sharing = dir_rec._is_sharing_directory()
+            if is_sharing:
+                # Tại phòng Chia Sẻ: CHỈ Sếp/Admin (hoặc Leader nếu được phân công) mới có quyền cho phép tải về hay không
+                record.can_manage_download = bool(dir_rec._is_user_leader(user))
+            else:
+                # Tại các phòng ban thông thường: CHỈ LEADER của phòng ban đó mới có quyền quản lý cấu hình tải về
+                record.can_manage_download = bool(dir_rec._is_user_leader(user))
+
+    def write(self, vals):
+        if "is_downloadable" in vals:
+            for record in self:
+                if not record.can_manage_download:
+                    raise AccessError(_("Bạn không có quyền thay đổi cấu hình cho phép tải về của tệp tin này! Chỉ Sếp/Admin (hoặc Trưởng phòng) mới có quyền này."))
+        return super().write(vals)
+
+    @api.onchange("directory_id")
+    def _onchange_directory_id_download(self):
+        if self.directory_id:
+            self.is_downloadable = self.directory_id.default_allow_download
+
     # Extend inherited field(s)
     image_1920 = fields.Image(compute="_compute_image_1920", store=True, readonly=False)
 
@@ -231,22 +335,356 @@ class DMSFile(models.Model):
 
     @api.model
     def _get_binary_max_size(self):
-        return int(
-            self.env["ir.config_parameter"]
-            .sudo()
-            .get_param("dms.binary_max_size", default=25)
-        )
+        icp = self.env["ir.config_parameter"].sudo()
+        if hasattr(icp, "get_int"):
+            return icp.get_int("dms.binary_max_size", default=25)
+        getter = getattr(icp, "get_str", getattr(icp, "get_param", lambda k, default: 25))
+        return int(getter("dms.binary_max_size", default=25))
 
     @api.model
     def _get_forbidden_extensions(self):
-        get_param = self.env["ir.config_parameter"].sudo().get_param
-        extensions = get_param("dms.forbidden_extensions", default="")
-        return [extension.strip() for extension in extensions.split(",")]
+        icp = self.env["ir.config_parameter"].sudo()
+        getter = getattr(icp, "get_str", getattr(icp, "get_param", lambda k, default="": ""))
+        extensions = getter("dms.forbidden_extensions", default="")
+        return [extension.strip() for extension in (extensions or "").split(",") if extension.strip()]
 
     def _get_icon_placeholder_name(self):
         return self.extension and f"file_{self.extension}.svg" or ""
 
+    def _get_raw_content(self):
+        """Safely extract raw binary bytes from content (BinaryValue / bytes / base64)."""
+        self.ensure_one()
+        val = self.content
+        if not val:
+            return b""
+        if hasattr(val, "content"):
+            return val.content
+        if isinstance(val, (bytes, bytearray)):
+            return bytes(val)
+        if isinstance(val, str):
+            try:
+                return base64.b64decode(val.encode("ascii"))
+            except Exception:
+                return val.encode("utf-8")
+        try:
+            return bytes(val)
+        except Exception:
+            return b""
+
+    def _is_excel_spreadsheet(self):
+        """Check if file is an Excel spreadsheet or tabular data format."""
+        self.ensure_one()
+        ext = (self.extension or "").lower()
+        if ext in EXCEL_EXTENSIONS:
+            return True
+        mimetype = (self.mimetype or "").lower()
+        if any(keyword in mimetype for keyword in [
+            "spreadsheet", "ms-excel", "csv", "tab-separated"
+        ]):
+            return True
+        return False
+
+    def _is_office_document(self):
+        """Check if file is a Microsoft Office or OpenOffice document format."""
+        self.ensure_one()
+        ext = (self.extension or "").lower()
+        if ext in OFFICE_EXTENSIONS:
+            return True
+        mimetype = (self.mimetype or "").lower()
+        if any(keyword in mimetype for keyword in [
+            "officedocument", "msword", "ms-excel", "ms-powerpoint", "opendocument", "rtf"
+        ]):
+            return True
+        return False
+
+    def _convert_to_pdf(self):
+        """Convert office/document content to PDF using headless LibreOffice.
+        Caches the converted PDF to disk to speed up subsequent requests.
+        """
+        self.ensure_one()
+        raw = self._get_raw_content()
+        if not raw:
+            return None
+
+        try:
+            os.makedirs(PDF_PREVIEW_DIR, exist_ok=True)
+        except Exception as e:
+            _logger.warning("Failed to create PDF cache dir %s: %s", PDF_PREVIEW_DIR, e)
+
+        checksum = self.checksum or hashlib.sha1(raw).hexdigest()
+        cache_path = os.path.join(PDF_PREVIEW_DIR, f"{self.id}_{checksum}.pdf")
+
+        if os.path.isfile(cache_path) and os.path.getsize(cache_path) > 0:
+            try:
+                with open(cache_path, "rb") as f:
+                    return f.read()
+            except Exception as e:
+                _logger.warning("Failed to read cached PDF for file %s: %s", self.id, e)
+
+        ext = (self.extension or "bin").lower()
+        with tempfile.TemporaryDirectory() as temp_dir:
+            input_file = os.path.join(temp_dir, f"document.{ext}")
+            try:
+                with open(input_file, "wb") as f:
+                    f.write(raw)
+            except Exception as e:
+                _logger.error("Failed to write temporary file for conversion: %s", e)
+                return None
+
+            profile_uri = f"file://{os.path.join(temp_dir, 'profile')}"
+            cmd = [
+                "soffice",
+                "--headless",
+                f"-env:UserInstallation={profile_uri}",
+                "--convert-to",
+                "pdf",
+                "--outdir",
+                temp_dir,
+                input_file,
+            ]
+            try:
+                result = subprocess.run(
+                    cmd,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.PIPE,
+                    timeout=120,
+                    check=False,
+                )
+                if result.returncode != 0:
+                    _logger.error(
+                        "LibreOffice conversion failed with code %s: %s",
+                        result.returncode,
+                        result.stderr.decode("utf-8", errors="ignore"),
+                    )
+                    return None
+
+                # Locate generated PDF
+                output_pdf = os.path.join(temp_dir, "document.pdf")
+                if not os.path.isfile(output_pdf):
+                    for fname in os.listdir(temp_dir):
+                        if fname.lower().endswith(".pdf"):
+                            output_pdf = os.path.join(temp_dir, fname)
+                            break
+
+                if os.path.isfile(output_pdf) and os.path.getsize(output_pdf) > 0:
+                    with open(output_pdf, "rb") as f:
+                        pdf_data = f.read()
+                    try:
+                        with open(cache_path, "wb") as f:
+                            f.write(pdf_data)
+                    except Exception as e:
+                        _logger.warning("Failed to write cache for file %s: %s", self.id, e)
+                    return pdf_data
+                else:
+                    _logger.warning("LibreOffice produced no PDF for file %s", self.id)
+                    return None
+            except subprocess.TimeoutExpired:
+                _logger.error("LibreOffice conversion timed out (120s) for file %s", self.id)
+                return None
+            except FileNotFoundError:
+                _logger.error("soffice command not found in system PATH.")
+                return None
+            except Exception as e:
+                _logger.exception("Unexpected error in _convert_to_pdf for file %s: %s", self.id, e)
+                return None
+
     # Actions
+    def action_preview_file(self):
+        self.ensure_one()
+        try:
+            action = self.env["ir.actions.actions"]._for_xml_id("dms.action_dms_file")
+        except Exception:
+            action = {
+                "name": _("Files"),
+                "type": "ir.actions.act_window",
+                "res_model": "dms.file",
+            }
+        view_id = self.env.ref("dms.view_dms_file_preview_modal", raise_if_not_found=False)
+        action["views"] = [(view_id.id if view_id else False, "form")]
+        action["res_id"] = self.id
+        action["target"] = "current"
+        return action
+
+    def action_download_file(self):
+        self.ensure_one()
+        if not self.can_download:
+            raise AccessError(_("Bạn không có quyền tải tệp này về máy!"))
+        return {
+            "type": "ir.actions.act_url",
+            "url": f"/dms/file/{self.id}/download",
+            "target": "new",
+        }
+
+    def action_bulk_allow_download(self):
+        for record in self:
+            if not record.can_manage_download:
+                raise AccessError(_("Bạn không có quyền quản lý cấu hình tải về cho file '%s'!") % record.name)
+        self.write({"is_downloadable": True})
+
+    def action_bulk_disallow_download(self):
+        for record in self:
+            if not record.can_manage_download:
+                raise AccessError(_("Bạn không có quyền quản lý cấu hình tải về cho file '%s'!") % record.name)
+        self.write({"is_downloadable": False})
+
+    def action_toggle_downloadable(self):
+        for record in self:
+            if not record.can_manage_download:
+                raise AccessError(_("Bạn không có quyền thay đổi cấu hình cho phép tải về của tệp tin này! Chỉ Trưởng phòng/Quản lý hoặc Quản trị viên mới có quyền này."))
+            record.is_downloadable = not record.is_downloadable
+
+    def _compute_preview_html(self):
+        for record in self:
+            if not record.id:
+                record.preview_html = False
+                continue
+            raw = record._get_raw_content()
+            if not raw:
+                record.preview_html = (
+                    '<div class="d-flex flex-column align-items-center justify-content-center h-100 text-center p-5 text-muted" style="min-height: 60vh;">'
+                    '<i class="fa fa-file-o fa-5x mb-3 text-secondary"></i>'
+                    '<h4>Tệp này chưa có dữ liệu nội dung.</h4>'
+                    '</div>'
+                )
+                continue
+
+            mimetype = (record.mimetype or "").lower()
+            ext = (record.extension or "").lower()
+            ts = int(fields.Datetime.now().timestamp())
+            preview_url = f"/dms/file/{record.id}/preview?v={ts}"
+            download_url = f"/dms/file/{record.id}/download"
+            pdf_preview_url = preview_url if record.can_download else f"{preview_url}#toolbar=0&navpanes=0"
+
+            # 1. PDF
+            if mimetype == "application/pdf" or ext == "pdf":
+                record.preview_html = (
+                    f'<iframe src="{pdf_preview_url}" '
+                    f'style="width: 100%; height: 86vh; border: none; display: block; background: #525659;"></iframe>'
+                )
+            # 2. Bảng tính Excel / CSV / ODS (Spreadsheet) -> Trực quan dạng lưới bảng tính tương tác Excel
+            elif record._is_excel_spreadsheet():
+                record.preview_html = (
+                    f'<iframe src="{preview_url}" '
+                    f'style="width: 100%; height: 86vh; border: none; display: block; background: #ffffff;"></iframe>'
+                )
+            # 3. Tài liệu văn phòng khác (Word, PowerPoint, OpenOffice, RTF) -> Preview qua PDF chuyển đổi
+            elif record._is_office_document():
+                office_pdf_url = f"/dms/file/{record.id}/preview?as_pdf=1&v={ts}"
+                if not record.can_download:
+                    office_pdf_url = f"{office_pdf_url}#toolbar=0&navpanes=0"
+                record.preview_html = (
+                    f'<iframe src="{office_pdf_url}" '
+                    f'style="width: 100%; height: 86vh; border: none; display: block; background: #525659;"></iframe>'
+                )
+            # 3. Hình ảnh (Image)
+            elif mimetype.startswith("image/") or ext in [
+                "png", "jpg", "jpeg", "gif", "svg", "webp", "bmp", "ico", "tiff", "tif"
+            ]:
+                record.preview_html = (
+                    f'<div class="d-flex align-items-center justify-content-center h-100 p-3" '
+                    f'style="min-height: 84vh; background: #1e1e1e;">'
+                    f'<img src="{preview_url}" '
+                    f'style="max-width: 100%; max-height: 84vh; object-fit: contain; '
+                    f'box-shadow: 0 4px 20px rgba(0,0,0,0.5); border-radius: 6px; background: #fff;" '
+                    f'alt="{record.name}"/>'
+                    f'</div>'
+                )
+            # 4. Video (HTML5 video player)
+            elif mimetype.startswith("video/") or ext in [
+                "mp4", "webm", "mkv", "mov", "ogg", "avi", "m4v", "wmv", "3gp", "flv"
+            ]:
+                video_type = mimetype if mimetype.startswith("video/") else f"video/{ext}"
+                if ext in ["mp4", "m4v"]:
+                    video_type = "video/mp4"
+                elif ext == "mov":
+                    video_type = "video/mp4"
+                elif ext == "webm":
+                    video_type = "video/webm"
+                elif ext == "ogg":
+                    video_type = "video/ogg"
+
+                download_btn = (
+                    f'<a href="{download_url}" class="btn btn-sm btn-outline-light"><i class="fa fa-download me-1"></i>Tải video về máy</a>'
+                    if record.can_download
+                    else '<span class="badge bg-secondary py-2 px-3"><i class="fa fa-lock me-1"></i>Tệp khóa tải về</span>'
+                )
+
+                record.preview_html = (
+                    f'<div class="d-flex flex-column align-items-center justify-content-center h-100 p-3" '
+                    f'style="min-height: 84vh; background: #0b0c10;">'
+                    f'<video controls autoplay preload="metadata" style="max-width: 100%; max-height: 76vh; border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.8); outline: none;">'
+                    f'<source src="{preview_url}" type="{video_type}">'
+                    f'Trình duyệt không hỗ trợ phát trực tiếp định dạng video này.'
+                    f'</video>'
+                    f'<div class="mt-2 text-center">'
+                    f'<span class="text-white-50 me-3">{record.name} ({record.human_size or ""})</span>'
+                    f'{download_btn}'
+                    f'</div>'
+                    f'</div>'
+                )
+            # 5. Âm thanh (Audio)
+            elif mimetype.startswith("audio/") or ext in ["mp3", "ogg", "wav", "aac", "m4a", "flac"]:
+                audio_type = mimetype if mimetype.startswith("audio/") else f"audio/{ext}"
+                if ext == "mp3":
+                    audio_type = "audio/mpeg"
+
+                download_btn = (
+                    f'<a href="{download_url}" class="btn btn-outline-primary"><i class="fa fa-download me-1"></i>Tải file âm thanh về máy</a>'
+                    if record.can_download
+                    else '<span class="badge bg-secondary py-2 px-3"><i class="fa fa-lock me-1"></i>Tệp khóa tải về</span>'
+                )
+
+                record.preview_html = (
+                    f'<div class="d-flex flex-column align-items-center justify-content-center h-100 text-center p-5" '
+                    f'style="min-height: 70vh; background: #f8f9fa;">'
+                    f'<div class="p-4 rounded-circle bg-primary-subtle text-primary mb-4" style="width: 100px; height: 100px; display: inline-flex; align-items: center; justify-content: center;">'
+                    f'<i class="fa fa-music fa-4x"></i>'
+                    f'</div>'
+                    f'<h4 class="fw-bold mb-2">{record.name}</h4>'
+                    f'<p class="text-muted mb-4">{record.human_size or ""}</p>'
+                    f'<audio controls autoplay style="width: 70%; max-width: 550px;">'
+                    f'<source src="{preview_url}" type="{audio_type}">'
+                    f'Trình duyệt không hỗ trợ phát âm thanh.'
+                    f'</audio>'
+                    f'<div class="mt-4">'
+                    f'{download_btn}'
+                    f'</div>'
+                    f'</div>'
+                )
+            # 6. Văn bản thuần / Mã nguồn / JSON / HTML / XML / Markdown / Log
+            elif mimetype.startswith("text/") or ext in [
+                "txt", "log", "json", "xml", "html", "htm", "css", "js", "py", "sql", "sh", "md", "markdown", "yml", "yaml", "ini", "conf"
+            ]:
+                record.preview_html = (
+                    f'<iframe src="{preview_url}" '
+                    f'style="width: 100%; height: 86vh; border: none; display: block; background: #fff;"></iframe>'
+                )
+            # 7. Định dạng khác (File nén, file nhị phân, v.v.)
+            else:
+                if record.can_download:
+                    action_ui = (
+                        f'<a href="{download_url}" class="btn btn-primary btn-lg px-4 shadow-sm">'
+                        f'<i class="fa fa-download me-2"></i>Tải tệp về máy'
+                        f'</a>'
+                    )
+                else:
+                    action_ui = (
+                        f'<div class="alert alert-warning d-inline-block py-2 px-4 shadow-sm mb-0">'
+                        f'<i class="fa fa-lock me-2"></i>Tệp tin này bị khóa tải về theo chính sách bảo mật nội bộ.'
+                        f'</div>'
+                    )
+
+                record.preview_html = (
+                    f'<div class="d-flex flex-column align-items-center justify-content-center h-100 text-center p-5" '
+                    f'style="min-height: 70vh; background: #f8f9fa;">'
+                    f'<i class="fa fa-file-archive-o fa-5x text-secondary mb-4"></i>'
+                    f'<h3 class="fw-bold mb-2">{record.name}</h3>'
+                    f'<p class="text-muted mb-1">Định dạng: <strong>{mimetype or ext.upper()}</strong> ({record.human_size or ""})</p>'
+                    f'<p class="text-muted mb-4">Định dạng tệp này không hỗ trợ xem trực tiếp trên trình duyệt.</p>'
+                    f'{action_ui}'
+                    f'</div>'
+                )
+
     def action_migrate(self, should_logging=True):
         record_count = len(self)
         index = 1
@@ -437,14 +875,18 @@ class DMSFile(models.Model):
     def _compute_extension(self):
         for record in self:
             record.extension = file.guess_extension(
-                record.name, record.mimetype, record.content
+                record.name, record.mimetype, record._get_raw_content()
             )
 
     @api.depends("content")
     def _compute_mimetype(self):
         for record in self:
-            binary = base64.b64decode(record.content or "")
-            record.mimetype = guess_mimetype(binary)
+            val = record.content
+            if hasattr(val, "mimetype") and val.mimetype:
+                record.mimetype = val.mimetype
+            else:
+                binary = record._get_raw_content()
+                record.mimetype = guess_mimetype(binary) if binary else False
 
     @api.depends("size")
     def _compute_human_size(self):
@@ -546,7 +988,7 @@ class DMSFile(models.Model):
         updates = defaultdict(set)
         for record in self:
             values = self._get_content_inital_vals()
-            binary = base64.b64decode(record.content or "")
+            binary = record._get_raw_content()
             values = record._update_content_vals(values, binary)
             updates[tools.frozendict(values)].add(record.id)
         for vals, ids in updates.items():
@@ -598,6 +1040,11 @@ class DMSFile(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
+        for vals in vals_list:
+            if vals.get("directory_id") and "is_downloadable" not in vals:
+                directory = self.env["dms.directory"].browse(vals["directory_id"])
+                if directory.exists():
+                    vals["is_downloadable"] = directory.default_allow_download
         new_vals_list = []
         for vals in vals_list:
             if "attachment_id" not in vals:

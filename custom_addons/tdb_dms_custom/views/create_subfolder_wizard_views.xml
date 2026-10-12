@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_dms_create_subfolder_wizard_form" model="ir.ui.view">
+        <field name="name">dms.create.subfolder.wizard.form</field>
+        <field name="model">dms.create.subfolder.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Tạo thư mục con">
+                <sheet>
+                    <div class="oe_title mb-3">
+                        <label for="name" string="Tên thư mục mới" class="fw-bold" />
+                        <h2>
+                            <field name="name" placeholder="Ví dụ: Báo giá 2026, Hợp đồng khách hàng..." />
+                        </h2>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="parent_id" options="{'no_create': True, 'no_open': True}" />
+                            <field name="can_manage_download_setting" invisible="1" />
+                            <field name="default_allow_download" widget="boolean_toggle" readonly="not can_manage_download_setting" help="Nếu bật: file tải lên thư mục này mặc định cho phép tải về. Nếu tắt: mặc định bị khóa tải về." />
+                        </group>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_create_subfolder" type="object" string="Tạo thư mục" class="btn-primary" />
+                    <button string="Hủy" special="cancel" class="btn-secondary ms-2" />
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_dms_create_subfolder_wizard" model="ir.actions.act_window">
+        <field name="name">Tạo thư mục con</field>
+        <field name="res_model">dms.create.subfolder.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

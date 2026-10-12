@@ -1,0 +1,3 @@
+id,name,model_id,group_id/id,operation,domain
+access_dms_create_subfolder_wizard_user,dms_create_subfolder_wizard_user,dms.create.subfolder.wizard,base.group_user,crud,
+access_dms_file_date_filter_wizard_user,dms_file_date_filter_wizard_user,dms.file.date.filter.wizard,base.group_user,crud,

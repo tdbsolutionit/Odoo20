@@ -378,6 +378,10 @@
                 <field name="count_directories" string="Directories" />
                 <field name="complete_name" />
                 <field name="storage_id" groups="dms.group_dms_manager" />
+                <field name="can_manage_directory" column_invisible="True" />
+                <field name="is_sharing" widget="boolean_toggle" optional="show" string="Dùng chung (Sharing)" />
+                <field name="leader_ids" widget="many2many_tags" optional="show" string="Trưởng phòng / Quản lý" />
+                <field name="default_allow_download" widget="boolean_toggle" readonly="not can_manage_directory" optional="show" />
             </list>
         </field>
     </record>
@@ -431,6 +435,17 @@
                             <field name="complete_name" />
                         </h4>
                     </div>
+                    <group name="department_security" string="Phân quyền phòng ban &amp; Quản trị">
+                        <group>
+                            <field name="can_manage_directory" invisible="1" />
+                            <field name="available_leader_ids" invisible="1" />
+                            <field name="is_sharing" widget="boolean_toggle" groups="base.group_system" help="Bật cờ này để mọi nhân viên nội bộ đều được xem phòng ban này." />
+                            <field name="default_allow_download" widget="boolean_toggle" readonly="not can_manage_directory" />
+                        </group>
+                        <group>
+                            <field name="leader_ids" widget="many2many_tags" domain="[('id', 'in', available_leader_ids)]" options="{'color_field': 'color', 'no_create_edit': True}" groups="base.group_system,dms.group_dms_manager" placeholder="Chọn Trưởng phòng / Người quản lý thư mục..." />
+                        </group>
+                    </group>
                     <group name="settings">
                         <group>
                             <field
