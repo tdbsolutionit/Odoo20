@@ -113,14 +113,14 @@
             <xpath expr="//footer" position="replace">
                 <footer class="mt-auto pt-0 ms-1 d-flex align-items-center w-100">
                     <!-- Nút Xem trước (luôn ở đầu bên trái) -->
-                    <button
-                        name="action_preview_file"
-                        type="object"
+                    <a
+                        type="open"
+                        role="button"
                         class="btn btn-sm btn-link p-0 text-primary text-decoration-none o_dms_preview_btn text-nowrap"
                         title="Xem trước tài liệu"
                     >
                         <i class="fa fa-eye me-1"/>Xem trước
-                    </button>
+                    </a>
 
                     <!-- KHI TRONG THÙNG RÁC: Hiện nút Khôi phục & Xóa vĩnh viễn (TUYỆT ĐỐI KHÔNG hiện nút Cho tải / Khóa tải) -->
                     <t t-if="record.is_in_recycle_bin.raw_value">

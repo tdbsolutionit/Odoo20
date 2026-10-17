@@ -109,11 +109,10 @@ class DmsFile(models.Model):
                 "res_model": "dms.file",
             }
         view_id = self.env.ref("dms.view_dms_file_preview_modal", raise_if_not_found=False)
-        action["name"] = _("Xem trước: %s") % self.name
+        action["name"] = _("Files")
         action["views"] = [(view_id.id if view_id else False, "form")]
         action["res_id"] = self.id
-        action["target"] = "new"
-        action["context"] = {"dialog_size": "extra-large"}
+        action["target"] = "current"
         return action
 
     @api.model

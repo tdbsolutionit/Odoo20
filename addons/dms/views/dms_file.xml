@@ -248,8 +248,7 @@
                             >
                                 <div class="col-3">
                                     <a
-                                        type="object"
-                                        name="action_preview_file"
+                                        type="open"
                                         class="h-100 d-block o_kanban_dms_file_preview cursor-pointer"
                                         t-att-data-id="record.id.raw_value"
                                         t-att-id="record.id.raw_value"
@@ -280,14 +279,14 @@
                                     </div>
                                 </div>
                                 <footer class="mt-auto pt-0 ms-1 d-flex align-items-center">
-                                    <button
-                                        name="action_preview_file"
-                                        type="object"
+                                    <a
+                                        type="open"
+                                        role="button"
                                         class="btn btn-sm btn-link p-0 text-primary text-decoration-none o_dms_preview_btn"
                                         title="Xem trước tài liệu"
                                     >
                                         <i class="fa fa-eye me-1"/>Xem trước
-                                    </button>
+                                    </a>
                                     <button
                                         name="action_toggle_downloadable"
                                         type="object"
