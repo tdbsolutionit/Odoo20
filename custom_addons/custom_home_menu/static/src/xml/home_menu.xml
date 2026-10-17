@@ -36,7 +36,8 @@
                                     <div class="o_home_menu_app_icon_wrapper">
                                         <img class="o_home_menu_app_icon"
                                              t-att-src="this.getAppIcon(app)"
-                                             t-att-alt="app.name"/>
+                                             t-att-alt="app.name"
+                                             onerror="this.onerror=null;this.src='/web/static/img/default_icon_app.png';"/>
                                     </div>
                                     <div class="o_home_menu_app_name">
                                         <t t-out="app.name"/>

@@ -60,10 +60,44 @@ patch(NavBar.prototype, {
                 ? app.webIconData
                 : `data:image/png;base64,${app.webIconData}`;
         }
-        if (app.webIcon && typeof app.webIcon === "string" && app.webIcon.includes("/")) {
+        if (app.webIcon && typeof app.webIcon === "string" && app.webIcon.includes(",")) {
             const parts = app.webIcon.split(",");
-            return `/${parts[0]}/${parts[1]}`;
+            return `/${parts[0].trim()}/${parts[1].trim()}`;
         }
+        if (app.webIcon && typeof app.webIcon === "string" && app.webIcon.includes("/")) {
+            return app.webIcon.startsWith("/") ? app.webIcon : `/${app.webIcon}`;
+        }
+        if (app.xmlid) {
+            const moduleName = app.xmlid.split(".")[0];
+            return `/${moduleName}/static/description/icon.png`;
+        }
+
+        // Bảng ánh xạ icon chuẩn của các ứng dụng Odoo gốc
+        const defaultAppIcons = {
+            "discuss": "/mail/static/description/icon.png",
+            "calendar": "/calendar/static/description/icon.png",
+            "to-do": "/project_todo/static/description/icon.png",
+            "contacts": "/contacts/static/description/icon.png",
+            "crm": "/crm/static/description/icon.png",
+            "sales": "/sale/static/description/icon.png",
+            "dashboards": "/spreadsheet_dashboard/static/description/icon.png",
+            "point of sale": "/point_of_sale/static/description/icon.png",
+            "invoicing": "/account/static/description/icon.png",
+            "project": "/project/static/description/icon.png",
+            "website": "/website/static/description/icon.png",
+            "elearning": "/website_slides/static/description/icon.png",
+            "email marketing": "/mass_mailing/static/description/icon.png",
+            "purchase": "/purchase/static/description/icon.png",
+            "inventory": "/stock/static/description/icon.png",
+            "manufacturing": "/mrp/static/description/icon.png",
+            "documents": "/dms/static/description/icon.png",
+            "plm": "/plm/static/description/icon.png",
+        };
+        const normalizedName = (app.name || "").toLowerCase().trim();
+        if (defaultAppIcons[normalizedName]) {
+            return defaultAppIcons[normalizedName];
+        }
+
         return `/web/image/ir.ui.menu/${app.id}/web_icon_data`;
     },
 
