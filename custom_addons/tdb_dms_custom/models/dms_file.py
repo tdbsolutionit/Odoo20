@@ -57,6 +57,39 @@ class DmsFile(models.Model):
                 record.is_deleted or (record.directory_id and record.directory_id.is_recycle_bin)
             )
 
+    def _update_content_vals(self, vals, binary):
+        new_vals = vals.copy()
+        new_vals.update(
+            {
+                "checksum": self._get_checksum(binary),
+                "size": binary and len(binary) or 0,
+            }
+        )
+        if self.storage_id.save_type in ["file", "attachment"]:
+            new_vals["content_file"] = self.content
+        else:
+            if not binary:
+                new_vals["content_binary"] = False
+            elif isinstance(self.content, str) and self.content:
+                new_vals["content_binary"] = self.content
+            else:
+                import base64
+                new_vals["content_binary"] = base64.b64encode(binary).decode("ascii")
+        return new_vals
+
+    @api.depends("content_binary", "content_file", "attachment_id")
+    def _compute_content(self):
+        bin_size = self.env.context.get("bin_size", False)
+        for record in self:
+            if record.content_file:
+                context = {"human_size": True} if bin_size else {"base64": True}
+                record.content = record.with_context(**context).content_file
+            elif record.content_binary:
+                record.content = record.content_binary
+            elif record.attachment_id:
+                context = {"human_size": True} if bin_size else {"base64": True}
+                record.content = record.with_context(**context).attachment_id.datas
+
     @api.model
     def _search(self, domain, offset=0, limit=None, order=None, **kwargs):
         """Người dùng thông thường không bao giờ nhìn thấy các file trong Thùng Rác hoặc đã bị xóa."""

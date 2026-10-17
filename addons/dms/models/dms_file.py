@@ -340,12 +340,10 @@ class DMSFile(models.Model):
         else:
             if not binary:
                 new_vals["content_binary"] = False
-            elif BinaryBytes is not None:
-                new_vals["content_binary"] = BinaryBytes(binary, filename=self.name)
-            elif BinaryValue is not None:
-                new_vals["content_binary"] = BinaryValue(binary)
+            elif isinstance(self.content, str) and self.content:
+                new_vals["content_binary"] = self.content
             else:
-                new_vals["content_binary"] = self.content and binary
+                new_vals["content_binary"] = base64.b64encode(binary).decode("ascii")
         return new_vals
 
     @api.model

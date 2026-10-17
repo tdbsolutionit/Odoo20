@@ -93,22 +93,12 @@ class OnboardingController(http.Controller):
             if request.httprequest.user_agent.browser == "safari":
                 filename = unicodedata.normalize("NFD", ufile.filename)
             try:
-                file_bytes = ufile.read()
-                try:
-                    from odoo.tools import BinaryBytes
-                    content_val = BinaryBytes(file_bytes, filename=filename)
-                except Exception:
-                    try:
-                        from odoo.tools import BinaryValue
-                        content_val = BinaryValue(file_bytes)
-                    except Exception:
-                        content_val = base64.b64encode(file_bytes).decode("ascii")
-
+                content_base64 = base64.b64encode(ufile.read()).decode("ascii")
                 dms_file = Model.create(
                     {
                         "directory_id": directory_id,
                         "name": filename,
-                        "content": content_val,
+                        "content": content_base64,
                     }
                 )
             except AccessError:
