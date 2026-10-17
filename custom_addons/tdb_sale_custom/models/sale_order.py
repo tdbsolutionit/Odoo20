@@ -34,20 +34,6 @@ class SaleOrder(models.Model):
             pass
         return res
 
-class IrActionsActions(models.Model):
-    _inherit = 'ir.actions.actions'
-
-    @api.model
-    def get_bindings(self, model_name):
-        res = super().get_bindings(model_name)
-        if model_name == 'sale.order' and isinstance(res, dict) and 'report' in res:
-            res['report'] = [
-                r for r in res['report']
-                if r.get('xml_id') != 'sale.action_report_saleorder'
-                and r.get('name') not in ('Quotation / Order', 'Báo giá / Đơn hàng')
-            ]
-        return res
-
     # === POPUP PREVIEW BÁO GIÁ ===#
     preview_html = fields.Html(compute="_compute_preview_html", sanitize=False)
 
@@ -70,7 +56,8 @@ class IrActionsActions(models.Model):
             "res_id": self.id,
             "view_mode": "form",
             "views": [(view_id_val, "form")],
-            "target": "current",
+            "target": "new",
+            "context": {"dialog_size": "extra-large"},
         }
 
     def action_open_terms_modal(self):
@@ -126,3 +113,18 @@ class IrActionsActions(models.Model):
             "url": f"/report/pdf/sale.report_saleorder/{self.id}",
             "target": "new",
         }
+
+
+class IrActionsActions(models.Model):
+    _inherit = 'ir.actions.actions'
+
+    @api.model
+    def get_bindings(self, model_name):
+        res = super().get_bindings(model_name)
+        if model_name == 'sale.order' and isinstance(res, dict) and 'report' in res:
+            res['report'] = [
+                r for r in res['report']
+                if r.get('xml_id') != 'sale.action_report_saleorder'
+                and r.get('name') not in ('Quotation / Order', 'Báo giá / Đơn hàng')
+            ]
+        return res
