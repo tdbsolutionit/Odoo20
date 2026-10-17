@@ -15,6 +15,21 @@ class DmsDirectory(models.Model):
     )
 
     @api.model
+    def default_get(self, fields_list):
+        res = super().default_get(fields_list)
+        if "is_root_directory" in fields_list and "is_root_directory" not in res and not res.get("parent_id"):
+            res["is_root_directory"] = True
+        if "storage_id" in fields_list and not res.get("storage_id"):
+            storage = self.env["dms.storage"].sudo().search([], limit=1)
+            if not storage:
+                storage = self.env["dms.storage"].sudo().create({
+                    "name": "Documents Storage",
+                    "save_type": "database",
+                })
+            res["storage_id"] = storage.id
+        return res
+
+    @api.model
     def _search(self, domain, offset=0, limit=None, order=None, **kwargs):
         """Ẩn hoàn toàn thư mục Thùng Rác đối với người dùng không phải Quản trị viên/Sếp."""
         if not self.env.su:
@@ -66,13 +81,26 @@ class DmsDirectory(models.Model):
         recycle = self.sudo().search([("is_recycle_bin", "=", True)], limit=1)
         if not recycle:
             storage = self.env["dms.storage"].sudo().search([], limit=1)
+            if not storage:
+                storage = self.env["dms.storage"].sudo().create({
+                    "name": "Documents Storage",
+                    "save_type": "database",
+                })
             recycle = self.sudo().create({
                 "name": "00. Thùng Rác (Recycle Bin)",
                 "is_root_directory": True,
                 "is_recycle_bin": True,
                 "default_allow_download": False,
-                "storage_id": storage.id if storage else False,
+                "storage_id": storage.id,
             })
+        elif not recycle.storage_id:
+            storage = self.env["dms.storage"].sudo().search([], limit=1)
+            if not storage:
+                storage = self.env["dms.storage"].sudo().create({
+                    "name": "Documents Storage",
+                    "save_type": "database",
+                })
+            recycle.sudo().write({"storage_id": storage.id})
         return recycle
 
     @api.model
