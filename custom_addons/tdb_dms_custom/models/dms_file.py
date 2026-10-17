@@ -90,6 +90,24 @@ class DmsFile(models.Model):
                 context = {"human_size": True} if bin_size else {"base64": True}
                 record.content = record.with_context(**context).attachment_id.datas
 
+    def action_preview_file(self):
+        self.ensure_one()
+        try:
+            action = self.env["ir.actions.actions"]._for_xml_id("dms.action_dms_file")
+        except Exception:
+            action = {
+                "name": _("Files"),
+                "type": "ir.actions.act_window",
+                "res_model": "dms.file",
+            }
+        view_id = self.env.ref("dms.view_dms_file_preview_modal", raise_if_not_found=False)
+        action["name"] = _("Xem trước: %s") % self.name
+        action["views"] = [(view_id.id if view_id else False, "form")]
+        action["res_id"] = self.id
+        action["target"] = "new"
+        action["context"] = {"dialog_size": "extra-large"}
+        return action
+
     @api.model
     def _search(self, domain, offset=0, limit=None, order=None, **kwargs):
         """Người dùng thông thường không bao giờ nhìn thấy các file trong Thùng Rác hoặc đã bị xóa."""
