@@ -142,14 +142,26 @@ class OnboardingController(http.Controller):
         )
 
     def _render_preview_error_response(self, dms_file):
+        ext = (dms_file.extension or "").lower()
+        is_office = ext in ["pptx", "ppt", "docx", "doc", "odt", "odp", "rtf"]
+        hint = (
+            "<p>Đối với định dạng Office (.pptx, .docx), máy chủ cần được cài đặt <b>LibreOffice</b> để tự động chuyển đổi slide sang PDF xem trước.</p>"
+            if is_office
+            else "<p>Tệp có thể bị hỏng, có mật khẩu bảo vệ hoặc không đúng cấu trúc chuẩn.</p>"
+        )
+        download_btn = (
+            f'<a href="/dms/file/{dms_file.id}/download">Tải tệp về máy</a>'
+            if dms_file.can_download
+            else '<p style="color:#dc3545;font-weight:500;margin-top:15px;"><i class="fa fa-lock"></i> Tệp này hiện đang bị khóa tải về.</p>'
+        )
         html_error = f"""<!DOCTYPE html>
 <html>
-<head><meta charset="utf-8"><style>body{{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:90vh;margin:0;background:#f8f9fa;color:#495057;text-align:center;}}.box{{padding:30px;background:#fff;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);}}a{{display:inline-block;margin-top:15px;padding:10px 20px;background:#017e84;color:#fff;text-decoration:none;border-radius:4px;}}</style></head>
+<head><meta charset="utf-8"><style>body{{font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:90vh;margin:0;background:#f8f9fa;color:#495057;text-align:center;}}.box{{padding:30px;background:#fff;border-radius:8px;box-shadow:0 4px 12px rgba(0,0,0,0.08);max-width:520px;}}a{{display:inline-block;margin-top:15px;padding:10px 20px;background:#017e84;color:#fff;text-decoration:none;border-radius:4px;}}</style></head>
 <body>
 <div class="box">
     <h3>Không thể tạo bản xem trước cho tài liệu này</h3>
-    <p>Tệp có thể bị hỏng, có mật khẩu bảo vệ hoặc không đúng cấu trúc chuẩn.</p>
-    <a href="/dms/file/{dms_file.id}/download">Tải tệp về máy</a>
+    {hint}
+    {download_btn}
 </div>
 </body>
 </html>"""
