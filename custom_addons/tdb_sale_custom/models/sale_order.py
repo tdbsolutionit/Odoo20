@@ -25,10 +25,27 @@ class SaleOrder(models.Model):
     @api.model
     def _register_hook(self):
         res = super()._register_hook()
-        # Tự động ẩn hoàn toàn báo cáo gốc 'Quotation / Order' khỏi menu Print để chỉ còn 'Báo giá đơn hàng (TDB)'
-        report = self.env.ref("sale.action_report_saleorder", raise_if_not_found=False)
-        if report and report.binding_model_id:
-            report.sudo().write({"binding_model_id": False})
+        try:
+            # Tự động ẩn hoàn toàn báo cáo gốc 'Quotation / Order' khỏi menu Print để chỉ còn 'Báo giá đơn hàng (TDB)'
+            report = self.env.ref("sale.action_report_saleorder", raise_if_not_found=False)
+            if report and report.binding_model_id:
+                report.sudo().write({"binding_model_id": False})
+        except Exception:
+            pass
+        return res
+
+class IrActionsActions(models.Model):
+    _inherit = 'ir.actions.actions'
+
+    @api.model
+    def get_bindings(self, model_name):
+        res = super().get_bindings(model_name)
+        if model_name == 'sale.order' and isinstance(res, dict) and 'report' in res:
+            res['report'] = [
+                r for r in res['report']
+                if r.get('xml_id') != 'sale.action_report_saleorder'
+                and r.get('name') not in ('Quotation / Order', 'Báo giá / Đơn hàng')
+            ]
         return res
 
     # === POPUP PREVIEW BÁO GIÁ ===#

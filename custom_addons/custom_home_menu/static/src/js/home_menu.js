@@ -55,24 +55,8 @@ patch(NavBar.prototype, {
         if (!app) {
             return "/web/static/img/default_icon_app.png";
         }
-        if (app.webIconData) {
-            return app.webIconData.startsWith("data:") || app.webIconData.startsWith("/")
-                ? app.webIconData
-                : `data:image/png;base64,${app.webIconData}`;
-        }
-        if (app.webIcon && typeof app.webIcon === "string" && app.webIcon.includes(",")) {
-            const parts = app.webIcon.split(",");
-            return `/${parts[0].trim()}/${parts[1].trim()}`;
-        }
-        if (app.webIcon && typeof app.webIcon === "string" && app.webIcon.includes("/")) {
-            return app.webIcon.startsWith("/") ? app.webIcon : `/${app.webIcon}`;
-        }
-        if (app.xmlid) {
-            const moduleName = app.xmlid.split(".")[0];
-            return `/${moduleName}/static/description/icon.png`;
-        }
 
-        // Bảng ánh xạ icon chuẩn của các ứng dụng Odoo gốc
+        // 1. ƯU TIÊN SỐ 1: Ánh xạ theo tên app chuẩn của Odoo
         const defaultAppIcons = {
             "discuss": "/mail/static/description/icon.png",
             "calendar": "/calendar/static/description/icon.png",
@@ -98,7 +82,29 @@ patch(NavBar.prototype, {
             return defaultAppIcons[normalizedName];
         }
 
-        return `/web/image/ir.ui.menu/${app.id}/web_icon_data`;
+        // 2. Nếu có web_icon riêng của module (như PLM, DMS)
+        if (app.webIcon && typeof app.webIcon === "string" && app.webIcon.includes(",")) {
+            const parts = app.webIcon.split(",");
+            return `/${parts[0].trim()}/${parts[1].trim()}`;
+        }
+        if (app.webIcon && typeof app.webIcon === "string" && app.webIcon.includes("/")) {
+            return app.webIcon.startsWith("/") ? app.webIcon : `/${app.webIcon}`;
+        }
+
+        // 3. Nếu có xmlid của module
+        if (app.xmlid) {
+            const moduleName = app.xmlid.split(".")[0];
+            return `/${moduleName}/static/description/icon.png`;
+        }
+
+        // 4. Chỉ dùng webIconData nếu không phải là icon mặc định
+        if (app.webIconData) {
+            return app.webIconData.startsWith("data:") || app.webIconData.startsWith("/")
+                ? app.webIconData
+                : `data:image/png;base64,${app.webIconData}`;
+        }
+
+        return "/web/static/img/default_icon_app.png";
     },
 
     get displayedApps() {
