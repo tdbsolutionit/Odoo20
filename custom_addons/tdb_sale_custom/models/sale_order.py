@@ -22,6 +22,15 @@ class SaleOrder(models.Model):
             return self.env._("Some orders are not in a state requiring confirmation.")
         return False
 
+    @api.model
+    def _register_hook(self):
+        res = super()._register_hook()
+        # Tự động ẩn hoàn toàn báo cáo gốc 'Quotation / Order' khỏi menu Print để chỉ còn 'Báo giá đơn hàng (TDB)'
+        report = self.env.ref("sale.action_report_saleorder", raise_if_not_found=False)
+        if report and report.binding_model_id:
+            report.sudo().write({"binding_model_id": False})
+        return res
+
     # === POPUP PREVIEW BÁO GIÁ ===#
     preview_html = fields.Html(compute="_compute_preview_html", sanitize=False)
 
