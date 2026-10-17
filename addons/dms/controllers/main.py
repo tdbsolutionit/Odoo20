@@ -42,14 +42,23 @@ class OnboardingController(http.Controller):
 
     def _check_upload_permission(self, directory_id):
         """Check if current user is allowed to upload files into directory_id."""
+        user = request.env.user
         if (
-            request.env.is_admin()
-            or request.env.user.has_group("dms.group_dms_manager")
+            request.env.su
+            or request.env.is_superuser()
+            or user._is_superuser()
+            or user._is_admin()
+            or user.has_group("base.group_system")
+            or user.has_group("dms.group_dms_manager")
         ):
             return True
         directory = request.env["dms.directory"].browse(directory_id)
         if not directory.exists():
             return False
+        if hasattr(directory, "_is_user_leader") and directory._is_user_leader(user):
+            return True
+        if directory.permission_create:
+            return True
         # Check if user has perm_inclusive_create in access groups for this directory
         cr = request.env.cr
         cr.execute(
@@ -73,12 +82,18 @@ class OnboardingController(http.Controller):
         try:
             directory_id = int(directory_id)
         except (ValueError, TypeError):
-            return json.dumps([{"error": _("Thư mục không hợp lệ.")}])
+            return request.make_response(
+                json.dumps([{"error": str(_("Thư mục không hợp lệ."))}]),
+                headers=[("Content-Type", "application/json; charset=utf-8")],
+            )
 
         # Permission check: verify if the user has create/push access on this directory
         if not self._check_upload_permission(directory_id):
-            return json.dumps(
-                [{"error": _("Bạn không có đủ quyền hạn để tải tài liệu lên thư mục này.")}]
+            return request.make_response(
+                json.dumps(
+                    [{"error": str(_("Bạn không có đủ quyền hạn để tải tài liệu lên thư mục này."))}]
+                ),
+                headers=[("Content-Type", "application/json; charset=utf-8")],
             )
 
         files = request.httprequest.files.getlist("ufile")
@@ -103,7 +118,7 @@ class OnboardingController(http.Controller):
                 )
             except AccessError:
                 args.append(
-                    {"error": _("Bạn không có đủ quyền hạn để tải tài liệu lên thư mục này.")}
+                    {"error": str(_("Bạn không có đủ quyền hạn để tải tài liệu lên thư mục này."))}
                 )
             except ValidationError as e:
                 args.append({"error": str(e.args[0] if e.args else e)})
@@ -119,10 +134,11 @@ class OnboardingController(http.Controller):
                         "size": dms_file.size,
                     }
                 )
-        return (
-            out % (json.dumps(clean(callback)), json.dumps(args))
-            if callback
-            else json.dumps(args)
+        if callback:
+            return out % (json.dumps(clean(callback)), json.dumps(args))
+        return request.make_response(
+            json.dumps(args),
+            headers=[("Content-Type", "application/json; charset=utf-8")],
         )
 
     def _render_preview_error_response(self, dms_file):

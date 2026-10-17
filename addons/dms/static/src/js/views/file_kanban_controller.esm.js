@@ -121,8 +121,10 @@ export class FileKanbanController extends KanbanController {
             try {
                 result = typeof fileData === "string" ? JSON.parse(fileData) : fileData;
             } catch (err) {
+                console.error("DMS upload failed. Server response:", fileData, err);
+                const snippet = typeof fileData === "string" && !fileData.startsWith("<!") ? fileData.slice(0, 150) : "";
                 return this.notification.add(
-                    _t("Máy chủ trả về kết quả không hợp lệ hoặc bạn không có đủ quyền hạn."),
+                    snippet || _t("Máy chủ trả về kết quả không hợp lệ hoặc đã xảy ra lỗi trong quá trình xử lý."),
                     {type: "danger"}
                 );
             }

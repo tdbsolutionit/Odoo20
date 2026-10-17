@@ -70,6 +70,16 @@ class DmsSecurityMixin(models.AbstractModel):
             if record.res_model and record.res_id:
                 record.record_ref = f"{record.res_model},{record.res_id}"
 
+    def _is_dms_admin_or_manager(self):
+        user = self.env.user
+        return (
+            self.env.su
+            or user._is_superuser()
+            or user._is_admin()
+            or user.has_group("base.group_system")
+            or user.has_group("dms.group_dms_manager")
+        )
+
     def _compute_permissions(self):
         """
         Get permissions for the current record.
@@ -77,7 +87,7 @@ class DmsSecurityMixin(models.AbstractModel):
 
         # Update according to presence when applying ir.rule
         self.invalidate_recordset()
-        if self.env.su:
+        if self._is_dms_admin_or_manager():
             self.update(
                 {
                     "permission_create": True,
@@ -105,7 +115,7 @@ class DmsSecurityMixin(models.AbstractModel):
     @api.model
     def _get_domain_by_inheritance(self, operation):
         """Get domain for inherited accessible records."""
-        if self.env.su:
+        if self._is_dms_admin_or_manager():
             return []
         inherited_access_field = "storage_id_inherit_access_from_parent_record"
         if self._name != "dms.directory":
@@ -159,7 +169,7 @@ class DmsSecurityMixin(models.AbstractModel):
     @api.model
     def _get_access_groups_query(self, operation):
         """Return the query to select access groups."""
-        if self.env.su or self.env.user.has_group("base.group_system"):
+        if self._is_dms_admin_or_manager():
             return SQL("(SELECT id FROM dms_directory)")
 
         operation_check = {
@@ -275,8 +285,8 @@ class DmsSecurityMixin(models.AbstractModel):
             truthy_val = any(value)
         positive = (operator not in NEGATIVE_TERM_OPERATORS) == truthy_val
 
-        if _self.env.su:
-            # You're SUPERUSER_ID
+        if _self._is_dms_admin_or_manager():
+            # You're SUPERUSER_ID or Admin/Manager
             return TRUE_DOMAIN if positive else FALSE_DOMAIN
 
         result = OR(
@@ -313,12 +323,12 @@ class DmsSecurityMixin(models.AbstractModel):
         The _filtered_access() method is also overwritten to prevent this sudo()
         specific behavior and to be able to access only the appropriate records.
         """
-        if self.env.su:
+        if self._is_dms_admin_or_manager():
             return self
         return super().filtered_domain(domain)
 
     def _filtered_access(self, operation):
-        if not self or self.env.su:
+        if not self or self._is_dms_admin_or_manager():
             return self
         sql = self._get_access_groups_query(operation)
         self.env.cr.execute(sql)
@@ -331,7 +341,7 @@ class DmsSecurityMixin(models.AbstractModel):
         """Specific method "similar" to _check_access() but with a different
         behavior: check if you do not really have access to any of the records
         in to avoid performing the corresponding create/write/unlink action."""
-        if any(self._ids) and not self.env.su:
+        if any(self._ids) and not self._is_dms_admin_or_manager():
             self.check_access(operation)
 
     @api.model_create_multi
@@ -343,7 +353,7 @@ class DmsSecurityMixin(models.AbstractModel):
         # to check access works
         res.flush_recordset()
         # Go back to the original sudo state and check we really had creation permission
-        res = res.sudo(self.env.su)
+        res = res.sudo(self.env.su or self._is_dms_admin_or_manager())
         res._check_access_dms_record("create")
         return res
 
