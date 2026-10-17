@@ -21,6 +21,14 @@ from odoo.osv import expression
 from odoo.tools import consteq, human_size
 from odoo.tools.mimetypes import guess_mimetype
 
+try:
+    from odoo.tools import BinaryBytes, BinaryValue
+except ImportError:
+    try:
+        from odoo.tools.binary import BinaryBytes, BinaryValue
+    except ImportError:
+        BinaryBytes = BinaryValue = None
+
 from ..tools import file
 
 _logger = logging.getLogger(__name__)
@@ -330,7 +338,14 @@ class DMSFile(models.Model):
         if self.storage_id.save_type in ["file", "attachment"]:
             new_vals["content_file"] = self.content
         else:
-            new_vals["content_binary"] = self.content and binary
+            if not binary:
+                new_vals["content_binary"] = False
+            elif BinaryBytes is not None:
+                new_vals["content_binary"] = BinaryBytes(binary, filename=self.name)
+            elif BinaryValue is not None:
+                new_vals["content_binary"] = BinaryValue(binary)
+            else:
+                new_vals["content_binary"] = self.content and binary
         return new_vals
 
     @api.model
@@ -901,11 +916,14 @@ class DMSFile(models.Model):
                 context = {"human_size": True} if bin_size else {"base64": True}
                 record.content = record.with_context(**context).content_file
             elif record.content_binary:
-                record.content = (
-                    record.content_binary
-                    if bin_size
-                    else base64.b64encode(record.content_binary)
-                )
+                if BinaryValue is not None or BinaryBytes is not None:
+                    record.content = record.content_binary
+                else:
+                    record.content = (
+                        record.content_binary
+                        if bin_size
+                        else base64.b64encode(record.content_binary)
+                    )
             elif record.attachment_id:
                 context = {"human_size": True} if bin_size else {"base64": True}
                 record.content = record.with_context(**context).attachment_id.datas
