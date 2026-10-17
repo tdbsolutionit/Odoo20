@@ -410,6 +410,21 @@ class DMSFile(models.Model):
             return True
         return False
 
+    @api.model
+    def _find_soffice_executable(self):
+        import shutil
+        soffice = shutil.which("soffice")
+        if soffice:
+            return soffice
+        candidates = [
+            r"C:\Program Files\LibreOffice\program\soffice.exe",
+            r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+        ]
+        for c in candidates:
+            if os.path.isfile(c):
+                return c
+        return "soffice"
+
     def _convert_to_pdf(self):
         """Convert office/document content to PDF using headless LibreOffice.
         Caches the converted PDF to disk to speed up subsequent requests.
@@ -445,8 +460,9 @@ class DMSFile(models.Model):
                 return None
 
             profile_uri = f"file://{os.path.join(temp_dir, 'profile')}"
+            soffice_bin = self._find_soffice_executable()
             cmd = [
-                "soffice",
+                soffice_bin,
                 "--headless",
                 f"-env:UserInstallation={profile_uri}",
                 "--convert-to",
