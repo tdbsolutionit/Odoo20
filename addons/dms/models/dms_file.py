@@ -350,9 +350,9 @@ class DMSFile(models.Model):
     def _get_binary_max_size(self):
         icp = self.env["ir.config_parameter"].sudo()
         if hasattr(icp, "get_int"):
-            return icp.get_int("dms.binary_max_size", default=25)
-        getter = getattr(icp, "get_str", getattr(icp, "get_param", lambda k, default: 25))
-        return int(getter("dms.binary_max_size", default=25))
+            return icp.get_int("dms.binary_max_size", default=500)
+        getter = getattr(icp, "get_str", getattr(icp, "get_param", lambda k, default: 500))
+        return int(getter("dms.binary_max_size", default=500))
 
     @api.model
     def _get_forbidden_extensions(self):
@@ -643,7 +643,7 @@ class DMSFile(models.Model):
                 record.preview_html = (
                     f'<div class="d-flex flex-column align-items-center justify-content-center h-100 p-3" '
                     f'style="min-height: 84vh; background: #0b0c10;">'
-                    f'<video controls autoplay preload="metadata" style="max-width: 100%; max-height: 76vh; border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.8); outline: none;">'
+                    f'<video controls preload="auto" playsinline style="max-width: 100%; max-height: 76vh; border-radius: 8px; box-shadow: 0 4px 24px rgba(0,0,0,0.8); outline: none;">'
                     f'<source src="{preview_url}" type="{video_type}">'
                     f'Trình duyệt không hỗ trợ phát trực tiếp định dạng video này.'
                     f'</video>'

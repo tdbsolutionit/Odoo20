@@ -1033,7 +1033,7 @@ window.addEventListener('DOMContentLoaded', function() {
             if "charset" not in mimetype:
                 mimetype = f"{mimetype}; charset=utf-8" if mimetype.startswith("text/") else "text/plain; charset=utf-8"
 
-        return send_file(
+        resp = send_file(
             BytesIO(raw_content),
             environ=request.httprequest.environ,
             mimetype=mimetype,
@@ -1041,6 +1041,8 @@ window.addEventListener('DOMContentLoaded', function() {
             as_attachment=False,
             conditional=True,
         )
+        resp.headers["Accept-Ranges"] = "bytes"
+        return resp
 
     @http.route(
         ["/dms/file/<int:dms_file_id>/download"],

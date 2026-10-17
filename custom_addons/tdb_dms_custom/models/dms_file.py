@@ -90,6 +90,14 @@ class DmsFile(models.Model):
                 context = {"human_size": True} if bin_size else {"base64": True}
                 record.content = record.with_context(**context).attachment_id.datas
 
+    @api.model
+    def _get_binary_max_size(self):
+        icp = self.env["ir.config_parameter"].sudo()
+        if hasattr(icp, "get_int"):
+            return icp.get_int("dms.binary_max_size", default=500)
+        getter = getattr(icp, "get_str", getattr(icp, "get_param", lambda k, default: 500))
+        return int(getter("dms.binary_max_size", default=500))
+
     def action_preview_file(self):
         self.ensure_one()
         try:
