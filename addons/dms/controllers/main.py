@@ -4,7 +4,10 @@ import html
 import json
 import logging
 import mimetypes
+import os
 import unicodedata
+import xml.etree.ElementTree as ET
+import zipfile
 from io import BytesIO
 
 from werkzeug.exceptions import Forbidden
@@ -975,6 +978,540 @@ window.addEventListener('DOMContentLoaded', function() {
             ],
         )
 
+    def _extract_pptx_slides(self, raw_bytes):
+        slides = []
+        try:
+            with zipfile.ZipFile(BytesIO(raw_bytes)) as z:
+                media = {}
+                for fname in z.namelist():
+                    if fname.startswith("ppt/media/"):
+                        bname = os.path.basename(fname)
+                        data = z.read(fname)
+                        mime = "image/png"
+                        if bname.lower().endswith((".jpg", ".jpeg")):
+                            mime = "image/jpeg"
+                        elif bname.lower().endswith(".gif"):
+                            mime = "image/gif"
+                        elif bname.lower().endswith(".svg"):
+                            mime = "image/svg+xml"
+                        media[bname] = f"data:{mime};base64,{base64.b64encode(data).decode('ascii')}"
+
+                slide_files = [f for f in z.namelist() if f.startswith("ppt/slides/slide") and f.endswith(".xml")]
+                slide_files.sort(key=lambda x: int("".join(filter(str.isdigit, os.path.basename(x))) or 0))
+
+                for idx, s_path in enumerate(slide_files, start=1):
+                    try:
+                        root = ET.fromstring(z.read(s_path))
+                        title = ""
+                        paragraphs = []
+                        tables = []
+                        images = []
+
+                        rel_path = f"ppt/slides/_rels/{os.path.basename(s_path)}.rels"
+                        r_map = {}
+                        if rel_path in z.namelist():
+                            try:
+                                rel_root = ET.fromstring(z.read(rel_path))
+                                for r in rel_root.iter():
+                                    if r.tag.endswith("}Relationship"):
+                                        r_id = r.get("Id")
+                                        target = r.get("Target", "")
+                                        img_name = os.path.basename(target)
+                                        if img_name in media:
+                                            r_map[r_id] = media[img_name]
+                            except Exception:
+                                pass
+
+                        for elem in root.iter():
+                            if elem.tag.endswith("}pic"):
+                                for blip in elem.iter():
+                                    if blip.tag.endswith("}blip"):
+                                        embed_id = blip.get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed")
+                                        if embed_id and embed_id in r_map:
+                                            images.append(r_map[embed_id])
+                            elif elem.tag.endswith("}sp"):
+                                is_title = False
+                                for ph in elem.iter():
+                                    if ph.tag.endswith("}ph"):
+                                        ptype = ph.get("type", "")
+                                        if ptype in ("title", "ctrTitle", "subTitle"):
+                                            is_title = True
+                                            break
+                                lines = []
+                                for p in elem.iter():
+                                    if p.tag.endswith("}p"):
+                                        line = "".join(p.itertext()).strip()
+                                        if line:
+                                            lines.append(line)
+                                if lines:
+                                    if is_title and not title:
+                                        title = " ".join(lines)
+                                    else:
+                                        paragraphs.extend(lines)
+                            elif elem.tag.endswith("}tbl"):
+                                tbl_rows = []
+                                for tr in elem.iter():
+                                    if tr.tag.endswith("}tr"):
+                                        row_cells = []
+                                        for tc in tr.iter():
+                                            if tc.tag.endswith("}tc"):
+                                                row_cells.append("".join(tc.itertext()).strip())
+                                        if any(row_cells):
+                                            tbl_rows.append(row_cells)
+                                if tbl_rows:
+                                    tables.append(tbl_rows)
+
+                        if not title and paragraphs:
+                            title = paragraphs[0]
+                            paragraphs = paragraphs[1:]
+
+                        slides.append({
+                            "index": idx,
+                            "title": title or f"Slide {idx}",
+                            "paragraphs": paragraphs,
+                            "tables": tables,
+                            "images": images,
+                        })
+                    except Exception as ex:
+                        slides.append({
+                            "index": idx,
+                            "title": f"Slide {idx}",
+                            "paragraphs": [f"Nội dung slide {idx}"],
+                            "tables": [],
+                            "images": [],
+                        })
+        except Exception as e:
+            _logger.warning("Failed to extract PPTX slides: %s", e)
+        return slides
+
+    def _render_powerpoint_presentation_html(self, dms_file):
+        """Render interactive PowerPoint slide presentation player HTML."""
+        raw_content = dms_file._get_raw_content()
+        if not raw_content:
+            return None
+
+        ext = (dms_file.extension or "").lower()
+        slides = []
+        if ext in ("pptx", "ppsx"):
+            slides = self._extract_pptx_slides(raw_content)
+
+        filename_esc = html.escape(dms_file.name or "Slide Presentation")
+        total_slides = len(slides)
+
+        download_btn_html = ""
+        if dms_file.can_download:
+            download_btn_html = f"""<a href="/dms/file/{dms_file.id}/download" class="btn-top" title="Tải tệp PowerPoint về máy">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Tải file PPTX
+            </a>"""
+
+        if not slides:
+            html_content = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>{filename_esc}</title>
+<style>
+body{{margin:0;padding:40px;background:#1a1d20;color:#fff;font-family:'Segoe UI',system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:85vh;}}
+.card{{background:#22262a;padding:40px;border-radius:12px;text-align:center;box-shadow:0 8px 32px rgba(0,0,0,0.5);max-width:500px;border:1px solid #343a40;}}
+.icon{{width:64px;height:64px;background:#d24726;border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 20px;font-size:28px;font-weight:bold;color:#fff;}}
+h2{{margin:0 0 10px;font-size:20px;font-weight:600;}}
+p{{color:#adb5bd;font-size:14px;line-height:1.6;margin:0 0 25px;}}
+a{{display:inline-block;padding:10px 24px;background:#d24726;color:#fff;text-decoration:none;border-radius:6px;font-weight:500;}}
+</style>
+</head>
+<body>
+<div class="card">
+    <div class="icon">P</div>
+    <h2>{filename_esc}</h2>
+    <p>Tệp trình chiếu PowerPoint ({ext.upper()}) dung lượng {dms_file.human_size or ''}.<br/>Để chuyển đổi tự động sang PDF xem trước, máy chủ cần có LibreOffice.</p>
+    {download_btn_html}
+</div>
+</body>
+</html>"""
+            return Response(html_content, content_type="text/html; charset=utf-8")
+
+        nav_items_html = []
+        slide_views_html = []
+
+        for s in slides:
+            s_idx = s["index"]
+            s_title_esc = html.escape(s["title"])
+            is_first = (s_idx == 1)
+            active_cls = "active" if is_first else ""
+            display_style = "display:flex;" if is_first else "display:none;"
+
+            nav_items_html.append(
+                f'<div class="thumb-item {active_cls}" onclick="goToSlide({s_idx})" id="thumb-{s_idx}">'
+                f'<span class="thumb-num">{s_idx}</span>'
+                f'<span class="thumb-title">{s_title_esc}</span>'
+                f'</div>'
+            )
+
+            body_parts = []
+            if s.get("paragraphs"):
+                body_parts.append('<div class="slide-paragraphs">')
+                for p in s["paragraphs"]:
+                    body_parts.append(f'<p class="slide-text">• {html.escape(p)}</p>')
+                body_parts.append('</div>')
+
+            if s.get("tables"):
+                for tbl in s["tables"]:
+                    body_parts.append('<table class="slide-table">')
+                    for r_idx, row in enumerate(tbl):
+                        body_parts.append('<tr>')
+                        tag = 'th' if r_idx == 0 else 'td'
+                        for cell in row:
+                            body_parts.append(f'<{tag}>{html.escape(cell)}</{tag}>')
+                        body_parts.append('</tr>')
+                    body_parts.append('</table>')
+
+            if s.get("images"):
+                body_parts.append('<div class="slide-images">')
+                for img_data in s["images"]:
+                    body_parts.append(f'<img src="{img_data}" class="slide-img" alt="Slide image" />')
+                body_parts.append('</div>')
+
+            slide_views_html.append(
+                f'<div class="slide-card" id="slide-{s_idx}" style="{display_style}">'
+                f'<div class="slide-header">'
+                f'<span class="slide-badge">SLIDE {s_idx}</span>'
+                f'<h2 class="slide-title">{s_title_esc}</h2>'
+                f'</div>'
+                f'<div class="slide-content">{"".join(body_parts)}</div>'
+                f'<div class="slide-footer"><span class="brand">PowerPoint Presentation</span><span>{s_idx} / {total_slides}</span></div>'
+                f'</div>'
+            )
+
+        html_template = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{filename_esc}</title>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#14171a;color:#e1e8ed;height:100vh;overflow:hidden;display:flex;flex-direction:column;}}
+.topbar{{height:48px;background:#1e2328;border-bottom:1px solid #2d333b;display:flex;align-items:center;justify-content:space-between;padding:0 16px;user-select:none;}}
+.topbar-left{{display:flex;align-items:center;gap:12px;}}
+.ppt-logo{{width:26px;height:26px;background:#d24726;color:#fff;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;}}
+.doc-name{{font-weight:600;font-size:14px;color:#fff;max-width:320px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
+.slide-counter{{font-size:13px;color:#8b949e;background:#2d333b;padding:3px 10px;border-radius:12px;font-weight:500;}}
+.topbar-controls{{display:flex;align-items:center;gap:8px;}}
+.btn-nav{{background:#2d333b;color:#fff;border:none;padding:6px 14px;border-radius:4px;font-size:13px;cursor:pointer;font-weight:500;transition:background 0.15s;}}
+.btn-nav:hover{{background:#38414a;}}
+.btn-top{{background:#d24726;color:#fff;text-decoration:none;padding:6px 14px;border-radius:4px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px;}}
+.btn-top:hover{{background:#b83a1b;}}
+.main-stage{{flex:1;display:flex;overflow:hidden;}}
+.sidebar{{width:260px;background:#1a1e23;border-right:1px solid #2d333b;overflow-y:auto;padding:12px 8px;display:flex;flex-direction:column;gap:6px;}}
+.thumb-item{{padding:10px 12px;border-radius:6px;cursor:pointer;background:#22272e;border:1px solid transparent;display:flex;align-items:center;gap:10px;transition:all 0.15s;}}
+.thumb-item:hover{{background:#2d333b;}}
+.thumb-item.active{{background:#2d333b;border-color:#d24726;box-shadow:0 0 0 1px #d24726;}}
+.thumb-num{{font-size:11px;font-weight:bold;background:#38414a;color:#adb5bd;padding:2px 6px;border-radius:4px;min-width:22px;text-align:center;}}
+.thumb-title{{font-size:12px;font-weight:500;color:#c9d1d9;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
+.stage{{flex:1;display:flex;align-items:center;justify-content:center;padding:24px;overflow:auto;background:#0d1117;}}
+.slide-card{{width:100%;max-width:960px;min-height:540px;aspect-ratio:16/9;background:#ffffff;color:#212529;border-radius:8px;box-shadow:0 8px 36px rgba(0,0,0,0.6);display:flex;flex-direction:column;padding:36px 44px;position:relative;animation:fadeIn 0.2s ease;}}
+@keyframes fadeIn{{from{{opacity:0;transform:translateY(4px);}}to{{opacity:1;transform:translateY(0);}}}}
+.slide-header{{border-bottom:2px solid #ea580c;padding-bottom:14px;margin-bottom:20px;}}
+.slide-badge{{font-size:11px;font-weight:700;color:#ea580c;letter-spacing:1px;text-transform:uppercase;}}
+.slide-title{{font-size:24px;font-weight:700;color:#1e293b;margin-top:4px;line-height:1.3;}}
+.slide-content{{flex:1;overflow-y:auto;padding-right:8px;display:flex;flex-direction:column;gap:16px;}}
+.slide-paragraphs{{display:flex;flex-direction:column;gap:10px;}}
+.slide-text{{font-size:16px;line-height:1.6;color:#334155;}}
+.slide-table{{width:100%;border-collapse:collapse;margin:10px 0;font-size:14px;}}
+.slide-table th,.slide-table td{{border:1px solid #cbd5e1;padding:8px 12px;text-align:left;}}
+.slide-table th{{background:#f1f5f9;font-weight:600;color:#0f172a;}}
+.slide-images{{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin-top:12px;}}
+.slide-img{{max-width:100%;max-height:220px;border-radius:6px;object-fit:contain;border:1px solid #e2e8f0;}}
+.slide-footer{{margin-top:auto;padding-top:14px;border-top:1px solid #f1f5f9;display:flex;justify-content:space-between;font-size:11px;color:#94a3b8;font-weight:500;}}
+.slide-footer .brand{{color:#ea580c;font-weight:600;}}
+</style>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="ppt-logo">P</div>
+    <span class="doc-name">{filename_esc}</span>
+    <span class="slide-counter"><span id="cur-slide">1</span> / {total_slides} Slides</span>
+  </div>
+  <div class="topbar-controls">
+    <button class="btn-nav" onclick="prevSlide()" title="Phím mũi tên trái (Left)">&#9664; Trước</button>
+    <button class="btn-nav" onclick="nextSlide()" title="Phím mũi tên phải (Right)">Sau &#9654;</button>
+    <button class="btn-nav" onclick="toggleFullScreen()" title="Toàn màn hình">&#x26F6; Phóng to</button>
+    {download_btn_html}
+  </div>
+</div>
+<div class="main-stage">
+  <div class="sidebar">{"".join(nav_items_html)}</div>
+  <div class="stage">{"".join(slide_views_html)}</div>
+</div>
+<script>
+let current = 1;
+const total = {total_slides};
+function goToSlide(idx) {{
+  if (idx < 1 || idx > total) return;
+  document.getElementById('slide-' + current).style.display = 'none';
+  document.getElementById('thumb-' + current).classList.remove('active');
+  current = idx;
+  document.getElementById('slide-' + current).style.display = 'flex';
+  const thumb = document.getElementById('thumb-' + current);
+  thumb.classList.add('active');
+  thumb.scrollIntoView({{ behavior: 'smooth', block: 'nearest' }});
+  document.getElementById('cur-slide').innerText = current;
+}}
+function nextSlide() {{ if (current < total) goToSlide(current + 1); }}
+function prevSlide() {{ if (current > 1) goToSlide(current - 1); }}
+document.addEventListener('keydown', (e) => {{
+  if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') {{ nextSlide(); }}
+  else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {{ prevSlide(); }}
+}});
+function toggleFullScreen() {{
+  if (!document.fullscreenElement) {{
+    document.documentElement.requestFullscreen().catch(() => {{}});
+  }} else {{
+    document.exitFullscreen().catch(() => {{}});
+  }}
+}}
+</script>
+</body>
+</html>"""
+        return Response(html_template, content_type="text/html; charset=utf-8")
+
+    def _extract_docx_document(self, raw_bytes):
+        elements = []
+        try:
+            with zipfile.ZipFile(BytesIO(raw_bytes)) as z:
+                media = {}
+                for fname in z.namelist():
+                    if fname.startswith("word/media/"):
+                        bname = os.path.basename(fname)
+                        data = z.read(fname)
+                        mime = "image/png"
+                        if bname.lower().endswith((".jpg", ".jpeg")):
+                            mime = "image/jpeg"
+                        elif bname.lower().endswith(".gif"):
+                            mime = "image/gif"
+                        elif bname.lower().endswith(".svg"):
+                            mime = "image/svg+xml"
+                        media[bname] = f"data:{mime};base64,{base64.b64encode(data).decode('ascii')}"
+
+                r_map = {}
+                rels_path = "word/_rels/document.xml.rels"
+                if rels_path in z.namelist():
+                    try:
+                        rel_root = ET.fromstring(z.read(rels_path))
+                        for r in rel_root.iter():
+                            if r.tag.endswith("}Relationship"):
+                                r_id = r.get("Id")
+                                target = r.get("Target", "")
+                                img_name = os.path.basename(target)
+                                if img_name in media:
+                                    r_map[r_id] = media[img_name]
+                    except Exception:
+                        pass
+
+                doc_xml = z.read("word/document.xml")
+                root = ET.fromstring(doc_xml)
+
+                body = None
+                for child in root:
+                    if child.tag.endswith("}body"):
+                        body = child
+                        break
+                if body is None:
+                    body = root
+
+                for node in body:
+                    tag = node.tag
+                    if tag.endswith("}p"):
+                        is_h1 = False
+                        is_h2 = False
+                        for pPr in node.iter():
+                            if pPr.tag.endswith("}pStyle"):
+                                val = pPr.get("{http://schemas.openxmlformats.org/wordprocessingml/2006/main}val", "")
+                                if "1" in val or "Title" in val or "Heading1" in val:
+                                    is_h1 = True
+                                elif "2" in val or "Heading2" in val:
+                                    is_h2 = True
+
+                        p_images = []
+                        for blip in node.iter():
+                            if blip.tag.endswith("}blip"):
+                                embed_id = blip.get("{http://schemas.openxmlformats.org/officeDocument/2006/relationships}embed")
+                                if embed_id and embed_id in r_map:
+                                    p_images.append(r_map[embed_id])
+
+                        runs = []
+                        for r in node.iter():
+                            if r.tag.endswith("}r"):
+                                is_bold = any(sub.tag.endswith("}b") for sub in r)
+                                is_italic = any(sub.tag.endswith("}i") for sub in r)
+                                t = "".join(sub.text for sub in r if sub.tag.endswith("}t") and sub.text)
+                                if t:
+                                    runs.append({"text": t, "bold": is_bold, "italic": is_italic})
+
+                        text_all = "".join(r["text"] for r in runs).strip()
+                        if text_all or p_images:
+                            if is_h1:
+                                elements.append(("h1", text_all, p_images))
+                            elif is_h2:
+                                elements.append(("h2", text_all, p_images))
+                            else:
+                                elements.append(("p", runs, p_images))
+
+                    elif tag.endswith("}tbl"):
+                        tbl_rows = []
+                        for tr in node:
+                            if tr.tag.endswith("}tr"):
+                                row_cells = []
+                                for tc in tr:
+                                    if tc.tag.endswith("}tc"):
+                                        tc_text = "".join(tc.itertext()).strip()
+                                        row_cells.append(tc_text)
+                                if any(row_cells):
+                                    tbl_rows.append(row_cells)
+                        if tbl_rows:
+                            elements.append(("tbl", tbl_rows))
+        except Exception as e:
+            _logger.warning("Failed to extract DOCX document: %s", e)
+        return elements
+
+    def _render_word_document_html(self, dms_file):
+        """Render Word document viewer HTML."""
+        raw_content = dms_file._get_raw_content()
+        if not raw_content:
+            return None
+
+        ext = (dms_file.extension or "").lower()
+        elements = []
+        if ext == "docx":
+            elements = self._extract_docx_document(raw_content)
+
+        filename_esc = html.escape(dms_file.name or "Word Document")
+
+        download_btn_html = ""
+        if dms_file.can_download:
+            download_btn_html = f"""<a href="/dms/file/{dms_file.id}/download" class="btn-top" title="Tải tệp Word về máy">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Tải file Word
+            </a>"""
+
+        body_html = []
+        for item in elements:
+            itype = item[0]
+            if itype == "h1":
+                body_html.append(f'<h1 class="doc-h1">{html.escape(item[1])}</h1>')
+            elif itype == "h2":
+                body_html.append(f'<h2 class="doc-h2">{html.escape(item[1])}</h2>')
+            elif itype == "p":
+                runs = item[1]
+                p_images = item[2]
+                line_parts = []
+                for r in runs:
+                    t_esc = html.escape(r["text"])
+                    if r["bold"] and r["italic"]:
+                        line_parts.append(f"<b><i>{t_esc}</i></b>")
+                    elif r["bold"]:
+                        line_parts.append(f"<b>{t_esc}</b>")
+                    elif r["italic"]:
+                        line_parts.append(f"<i>{t_esc}</i>")
+                    else:
+                        line_parts.append(t_esc)
+                if line_parts:
+                    body_html.append(f'<p class="doc-p">{"".join(line_parts)}</p>')
+                if p_images:
+                    for img_data in p_images:
+                        body_html.append(f'<div class="doc-img-wrap"><img src="{img_data}" class="doc-img" alt="Document image"/></div>')
+            elif itype == "tbl":
+                body_html.append('<table class="doc-table">')
+                for r_idx, row in enumerate(item[1]):
+                    body_html.append("<tr>")
+                    tag = "th" if r_idx == 0 else "td"
+                    for cell in row:
+                        body_html.append(f"<{tag}>{html.escape(cell)}</{tag}>")
+                    body_html.append("</tr>")
+                body_html.append("</table>")
+
+        if not body_html:
+            body_html.append(f"""<div style="text-align:center;padding:40px 20px;color:#64748b;">
+                <p>Tệp văn bản Word ({ext.upper()}) dung lượng {dms_file.human_size or ''}.</p>
+                <p>Để xuất sang định dạng PDF chuẩn, máy chủ cần có LibreOffice.</p>
+                {download_btn_html}
+            </div>""")
+
+        html_template = f"""<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>{filename_esc}</title>
+<style>
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;background:#e2e8f0;color:#1e293b;min-height:100vh;display:flex;flex-direction:column;}}
+.topbar{{height:48px;background:#1e293b;color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 20px;position:sticky;top:0;z-index:100;box-shadow:0 2px 8px rgba(0,0,0,0.15);}}
+.topbar-left{{display:flex;align-items:center;gap:12px;}}
+.word-logo{{width:26px;height:26px;background:#185abd;color:#fff;border-radius:4px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:14px;}}
+.doc-name{{font-weight:600;font-size:14px;color:#fff;max-width:360px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}}
+.topbar-right{{display:flex;align-items:center;gap:10px;}}
+.btn-nav{{background:#334155;color:#fff;border:none;padding:6px 12px;border-radius:4px;font-size:13px;cursor:pointer;font-weight:500;}}
+.btn-nav:hover{{background:#475569;}}
+.btn-top{{background:#185abd;color:#fff;text-decoration:none;padding:6px 14px;border-radius:4px;font-size:13px;font-weight:500;display:inline-flex;align-items:center;gap:6px;}}
+.btn-top:hover{{background:#104796;}}
+.page-container{{padding:30px 16px;flex:1;display:flex;justify-content:center;overflow-y:auto;}}
+.paper{{background:#ffffff;width:100%;max-width:850px;min-height:90vh;padding:56px 64px;box-shadow:0 4px 20px rgba(0,0,0,0.08);border-radius:4px;font-size:15px;line-height:1.7;color:#334155;}}
+.doc-h1{{font-size:26px;font-weight:700;color:#0f172a;margin:24px 0 14px;line-height:1.3;border-bottom:2px solid #e2e8f0;padding-bottom:8px;}}
+.doc-h2{{font-size:20px;font-weight:600;color:#1e293b;margin:20px 0 10px;line-height:1.3;}}
+.doc-p{{margin-bottom:12px;text-align:justify;}}
+.doc-table{{width:100%;border-collapse:collapse;margin:16px 0;font-size:14px;}}
+.doc-table th,.doc-table td{{border:1px solid #cbd5e1;padding:10px 14px;text-align:left;}}
+.doc-table th{{background:#f8fafc;font-weight:600;color:#0f172a;}}
+.doc-img-wrap{{text-align:center;margin:16px 0;}}
+.doc-img{{max-width:100%;border-radius:4px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}}
+#docx-canvas{{width:100%;}}
+</style>
+<script src="https://unpkg.com/jszip/dist/jszip.min.js"></script>
+<script src="https://unpkg.com/docx-preview/dist/docx-preview.min.js"></script>
+</head>
+<body>
+<div class="topbar">
+  <div class="topbar-left">
+    <div class="word-logo">W</div>
+    <span class="doc-name">{filename_esc}</span>
+  </div>
+  <div class="topbar-right">
+    <button class="btn-nav" onclick="zoomDoc(0.1)" title="Phóng to">A+</button>
+    <button class="btn-nav" onclick="zoomDoc(-0.1)" title="Thu nhỏ">A-</button>
+    <button class="btn-nav" onclick="window.print()" title="In văn bản">&#128438; In</button>
+    {download_btn_html}
+  </div>
+</div>
+<div class="page-container">
+  <div class="paper" id="paper-doc">
+    <div id="docx-native">{"".join(body_html)}</div>
+    <div id="docx-canvas" style="display:none;"></div>
+  </div>
+</div>
+<script>
+let curZoom = 1;
+function zoomDoc(step) {{
+  curZoom = Math.max(0.7, Math.min(1.6, curZoom + step));
+  document.getElementById('paper-doc').style.zoom = curZoom;
+}}
+if (window.docx) {{
+  fetch('/dms/file/{dms_file.id}/download')
+    .then(r => r.blob())
+    .then(blob => {{
+      const canvasEl = document.getElementById('docx-canvas');
+      docx.renderAsync(blob, canvasEl, null, {{ inWrapper: false }})
+        .then(() => {{
+          document.getElementById('docx-native').style.display = 'none';
+          canvasEl.style.display = 'block';
+        }})
+        .catch(err => console.log('Using native docx renderer'));
+    }})
+    .catch(err => console.log('Using native docx renderer'));
+}}
+</script>
+</body>
+</html>"""
+        return Response(html_template, content_type="text/html; charset=utf-8")
+
     @http.route(
         ["/dms/file/<int:dms_file_id>/preview", "/dms/file/<int:dms_file_id>/content"],
         type="http",
@@ -1003,8 +1540,7 @@ window.addEventListener('DOMContentLoaded', function() {
                     as_attachment=False,
                     conditional=True,
                 )
-            else:
-                return self._render_preview_error_response(dms_file)
+            # If LibreOffice is not installed, fall through to native HTML renderers!
 
         # 2. If it is an Excel / tabular spreadsheet, render interactive spreadsheet grid!
         if dms_file._is_excel_spreadsheet():
@@ -1012,7 +1548,44 @@ window.addEventListener('DOMContentLoaded', function() {
             if spreadsheet_resp:
                 return spreadsheet_resp
 
-        # 3. Other Office documents (Word, PowerPoint, OpenOffice, RTF) -> Preview via converted PDF
+        # 3. PowerPoint (.pptx, .ppt, .ppsx, .odp)
+        ext = (dms_file.extension or "").lower()
+        if ext in ("pptx", "ppt", "ppsx", "odp"):
+            pdf_data = dms_file._convert_to_pdf()
+            if pdf_data:
+                name_base = (dms_file.name or f"file_{dms_file_id}").rsplit(".", 1)[0]
+                pdf_filename = f"{clean(name_base)}.pdf"
+                return send_file(
+                    BytesIO(pdf_data),
+                    environ=request.httprequest.environ,
+                    mimetype="application/pdf",
+                    download_name=pdf_filename,
+                    as_attachment=False,
+                    conditional=True,
+                )
+            pptx_resp = self._render_powerpoint_presentation_html(dms_file)
+            if pptx_resp:
+                return pptx_resp
+
+        # 4. Word (.docx, .doc, .odt, .rtf)
+        if ext in ("docx", "doc", "odt", "rtf"):
+            pdf_data = dms_file._convert_to_pdf()
+            if pdf_data:
+                name_base = (dms_file.name or f"file_{dms_file_id}").rsplit(".", 1)[0]
+                pdf_filename = f"{clean(name_base)}.pdf"
+                return send_file(
+                    BytesIO(pdf_data),
+                    environ=request.httprequest.environ,
+                    mimetype="application/pdf",
+                    download_name=pdf_filename,
+                    as_attachment=False,
+                    conditional=True,
+                )
+            docx_resp = self._render_word_document_html(dms_file)
+            if docx_resp:
+                return docx_resp
+
+        # 5. Other Office documents -> Preview via converted PDF
         if dms_file._is_office_document():
             pdf_data = dms_file._convert_to_pdf()
             if pdf_data:

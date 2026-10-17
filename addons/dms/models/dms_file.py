@@ -419,9 +419,12 @@ class DMSFile(models.Model):
         candidates = [
             r"C:\Program Files\LibreOffice\program\soffice.exe",
             r"C:\Program Files (x86)\LibreOffice\program\soffice.exe",
+            os.path.expandvars(r"%ProgramFiles%\LibreOffice\program\soffice.exe"),
+            os.path.expandvars(r"%ProgramFiles(x86)%\LibreOffice\program\soffice.exe"),
+            os.path.expandvars(r"%LOCALAPPDATA%\Programs\LibreOffice\program\soffice.exe"),
         ]
         for c in candidates:
-            if os.path.isfile(c):
+            if c and os.path.isfile(c):
                 return c
         return "soffice"
 
@@ -459,7 +462,9 @@ class DMSFile(models.Model):
                 _logger.error("Failed to write temporary file for conversion: %s", e)
                 return None
 
-            profile_uri = f"file://{os.path.join(temp_dir, 'profile')}"
+            import pathlib
+            profile_dir = os.path.join(temp_dir, "profile")
+            profile_uri = pathlib.Path(profile_dir).as_uri()
             soffice_bin = self._find_soffice_executable()
             cmd = [
                 soffice_bin,
@@ -598,7 +603,19 @@ class DMSFile(models.Model):
                     f'<iframe src="{preview_url}" '
                     f'style="width: 100%; height: 86vh; border: none; display: block; background: #ffffff;"></iframe>'
                 )
-            # 3. Tài liệu văn phòng khác (Word, PowerPoint, OpenOffice, RTF) -> Preview qua PDF chuyển đổi
+            # 3. PowerPoint (.pptx, .ppt, .odp) -> Trình chiếu Slide PowerPoint tương tác
+            elif ext in ("pptx", "ppt", "odp", "ppsx"):
+                record.preview_html = (
+                    f'<iframe src="{preview_url}" '
+                    f'style="width: 100%; height: 86vh; border: none; display: block; background: #14171a;"></iframe>'
+                )
+            # 4. Word (.docx, .doc, .odt, .rtf) -> Văn bản Word định dạng trang A4
+            elif ext in ("docx", "doc", "odt", "rtf"):
+                record.preview_html = (
+                    f'<iframe src="{preview_url}" '
+                    f'style="width: 100%; height: 86vh; border: none; display: block; background: #e2e8f0;"></iframe>'
+                )
+            # 5. Tài liệu văn phòng khác -> Preview qua PDF chuyển đổi
             elif record._is_office_document():
                 office_pdf_url = f"/dms/file/{record.id}/preview?as_pdf=1&v={ts}"
                 if not record.can_download:
