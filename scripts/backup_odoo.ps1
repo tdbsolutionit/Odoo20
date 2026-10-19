@@ -55,12 +55,12 @@ $candidateUrls = @(
 $activeUrl = $null
 foreach ($url in $candidateUrls) {
     try {
-        $testReq = Invoke-WebRequest -Uri "$url/web/health" -Method Get -TimeoutSec 3 -ErrorAction SilentlyContinue
+        $testReq = Invoke-WebRequest -UseBasicParsing -Uri "$url/web/health" -Method Get -TimeoutSec 3 -ErrorAction SilentlyContinue
         $activeUrl = $url
         break
     } catch {
         try {
-            $testReq = Invoke-WebRequest -Uri "$url/web/login" -Method Get -TimeoutSec 3 -ErrorAction SilentlyContinue
+            $testReq = Invoke-WebRequest -UseBasicParsing -Uri "$url/web/login" -Method Get -TimeoutSec 3 -ErrorAction SilentlyContinue
             $activeUrl = $url
             break
         } catch {}
@@ -86,7 +86,7 @@ try {
 
     Write-Log "Dang gui yeu cau nen va tai du lieu tu Odoo... (Vui long doi vai phut tuy dung luong tep)"
     
-    $response = Invoke-WebRequest -Uri $backupUrl -Method Post -Body $body -OutFile $backupFile -TimeoutSec 7200
+    $response = Invoke-WebRequest -UseBasicParsing -Uri $backupUrl -Method Post -Body $body -OutFile $backupFile -TimeoutSec 7200
 
     if (Test-Path $backupFile) {
         $fileSizeMB = [math]::Round((Get-Item $backupFile).Length / 1MB, 2)
