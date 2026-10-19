@@ -8,10 +8,20 @@ import {KanbanRenderer} from "@web/views/kanban/kanban_renderer";
 import {useEffect, proxy} from "@odoo/owl";
 
 export class FileKanbanRenderer extends KanbanRenderer {
+    get dragState() {
+        if (!this._dragState) {
+            this._dragState = proxy({ showDragZone: false });
+        }
+        return this._dragState;
+    }
+    set dragState(val) {
+        this._dragState = val;
+    }
+
     setup() {
         super.setup();
         // Drag-drop zone state - direct class property (OWL 3 compatible)
-        this.dragState = proxy({
+        this._dragState = proxy({
             showDragZone: false,
         });
         useEffect(

@@ -6,7 +6,7 @@
     -->
     <t t-name="dms.ListRenderer" t-inherit="web.ListRenderer" t-inherit-mode="primary">
         <xpath expr="//div[hasclass('o_list_renderer')]" position="before">
-            <div t-if="dragState.showDragZone" class="o_dropzone">
+            <div t-if="this.dragState?.showDragZone" class="o_dropzone">
                 <i class="fa fa-cloud-upload fa-10x" />
             </div>
         </xpath>

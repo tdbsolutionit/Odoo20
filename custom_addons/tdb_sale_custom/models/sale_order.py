@@ -30,6 +30,14 @@ class SaleOrder(models.Model):
             report = self.env.ref("sale.action_report_saleorder", raise_if_not_found=False)
             if report and report.binding_model_id:
                 report.sudo().write({"binding_model_id": False})
+            sale_model = self.env['ir.model'].search([('model', '=', 'sale.order')], limit=1)
+            if sale_model:
+                other_reports = self.env['ir.actions.report'].sudo().search([
+                    ('binding_model_id', '=', sale_model.id),
+                    ('report_name', 'in', ['sale.report_saleorder', 'sale.report_saleorder_raw']),
+                ])
+                if other_reports:
+                    other_reports.write({"binding_model_id": False})
         except Exception:
             pass
         return res
@@ -122,9 +130,15 @@ class IrActionsActions(models.Model):
     def get_bindings(self, model_name):
         res = super().get_bindings(model_name)
         if model_name == 'sale.order' and isinstance(res, dict) and 'report' in res:
-            res['report'] = [
-                r for r in res['report']
-                if r.get('xml_id') != 'sale.action_report_saleorder'
-                and r.get('name') not in ('Quotation / Order', 'Báo giá / Đơn hàng')
-            ]
+            filtered_reports = []
+            for r in res['report']:
+                r_name = str(r.get('name') or '')
+                r_xml_id = str(r.get('xml_id') or '')
+                # Loại bỏ hoàn toàn báo cáo mẫu gốc của Odoo (chỉ giữ lại Báo giá đơn hàng TDB)
+                if r_xml_id == 'sale.action_report_saleorder':
+                    continue
+                if ('báo giá' in r_name.lower() or 'quotation' in r_name.lower()) and 'tdb' not in r_name.lower():
+                    continue
+                filtered_reports.append(r)
+            res['report'] = filtered_reports
         return res
