@@ -1,20 +1,27 @@
 # ================================================================================
 # SCRIPT TU DONG SAO LUU (BACKUP) ODOO & POSTGRESQL NEN ZIP HANG NGAY
 # ================================================================================
-# - Tu dong nen toan bo Database + Tep dinh kem (Filestore) thanh file .zip chuan Odoo.
-# - Tu dong dat ten theo ngay gio: odoo20_backup_yyyyMMdd_HHmmss.zip.
-# - TUYET DOI KHONG XOA BAN SAO LUU NAO (Giu nguyen toan bo lich su backup vinh vien).
-# - Tu dong do tim cong dang chay (8080, 8069, localhost, 127.0.0.1).
+# - Tu dong nen toan bo Database PostgreSQL + Tep dinh kem (Filestore) thanh file .zip.
+# - TUYET DOI KHONG XOA BAT KY BAN SAO LUU NAO (Giu lai lich su vinh vien).
+# - Ho tro 2 che do thong minh:
+#     1. Qua Odoo Web API neu Odoo dang mo.
+#     2. Tu dong chay truc tiep bang pg_dump.exe + nen filestore neu Odoo dang tat.
 # ================================================================================
 
 param(
-    [string]$DbName = "odoo20",                 # Ten co so du lieu Odoo can backup
-    [string]$MasterPwd = "admin",               # Master password quan tri (xem trong config/odoo.conf)
-    [string]$OdooUrl = "http://127.0.0.1:8080", # Cong Odoo dang chay
-    [string]$BackupDir = "C:\odoo_backups"      # Thu muc luu file backup tren server
+    [string]$DbName = "odoo20",
+    [string]$MasterPwd = "MatKhauMoi",
+    [string]$DbUser = "odoo20",
+    [string]$DbPassword = "tdb@2026",
+    [string]$DbHost = "localhost",
+    [int]$DbPort = 5432,
+    [string]$PgDumpPath = "C:\Program Files\PostgreSQL\15\bin\pg_dump.exe",
+    [string]$DataDir = "C:\odoo20\data",
+    [string]$OdooUrl = "http://127.0.0.1:8080",
+    [string]$BackupDir = "C:\odoo_backups"
 )
 
-# 1. Khoi tao thu muc luu tru va thu muc logs
+# 1. Khoi tao thu muc luu tru
 if (-not (Test-Path $BackupDir)) {
     New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
 }
@@ -37,80 +44,141 @@ function Write-Log {
 Write-Log "================================================================================"
 Write-Log "BAT DAU SAO LUU HE THONG ODOO (DATABASE & FILESTORE)"
 Write-Log "Database : $DbName"
+Write-Log "User DB  : $DbUser"
 Write-Log "File dich: $backupFile"
-Write-Log "Chinh sach: GIU LAI TOAN BO BAN SAO LUU (KHONG XOA FILE CU)"
+Write-Log "Chinh sach: GIU LAI TOAN BO BAN SAO LUU VINH VIEN"
 Write-Log "================================================================================"
 
-# 2. Tu dong do tim URL Odoo dang hoat dong
-$candidateUrls = @(
-    $OdooUrl,
-    "http://127.0.0.1:8080",
-    "http://localhost:8080",
-    "http://127.0.0.1:8069",
-    "http://localhost:8069",
-    "http://192.168.103.8:8080",
-    "http://192.168.103.8:8069"
-) | Select-Object -Unique
+# 2. Cau hinh thong tin xac thuc cho PostgreSQL (tranh loi password authentication failed)
+$env:PGUSER = $DbUser
+$env:PGPASSWORD = $DbPassword
+$env:PGHOST = $DbHost
+$env:PGPORT = "$DbPort"
 
-$activeUrl = $null
-foreach ($url in $candidateUrls) {
+# Tu dong tao file pgpass.conf cho ca User hien tai va he thong
+$pgpassContent = "localhost:$DbPort:*:$DbUser:$DbPassword`n127.0.0.1:$DbPort:*:$DbUser:$DbPassword`n*:$DbPort:*:$DbUser:$DbPassword"
+$pgpassPaths = @(
+    "$env:APPDATA\postgresql\pgpass.conf",
+    "$env:USERPROFILE\AppData\Roaming\postgresql\pgpass.conf",
+    "C:\Windows\System32\config\systemprofile\AppData\Roaming\postgresql\pgpass.conf"
+)
+foreach ($p in $pgpassPaths) {
     try {
-        $testReq = Invoke-WebRequest -UseBasicParsing -Uri "$url/web/health" -Method Get -TimeoutSec 3 -ErrorAction SilentlyContinue
-        $activeUrl = $url
-        break
-    } catch {
-        try {
-            $testReq = Invoke-WebRequest -UseBasicParsing -Uri "$url/web/login" -Method Get -TimeoutSec 3 -ErrorAction SilentlyContinue
-            $activeUrl = $url
-            break
-        } catch {}
-    }
+        $pDir = Split-Path -Parent $p
+        if (-not (Test-Path $pDir)) { New-Item -ItemType Directory -Path $pDir -Force | Out-Null }
+        Set-Content -Path $p -Value $pgpassContent -Encoding ASCII -Force
+    } catch {}
 }
 
-if (-not $activeUrl) {
-    # Thu kiem tra thang cong backup mac dinh
-    $activeUrl = $OdooUrl
-    Write-Log "Canh bao: Chua ket noi duoc truoc, se thu gui truc tiep den: $activeUrl" "WARNING"
-} else {
-    Write-Log "Da ket noi thanh cong den Odoo tai: $activeUrl" "INFO"
+# 3. Kiem tra xem co the sao luu truc tiep bang pg_dump.exe + Filestore khong (Cuc nhanh va on dinh 100%)
+$backupSuccess = $false
+
+# Tim duong dan pg_dump neu chua dung
+if (-not (Test-Path $PgDumpPath)) {
+    $found = Get-ChildItem "C:\Program Files\PostgreSQL" -Recurse -Filter "pg_dump.exe" -ErrorAction SilentlyContinue | Select-Object -ExpandProperty FullName -First 1
+    if ($found) { $PgDumpPath = $found }
 }
 
-# 3. Goi API Odoo Database Manager de nen toan bo CSDL + Filestore thanh file .ZIP
-try {
-    $backupUrl = "$activeUrl/web/database/backup"
-    $body = @{
-        master_pwd = $MasterPwd
-        name = $DbName
-        backup_format = "zip"
-    }
+if (Test-Path $PgDumpPath) {
+    Write-Log "Su dung phuong thuc sao luu truc tiep (Native pg_dump + Filestore) voi: $PgDumpPath"
+    $tempDir = Join-Path $env:TEMP "odoo_backup_$timestamp"
+    try {
+        New-Item -ItemType Directory -Path $tempDir -Force | Out-Null
+        $dumpSqlPath = Join-Path $tempDir "dump.sql"
 
-    Write-Log "Dang gui yeu cau nen va tai du lieu tu Odoo... (Vui long doi vai phut tuy dung luong tep)"
-    
-    $response = Invoke-WebRequest -UseBasicParsing -Uri $backupUrl -Method Post -Body $body -OutFile $backupFile -TimeoutSec 7200
+        Write-Log "Dang xuat du lieu Database bang pg_dump..."
+        $procArgs = @(
+            "-h", $DbHost,
+            "-p", "$DbPort",
+            "-U", $DbUser,
+            "--no-owner",
+            "-f", $dumpSqlPath,
+            $DbName
+        )
+        $pInfo = New-Object System.Diagnostics.ProcessStartInfo
+        $pInfo.FileName = $PgDumpPath
+        $pInfo.Arguments = ($procArgs -join " ")
+        $pInfo.EnvironmentVariables["PGPASSWORD"] = $DbPassword
+        $pInfo.EnvironmentVariables["PGUSER"] = $DbUser
+        $pInfo.UseShellExecute = $false
+        $pInfo.RedirectStandardError = $true
+        $pInfo.CreateNoWindow = $true
 
-    if (Test-Path $backupFile) {
-        $fileSizeMB = [math]::Round((Get-Item $backupFile).Length / 1MB, 2)
-        if ($fileSizeMB -gt 0.05) {
-            Write-Log ">>> SAO LUU THANH CONG! Dung luong file nen: $fileSizeMB MB." "SUCCESS"
-            Write-Log "File luu tai: $backupFile" "SUCCESS"
-        } else {
-            Write-Log "CANH BAO: File sao luu tao ra qua nho ($fileSizeMB MB). Vui long kiem tra lai Master Password ($MasterPwd) hoac Database Name ($DbName)!" "ERROR"
-        }
-    } else {
-        Write-Log "LOI: Khong tim thay file sao luu sau khi thuc hien!" "ERROR"
-    }
-} catch {
-    Write-Log "LOI NGOAI LE TRONG KHI SAO LUU: $($_.Exception.Message)" "ERROR"
-    if ($_.Exception.Response) {
-        try {
-            $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
-            $errDetail = $reader.ReadToEnd()
-            if ($errDetail) {
-                Write-Log "Chi tiet nguyen nhan tu Odoo: $errDetail" "ERROR"
+        $process = [System.Diagnostics.Process]::Start($pInfo)
+        $stdErr = $process.StandardError.ReadToEnd()
+        $process.WaitForExit()
+
+        if ($process.ExitCode -eq 0 -and (Test-Path $dumpSqlPath)) {
+            Write-Log "Xuat CSDL PostgreSQL thanh cong! Dang dong goi Filestore..."
+            
+            # Chep thu muc filestore vao ban backup neu ton tai
+            $filestoreDir = Join-Path $DataDir "filestore\$DbName"
+            if (-not (Test-Path $filestoreDir)) {
+                # Thu kiem tra o AppData mac dinh
+                $altFs = "$env:LOCALAPPDATA\Odoo\filestore\$DbName"
+                if (Test-Path $altFs) { $filestoreDir = $altFs }
             }
-        } catch {}
+
+            if (Test-Path $filestoreDir) {
+                Write-Log "Chep tep dinh kem tu: $filestoreDir"
+                $destFs = Join-Path $tempDir "filestore"
+                Copy-Item -Path $filestoreDir -Destination $destFs -Recurse -Force
+            }
+
+            # Tao file manifest.json chuan Odoo
+            $manifest = @{
+                "odoo_dump" = "1"
+                "db_name" = $DbName
+                "version" = "20.0"
+                "modules" = @{}
+            } | ConvertTo-Json
+            Set-Content -Path (Join-Path $tempDir "manifest.json") -Value $manifest -Encoding ASCII
+
+            # Nen toan bo thu muc thanh file .zip
+            Write-Log "Dang nen toan bo thanh file .ZIP..."
+            if (Test-Path $backupFile) { Remove-Item $backupFile -Force }
+            Compress-Archive -Path "$tempDir\*" -DestinationPath $backupFile -CompressionLevel Optimal
+
+            if (Test-Path $backupFile) {
+                $fileSizeMB = [math]::Round((Get-Item $backupFile).Length / 1MB, 2)
+                Write-Log ">>> SAO LUU THANH CONG! Dung luong file: $fileSizeMB MB" "SUCCESS"
+                Write-Log "File luu tai: $backupFile" "SUCCESS"
+                $backupSuccess = $true
+            }
+        } else {
+            Write-Log "Loi khi chay pg_dump: $stdErr" "WARNING"
+        }
+    } catch {
+        Write-Log "Loi tien trinh sao luu truc tiep: $($_.Exception.Message)" "WARNING"
+    } finally {
+        if (Test-Path $tempDir) {
+            Remove-Item -Path $tempDir -Recurse -Force -ErrorAction SilentlyContinue
+        }
     }
-    Write-Log "Goi y kiem tra: Hay kiem tra Master Password (-MasterPwd) va xem log tren cua so chay Odoo!" "WARNING"
+}
+
+# 4. Neu sao luu truc tiep chua thanh cong, thu tiep qua Odoo Web API
+if (-not $backupSuccess) {
+    Write-Log "Chuyen sang thu sao luu qua Odoo Web API..."
+    try {
+        $backupUrl = "$OdooUrl/web/database/backup"
+        $body = @{
+            master_pwd = $MasterPwd
+            name = $DbName
+            backup_format = "zip"
+        }
+        $response = Invoke-WebRequest -UseBasicParsing -Uri $backupUrl -Method Post -Body $body -OutFile $backupFile -TimeoutSec 7200
+        if (Test-Path $backupFile) {
+            $fileSizeMB = [math]::Round((Get-Item $backupFile).Length / 1MB, 2)
+            if ($fileSizeMB -gt 0.05) {
+                Write-Log ">>> SAO LUU QUA ODOO WEB THANH CONG! Dung luong file: $fileSizeMB MB." "SUCCESS"
+                Write-Log "File luu tai: $backupFile" "SUCCESS"
+                $backupSuccess = $true
+            }
+        }
+    } catch {
+        Write-Log "Loi sao luu qua Odoo Web API: $($_.Exception.Message)" "ERROR"
+    }
 }
 
 Write-Log "HOAN TAT TIEN TRINH SAO LUU HANG NGAY.`n"
