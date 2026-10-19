@@ -17,7 +17,6 @@ Module Home Menu 9 chấm:
     'data': [],
     'assets': {
         'web.assets_backend': [
-            ('prepend', 'custom_home_menu/static/src/js/clipboard_polyfill.js'),
             'custom_home_menu/static/src/scss/home_menu.scss',
             'custom_home_menu/static/src/xml/home_menu.xml',
             'custom_home_menu/static/src/js/home_menu.js',
