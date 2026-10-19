@@ -1,46 +1,50 @@
 # ================================================================================
-# SCRIPT ĐĂNG KÝ LỊCH TỰ ĐỘNG CHẠY BACKUP VÀO 21:00 (9H TỐI) HÀNG NGÀY TRÊN WINDOWS
+# SCRIPT DANG KY LICH TU DONG CHAY BACKUP VAO 21:00 (9H TOI) HANG NGAY TREN WINDOWS
 # ================================================================================
-# Chạy script này dưới quyền Run as Administrator để tạo Windows Scheduled Task.
+# Chay script nay duoi quyen Run as Administrator de tao Windows Scheduled Task.
 # ================================================================================
 
 $taskName = "Odoo_Daily_Backup_21h"
-$scriptPath = "C:\Work\odoo20-docker\scripts\backup_odoo.ps1"
 
-# Kiểm tra đường dẫn script thực tế
+# Tu dong xac dinh duong dan file backup_odoo.ps1 cung thu muc
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+if (-not $scriptDir) {
+    $scriptDir = (Get-Location).Path
+}
+$scriptPath = Join-Path $scriptDir "backup_odoo.ps1"
+
 if (-not (Test-Path $scriptPath)) {
-    # Nếu đang chạy từ thư mục khác, lấy đường dẫn cùng thư mục với script này
-    $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
-    $candidate = Join-Path $scriptDir "backup_odoo.ps1"
-    if (Test-Path $candidate) {
-        $scriptPath = $candidate
+    # Thu kiem tra o thu muc con scripts
+    $subPath = Join-Path $scriptDir "scripts\backup_odoo.ps1"
+    if (Test-Path $subPath) {
+        $scriptPath = $subPath
     }
 }
 
-Write-Host "Đường dẫn script backup: $scriptPath" -ForegroundColor Cyan
+Write-Host "Duong dan script backup: $scriptPath" -ForegroundColor Cyan
 
-# 1. Định nghĩa hành động chạy PowerShell ngầm
+# 1. Dinh nghia hanh dong chay PowerShell ngam
 $action = New-ScheduledTaskAction `
     -Execute "PowerShell.exe" `
     -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$scriptPath`""
 
-# 2. Định nghĩa lịch kích hoạt: 21:00 hàng ngày (9h tối)
+# 2. Dinh nghia lich kich hoat: 21:00 hang ngay (9h toi)
 $trigger = New-ScheduledTaskTrigger -Daily -At 9:00PM
 
-# 3. Chạy dưới quyền SYSTEM để luôn tự động chạy dù không có user đăng nhập
+# 3. Chay duoi quyen SYSTEM de luon tu dong chay du khong co user dang nhap
 $principal = New-ScheduledTaskPrincipal `
     -UserId "SYSTEM" `
     -LogonType ServiceAccount `
     -RunLevel Highest
 
-# 4. Thiết lập tùy chọn chạy (chạy lại nếu trễ, không giới hạn pin)
+# 4. Thiet lap tuy chon chay (chay lai neu tre, khong gioi han pin)
 $settings = New-ScheduledTaskSettingsSet `
     -AllowStartIfOnBatteries `
     -DontStopIfGoingOnBatteries `
     -StartWhenAvailable `
     -ExecutionTimeLimit (New-TimeSpan -Hours 3)
 
-# 5. Đăng ký Task vào Windows Task Scheduler
+# 5. Dang ky Task vao Windows Task Scheduler
 try {
     Register-ScheduledTask `
         -TaskName $taskName `
@@ -51,12 +55,12 @@ try {
         -Description "Tu dong sao luu database va filestore Odoo 20 nen ZIP hang ngay luc 21h00" `
         -Force | Out-Null
 
-    Write-Host "`n>>> ĐÃ ĐĂNG KÝ TASK THÀNH CÔNG!" -ForegroundColor Green
+    Write-Host "`n>>> DA DANG KY TASK THANH CONG!" -ForegroundColor Green
     Write-Host "Task Name : $taskName"
-    Write-Host "Thời gian : 21:00 (9h tối) hàng ngày"
-    Write-Host "Tài khoản : SYSTEM (hoạt động 24/7 kể cả khi máy chủ đã logout)"
-    Write-Host "Kiểm tra  : Gõ 'taskschd.msc' trong Run để xem Task Scheduler.`n"
+    Write-Host "Thoi gian : 21:00 (9h toi) hang ngay"
+    Write-Host "Tai khoan : SYSTEM (hoat dong 24/7 ke ca khi may chu da logout)"
+    Write-Host "Kiem tra  : Go 'taskschd.msc' trong Run de xem Task Scheduler.`n"
 } catch {
-    Write-Host "`n[LỖI] Không thể tạo Task: $($_.Exception.Message)" -ForegroundColor Red
-    Write-Host "LƯU Ý: Vui lòng mở PowerShell bằng quyền 'Run as Administrator' rồi chạy lại lệnh này!" -ForegroundColor Yellow
+    Write-Host "`n[LOI] Khong the tao Task: $($_.Exception.Message)" -ForegroundColor Red
+    Write-Host "LUU Y: Vui long mo PowerShell bang quyen 'Run as Administrator' roi chay lai lenh nay!" -ForegroundColor Yellow
 }

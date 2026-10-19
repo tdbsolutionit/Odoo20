@@ -1,21 +1,21 @@
 # ================================================================================
-# SCRIPT TỰ ĐỘNG SAO LƯU (BACKUP) ODOO & POSTGRESQL NÉN ZIP HÀNG NGÀY
+# SCRIPT TU DONG SAO LUU (BACKUP) ODOO & POSTGRESQL NEN ZIP HANG NGAY
 # ================================================================================
-# - Tự động nén toàn bộ Database + Tệp đính kèm (Filestore) thành file .zip chuẩn Odoo.
-# - Tự động đặt tên theo ngày giờ: odoo20_backup_yyyyMMdd_HHmmss.zip.
-# - Tự động xóa các bản sao lưu cũ quá 30 ngày để tiết kiệm dung lượng ổ cứng.
-# - Tự động ghi nhật ký (log) theo ngày để quản trị viên dễ dàng theo dõi.
+# - Tu dong nen toan bo Database + Tep dinh kem (Filestore) thanh file .zip chuan Odoo.
+# - Tu dong dat ten theo ngay gio: odoo20_backup_yyyyMMdd_HHmmss.zip.
+# - Tu dong xoa cac ban sao luu cu qua 30 ngay de tiet kiem dung luong o cung.
+# - Tu dong ghi nhat ky (log) theo ngay de quan tri vien de dang theo doi.
 # ================================================================================
 
 param(
-    [string]$DbName = "odoo20",                 # Tên cơ sở dữ liệu Odoo cần backup
-    [string]$MasterPwd = "admin",               # Master password quản trị (xem trong config/odoo.conf)
-    [string]$OdooUrl = "http://127.0.0.1:8080", # Cổng Odoo đang chạy (8080 hoặc 8069)
-    [string]$BackupDir = "C:\odoo_backups",      # Thư mục lưu file backup trên server
-    [int]$RetentionDays = 30                     # Số ngày lưu trữ (sau 30 ngày sẽ tự xóa file cũ)
+    [string]$DbName = "odoo20",                 # Ten co so du lieu Odoo can backup
+    [string]$MasterPwd = "admin",               # Master password quan tri (xem trong config/odoo.conf)
+    [string]$OdooUrl = "http://127.0.0.1:8080", # Cong Odoo dang chay (8080 hoac 8069)
+    [string]$BackupDir = "C:\odoo_backups",      # Thu muc luu file backup tren server
+    [int]$RetentionDays = 30                     # So ngay luu tru (sau 30 ngay se tu xoa file cu)
 )
 
-# 1. Khởi tạo thư mục lưu trữ và thư mục logs
+# 1. Khoi tao thu muc luu tru va thu muc logs
 if (-not (Test-Path $BackupDir)) {
     New-Item -ItemType Directory -Path $BackupDir -Force | Out-Null
 }
@@ -36,13 +36,13 @@ function Write-Log {
 }
 
 Write-Log "================================================================================"
-Write-Log "BẮT ĐẦU SAO LƯU HỆ THỐNG ODOO (DATABASE & FILESTORE)"
+Write-Log "BAT DAU SAO LUU HE THONG ODOO (DATABASE & FILESTORE)"
 Write-Log "Database : $DbName"
 Write-Log "Odoo URL : $OdooUrl"
-Write-Log "File đích: $backupFile"
+Write-Log "File dich: $backupFile"
 Write-Log "================================================================================"
 
-# 2. Gọi API Odoo Database Manager để nén toàn bộ CSDL + Filestore thành file .ZIP
+# 2. Goi API Odoo Database Manager de nen toan bo CSDL + Filestore thanh file .ZIP
 try {
     $backupUrl = "$OdooUrl/web/database/backup"
     $body = @{
@@ -51,40 +51,40 @@ try {
         backup_format = "zip"
     }
 
-    Write-Log "Đang gửi yêu cầu nén và tải dữ liệu từ Odoo... (Vui lòng đợi vài phút tùy dung lượng tệp)"
+    Write-Log "Dang gui yeu cau nen va tai du lieu tu Odoo... (Vui long doi vai phut tuy dung luong tep)"
     
-    # Gọi WebRequest với thời gian timeout lên đến 2 giờ (7200 giây)
+    # Goi WebRequest voi thoi gian timeout len den 2 gio (7200 giay)
     $response = Invoke-WebRequest -Uri $backupUrl -Method Post -Body $body -OutFile $backupFile -TimeoutSec 7200
 
     if (Test-Path $backupFile) {
         $fileSizeMB = [math]::Round((Get-Item $backupFile).Length / 1MB, 2)
         if ($fileSizeMB -gt 0.05) {
-            Write-Log ">>> SAO LƯU THÀNH CÔNG! Dung lượng file nén: $fileSizeMB MB." "SUCCESS"
+            Write-Log ">>> SAO LUU THANH CONG! Dung luong file nen: $fileSizeMB MB." "SUCCESS"
         } else {
-            Write-Log "CẢNH BÁO: File sao lưu tạo ra quá nhỏ ($fileSizeMB MB). Vui lòng kiểm tra lại Master Password hoặc Database Name!" "ERROR"
+            Write-Log "CANH BAO: File sao luu tao ra qua nho ($fileSizeMB MB). Vui long kiem tra lai Master Password hoac Database Name!" "ERROR"
         }
     } else {
-        Write-Log "LỖI: Không tìm thấy file sao lưu sau khi thực hiện!" "ERROR"
+        Write-Log "LOI: Khong tim thay file sao luu sau khi thuc hien!" "ERROR"
     }
 } catch {
-    Write-Log "LỖI NGOẠI LỆ TRONG KHI SAO LƯU: $($_.Exception.Message)" "ERROR"
+    Write-Log "LOI NGOAI LE TRONG KHI SAO LUU: $($_.Exception.Message)" "ERROR"
 }
 
-# 3. Tự động dọn dẹp các bản backup cũ hơn $RetentionDays ngày
+# 3. Tu dong don dep cac ban backup cu hon $RetentionDays ngay
 try {
-    Write-Log "Kiểm tra và dọn dẹp các bản sao lưu cũ hơn $RetentionDays ngày..."
+    Write-Log "Kiem tra va don dep cac ban sao luu cu hon $RetentionDays ngay..."
     $cutoffDate = (Get-Date).AddDays(-$RetentionDays)
     $oldFiles = Get-ChildItem -Path $BackupDir -Filter "*.zip" | Where-Object { $_.LastWriteTime -lt $cutoffDate }
     
     $deletedCount = 0
     foreach ($file in $oldFiles) {
-        Write-Log "Xóa bản sao lưu cũ: $($file.Name) (Tạo lúc: $($file.LastWriteTime))"
+        Write-Log "Xoa ban sao luu cu: $($file.Name) (Tao luc: $($file.LastWriteTime))"
         Remove-Item $file.FullName -Force
         $deletedCount++
     }
-    Write-Log "Đã dọn dẹp $deletedCount bản sao lưu cũ."
+    Write-Log "Da don dep $deletedCount ban sao luu cu."
 } catch {
-    Write-Log "Lỗi khi dọn dẹp file cũ: $($_.Exception.Message)" "WARNING"
+    Write-Log "Loi khi don dep file cu: $($_.Exception.Message)" "WARNING"
 }
 
-Write-Log "HOÀN TẤT TIẾN TRÌNH SAO LƯU HÀNG NGÀY.`n"
+Write-Log "HOAN TAT TIEN TRINH SAO LUU HANG NGAY.`n"
