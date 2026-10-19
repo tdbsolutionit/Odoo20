@@ -101,7 +101,16 @@ try {
     }
 } catch {
     Write-Log "LOI NGOAI LE TRONG KHI SAO LUU: $($_.Exception.Message)" "ERROR"
-    Write-Log "Goi y kiem tra: Hay chac chan Odoo dang chay va truy cap duoc tren trinh duyet!" "WARNING"
+    if ($_.Exception.Response) {
+        try {
+            $reader = New-Object System.IO.StreamReader($_.Exception.Response.GetResponseStream())
+            $errDetail = $reader.ReadToEnd()
+            if ($errDetail) {
+                Write-Log "Chi tiet nguyen nhan tu Odoo: $errDetail" "ERROR"
+            }
+        } catch {}
+    }
+    Write-Log "Goi y kiem tra: Hay kiem tra Master Password (-MasterPwd) va xem log tren cua so chay Odoo!" "WARNING"
 }
 
 Write-Log "HOAN TAT TIEN TRINH SAO LUU HANG NGAY.`n"
