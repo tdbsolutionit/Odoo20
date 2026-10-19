@@ -56,7 +56,7 @@ $env:PGHOST = $DbHost
 $env:PGPORT = "$DbPort"
 
 # Tu dong tao file pgpass.conf cho ca User hien tai va he thong
-$pgpassContent = "localhost:$DbPort:*:$DbUser:$DbPassword`n127.0.0.1:$DbPort:*:$DbUser:$DbPassword`n*:$DbPort:*:$DbUser:$DbPassword"
+$pgpassContent = "localhost:" + $DbPort + ":*:" + $DbUser + ":" + $DbPassword + "`r`n127.0.0.1:" + $DbPort + ":*:" + $DbUser + ":" + $DbPassword + "`r`n*:" + $DbPort + ":*:" + $DbUser + ":" + $DbPassword
 $pgpassPaths = @(
     "$env:APPDATA\postgresql\pgpass.conf",
     "$env:USERPROFILE\AppData\Roaming\postgresql\pgpass.conf",
