@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_slide_channel_add_video_wizard_form" model="ir.ui.view">
+        <field name="name">slide.channel.add.video.wizard.form</field>
+        <field name="model">slide.channel.add.video.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Chọn Video từ Thư mục cho Khóa học">
+                <sheet>
+                    <div class="alert alert-info py-2" role="alert">
+                        <strong>Khóa học:</strong> <field name="channel_id" readonly="1" class="fw-bold d-inline"/> |
+                        <strong>Thư mục:</strong> <field name="video_folder_id" readonly="1" class="fw-bold d-inline"/>
+                    </div>
+
+                    <group>
+                        <group string="1. Chọn File Video">
+                            <field name="video_file" widget="selection" options="{'no_create': True}" required="1"/>
+                        </group>
+                        <group string="2. Thông tin Bài học">
+                            <field name="name" placeholder="vd: Bài 1 - Giới thiệu cài đặt" required="1"/>
+                            <field name="category_id" placeholder="Chọn hoặc tạo Chương / Phần học..."/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <group string="3. Thiết lập Phát &amp; Thời lượng">
+                            <field name="completion_time_minutes"/>
+                            <field name="sequence"/>
+                        </group>
+                    </group>
+
+                    <group string="5. Mô tả Nội dung Bài học">
+                        <field name="description" nolabel="1" placeholder="Nhập tóm tắt hoặc ghi chú kiến thức cho bài học..."/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_create_slide" string="Thêm vào Khóa học" type="object" class="btn-primary"/>
+                    <button name="action_create_and_continue" string="Thêm &amp; Tiếp tục chọn video khác" type="object" class="btn-secondary"/>
+                    <button string="Hủy bỏ" class="btn-link" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_slide_channel_batch_video_wizard_form" model="ir.ui.view">
+        <field name="name">slide.channel.batch.video.wizard.form</field>
+        <field name="model">slide.channel.batch.video.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Tích chọn Video từ Thư mục đưa vào Khóa học">
+                <sheet>
+                    <div class="alert alert-info py-2 d-flex align-items-center justify-content-between mb-3" role="status">
+                        <div>
+                            <strong>Khóa học:</strong> <field name="channel_id" readonly="1" class="fw-bold d-inline me-3"/>
+                            <strong>Thư mục:</strong> <field name="folder_path" readonly="1" class="font-monospace text-primary fw-bold d-inline"/>
+                        </div>
+                        <div>
+                            <span>Đã chọn: <strong class="text-success"><field name="selected_count"/></strong> / <field name="total_files"/> video</span>
+                        </div>
+                    </div>
+
+                    <!-- Thanh nút thao tác tích chọn nhanh -->
+                    <div class="d-flex align-items-center gap-2 mb-2 p-2 bg-light rounded border">
+                        <span class="fw-bold me-1 text-muted">Thao tác:</span>
+                        <button name="action_select_all" string="Chọn tất cả" type="object" class="btn-outline-primary btn-sm"/>
+                        <button name="action_select_new" string="Chỉ chọn video mới" type="object" class="btn-outline-success btn-sm"/>
+                        <button name="action_deselect_all" string="Bỏ chọn tất cả" type="object" class="btn-outline-secondary btn-sm"/>
+                    </div>
+
+                    <!-- Bảng danh sách các video trong thư mục -->
+                    <field name="line_ids">
+                        <list editable="bottom" create="0" delete="0">
+                            <field name="selected" string="Chọn" widget="boolean_toggle"/>
+                            <field name="filename" string="Tên File Video"/>
+                            <field name="name" string="Tiêu đề Bài học"/>
+                            <field name="file_size_display" string="Dung lượng"/>
+                            <field name="already_in_course" widget="badge" string="Trạng thái"
+                                   decoration-success="already_in_course"
+                                   decoration-info="not already_in_course"/>
+                            <field name="category_id" string="Chương / Phần học" options="{'no_create': False}"/>
+                            <field name="completion_time_minutes" string="Thời lượng (phút)"/>
+                        </list>
+                    </field>
+                </sheet>
+                <footer>
+                    <button name="action_create_slides" string="Thêm các video đã chọn vào khóa học" type="object" class="btn-primary fw-bold"/>
+                    <button string="Đóng" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

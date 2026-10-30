@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_slide_slide_form_inherit_local_video" model="ir.ui.view">
+        <field name="name">slide.slide.form.inherit.local.video</field>
+        <field name="model">slide.slide</field>
+        <field name="inherit_id" ref="website_slides.view_slide_slide_form"/>
+        <field name="arch" type="xml">
+            <!-- Thêm chọn Chương / Phần học ngay dưới Khóa học -->
+            <xpath expr="//field[@name='channel_id']" position="after">
+                <field name="category_id"
+                       string="Chương / Phần học"
+                       domain="[('channel_id', '=', channel_id), ('is_category', '=', True)]"
+                       options="{'no_create': False, 'no_open': False}"
+                       placeholder="Chọn chương học cho bài này..."/>
+            </xpath>
+
+            <!-- Điều chỉnh bắt buộc của video_url khi là video cục bộ -->
+            <xpath expr="//field[@name='video_url']" position="attributes">
+                <attribute name="required">slide_category == 'video' and not is_local_video</attribute>
+                <attribute name="invisible">slide_category != 'video' or is_local_video</attribute>
+            </xpath>
+
+            <!-- Thêm thông tin file video cục bộ -->
+            <xpath expr="//field[@name='video_url']" position="after">
+                <field name="is_local_video" invisible="slide_category != 'video'" readonly="1"/>
+                <field name="local_video_filename" invisible="not is_local_video" readonly="1"/>
+                <field name="local_video_folder_id" invisible="not is_local_video" readonly="1"/>
+                <field name="local_video_path" invisible="not is_local_video" readonly="1"/>
+            </xpath>
+
+            <!-- Thêm thiết lập Video Tiên Quyết cho Quiz trong tab Quiz -->
+            <xpath expr="//page[@name='quiz']//group[@name='quiz_details']" position="before">
+                <group string="Điều Kiện Mở Khóa Bài Kiểm Tra (Quiz)">
+                    <field name="prerequisite_type" widget="radio"/>
+                    <field name="prerequisite_video_id"
+                           invisible="prerequisite_type != 'single'"
+                           options="{'no_create': True}"
+                           placeholder="Chọn video bắt buộc học viên phải xem xong mới được làm bài quiz..."/>
+                    <field name="is_quiz_locked" readonly="1"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="view_slide_slide_form_wo_channel_id_inherit_category" model="ir.ui.view">
+        <field name="name">slide.slide.form.wo.channel.inherit.category</field>
+        <field name="model">slide.slide</field>
+        <field name="inherit_id" ref="website_slides.view_slide_slide_form_wo_channel_id"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='slide_category']" position="before">
+                <field name="category_id"
+                       string="Chương / Phần học"
+                       domain="[('channel_id', '=', channel_id), ('is_category', '=', True)]"
+                       options="{'no_create': False, 'no_open': False}"
+                       placeholder="Chọn chương học cho bài này..."/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

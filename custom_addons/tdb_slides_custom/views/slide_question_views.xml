@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="slide_question_view_form_inherit_type" model="ir.ui.view">
+        <field name="name">slide.question.view.form.inherit.type</field>
+        <field name="model">slide.question</field>
+        <field name="inherit_id" ref="website_slides.slide_question_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_title')]" position="after">
+                <group>
+                    <field name="question_type" widget="radio" options="{'horizontal': true}"
+                           string="Hình thức trắc nghiệm"/>
+                </group>
+            </xpath>
+        </field>
+    </record>
+
+    <record id="slide_question_view_tree_inherit_type" model="ir.ui.view">
+        <field name="name">slide.question.view.tree.inherit.type</field>
+        <field name="model">slide.question</field>
+        <field name="inherit_id" ref="website_slides.slide_question_view_tree"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='question']" position="after">
+                <field name="question_type" widget="badge" decoration-info="question_type == 'multiple'" decoration-success="question_type == 'single'"/>
+            </xpath>
+        </field>
+    </record>
+</odoo>

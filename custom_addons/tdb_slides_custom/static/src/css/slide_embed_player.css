@@ -1,0 +1,672 @@
+                    /* =================================================================
+                       RESET & DESIGN SYSTEM CHUẨN COURSERA (100% STANDALONE CSS)
+                       ================================================================= */
+                    *, *::before, *::after {
+                        box-sizing: border-box;
+                        margin: 0;
+                        padding: 0;
+                    }
+                    html, body {
+                        width: 100%;
+                        height: 100%;
+                        background-color: #0b0f19;
+                        color: #e2e8f0;
+                        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+                        overflow: hidden;
+                        -webkit-font-smoothing: antialiased;
+                    }
+
+                    /* Ẩn hiện phần tử tuyệt đối */
+                    .tdb-d-none {
+                        display: none !important;
+                    }
+
+                    /* Thanh cuộn mảnh mượt mà */
+                    ::-webkit-scrollbar {
+                        width: 6px;
+                        height: 6px;
+                    }
+                    ::-webkit-scrollbar-track {
+                        background: rgba(0, 0, 0, 0.2);
+                    }
+                    ::-webkit-scrollbar-thumb {
+                        background: rgba(255, 255, 255, 0.18);
+                        border-radius: 4px;
+                    }
+                    ::-webkit-scrollbar-thumb:hover {
+                        background: rgba(255, 255, 255, 0.3);
+                    }
+
+                    /* Khung bao bọc toàn màn hình */
+                    .tdb-wrapper {
+                        display: flex;
+                        flex-direction: column;
+                        width: 100vw;
+                        height: 100vh;
+                        overflow: hidden;
+                        background: #0b0f19;
+                    }
+
+                    /* =================================================================
+                       1. THANH TIÊU ĐỀ TRÊN CÙNG (TOPBAR)
+                       ================================================================= */
+                    .tdb-topbar {
+                        height: 52px;
+                        flex-shrink: 0;
+                        background: #0f172a;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        padding: 0 16px;
+                        z-index: 20;
+                    }
+                    .tdb-topbar-left {
+                        display: flex;
+                        flex-direction: column;
+                        justify-content: center;
+                        overflow: hidden;
+                        max-width: 40%;
+                    }
+                    .tdb-topbar-title {
+                        font-size: 14px;
+                        font-weight: 600;
+                        color: #ffffff;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+                    .tdb-topbar-subtitle {
+                        font-size: 11px;
+                        color: #94a3b8;
+                        white-space: nowrap;
+                        overflow: hidden;
+                        text-overflow: ellipsis;
+                    }
+
+                    /* Tiến độ hoàn thành */
+                    .tdb-progress-wrap {
+                        display: flex;
+                        align-items: center;
+                        gap: 10px;
+                    }
+                    .tdb-progress-title {
+                        font-size: 12px;
+                        color: #94a3b8;
+                    }
+                    .tdb-progress-track {
+                        width: 120px;
+                        height: 7px;
+                        background: rgba(255, 255, 255, 0.15);
+                        border-radius: 999px;
+                        overflow: hidden;
+                    }
+                    .tdb-progress-fill {
+                        height: 100%;
+                        background: #10b981;
+                        width: 0%;
+                        transition: width 0.3s ease;
+                        border-radius: 999px;
+                    }
+                    .tdb-progress-text {
+                        font-size: 12px;
+                        font-weight: 700;
+                        color: #ffffff;
+                        min-width: 36px;
+                    }
+                    .tdb-badge-completed {
+                        background: #10b981;
+                        color: #ffffff;
+                        font-size: 11px;
+                        font-weight: 700;
+                        padding: 3px 8px;
+                        border-radius: 999px;
+                    }
+
+                    .tdb-topbar-right {
+                        display: flex;
+                        align-items: center;
+                        gap: 8px;
+                    }
+
+                    /* =================================================================
+                       2. BỐ CỤC CHIA ĐÔI MÀN HÌNH (COURSERA SPLIT VIEW)
+                       ================================================================= */
+                    .tdb-body-split {
+                        display: flex;
+                        flex-direction: row;
+                        flex: 1;
+                        min-height: 0;
+                        width: 100%;
+                        overflow: hidden;
+                    }
+
+                    /* Cột Trái: Chứa Video toàn màn hình chuẩn tỷ lệ 16:9, không bị cuộn hay cắt hình */
+                    .tdb-col-main {
+                        flex: 1;
+                        min-width: 0;
+                        display: flex;
+                        flex-direction: column;
+                        background: #000000;
+                        overflow: hidden;
+                        height: 100%;
+                        position: relative;
+                    }
+
+                    /* Sân khấu phát video (Video Stage) - Chiếm trọn 100% không gian hiển thị */
+                    .tdb-video-box {
+                        width: 100%;
+                        height: 100%;
+                        flex: 1;
+                        min-height: 0;
+                        background: #000000;
+                        position: relative;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        padding: 0;
+                        overflow: hidden;
+                    }
+
+                    /* Khung tỷ lệ chuẩn 16:9 - Giúp video và thanh điều khiển luôn vừa khít, cân bằng giữa màn hình */
+                    .tdb-video-container {
+                        position: relative;
+                        width: 100%;
+                        height: 100%;
+                        max-width: 100%;
+                        max-height: 100%;
+                        aspect-ratio: 16 / 9;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        overflow: hidden;
+                        background: #000000;
+                    }
+
+                    /* Phần tử video chuẩn 16:9 */
+                    .tdb-video-element {
+                        width: 100%;
+                        height: 100%;
+                        max-width: 100%;
+                        max-height: 100%;
+                        aspect-ratio: 16 / 9;
+                        object-fit: contain;
+                        outline: none;
+                        background: #000000;
+                        display: block;
+                    }
+                    .tdb-video-element::-webkit-media-controls-download-button,
+                    .tdb-video-element::-internal-media-controls-download-button {
+                        display: none !important;
+                    }
+
+                    /* =================================================================
+                       3. CỘT PHẢI: BẢNG GHI CHÚ / MÔ TẢ / TÀI LIỆU / QUIZ
+                       ================================================================= */
+                    .tdb-col-side {
+                        width: 420px;
+                        min-width: 360px;
+                        max-width: 480px;
+                        flex-shrink: 0;
+                        background: #111827;
+                        border-left: 1px solid rgba(255, 255, 255, 0.08);
+                        display: flex;
+                        flex-direction: column;
+                        height: 100%;
+                        overflow: hidden;
+                    }
+                    .tdb-col-side.collapsed {
+                        display: none !important;
+                    }
+
+                    /* Thanh tab chọn Ghi chú / Tài liệu / Tạo Quiz */
+                    .tdb-side-tabs {
+                        height: 48px;
+                        background: #0f172a;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+                        display: flex;
+                        align-items: center;
+                        padding: 0 10px;
+                        gap: 6px;
+                        flex-shrink: 0;
+                    }
+                    .tdb-tab-btn {
+                        background: transparent;
+                        border: none;
+                        color: #94a3b8;
+                        font-size: 13px;
+                        font-weight: 600;
+                        padding: 6px 12px;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                        display: flex;
+                        align-items: center;
+                        gap: 6px;
+                        text-decoration: none;
+                    }
+                    .tdb-tab-btn:hover {
+                        color: #ffffff;
+                        background: rgba(255, 255, 255, 0.06);
+                    }
+                    .tdb-tab-btn.active {
+                        color: #ffffff;
+                        background: #2563eb;
+                    }
+                    .tdb-tab-badge {
+                        background: rgba(255, 255, 255, 0.2);
+                        color: #ffffff;
+                        font-size: 11px;
+                        padding: 1px 6px;
+                        border-radius: 999px;
+                        font-weight: 700;
+                    }
+
+                    /* Khu vực nội dung từng tab */
+                    .tdb-side-content {
+                        flex: 1;
+                        overflow-y: auto;
+                        padding: 16px;
+                        display: flex;
+                        flex-direction: column;
+                    }
+
+                    /* =================================================================
+                       4. CÁC NÚT BẤM VÀ Ô NHẬP LIỆU ĐẸP MẮT
+                       ================================================================= */
+                    .tdb-btn {
+                        display: inline-flex;
+                        align-items: center;
+                        justify-content: center;
+                        font-size: 13px;
+                        font-weight: 600;
+                        padding: 8px 14px;
+                        border-radius: 6px;
+                        border: 1px solid transparent;
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                        text-decoration: none;
+                        white-space: nowrap;
+                    }
+                    .tdb-btn-sm {
+                        padding: 4px 10px;
+                        font-size: 12px;
+                    }
+                    .tdb-btn-xs {
+                        padding: 3px 8px;
+                        font-size: 11px;
+                        line-height: 1.2;
+                    }
+                    .tdb-btn-primary {
+                        background: #2563eb;
+                        color: #ffffff;
+                    }
+                    .tdb-btn-primary:hover {
+                        background: #1d4ed8;
+                    }
+                    .tdb-btn-success {
+                        background: #10b981;
+                        color: #ffffff;
+                    }
+                    .tdb-btn-success:hover {
+                        background: #059669;
+                    }
+                    .tdb-btn-secondary {
+                        background: #334155;
+                        color: #e2e8f0;
+                    }
+                    .tdb-btn-secondary:hover {
+                        background: #475569;
+                    }
+                    .tdb-btn-outline {
+                        background: transparent;
+                        border-color: rgba(255, 255, 255, 0.2);
+                        color: #ffffff;
+                    }
+                    .tdb-btn-outline:hover {
+                        background: rgba(255, 255, 255, 0.1);
+                    }
+                    .tdb-btn-danger-link {
+                        background: transparent;
+                        border: none;
+                        color: #f87171;
+                        font-size: 12px;
+                        cursor: pointer;
+                        padding: 0;
+                    }
+                    .tdb-btn-danger-link:hover {
+                        color: #ef4444;
+                        text-decoration: underline;
+                    }
+
+                    /* Ô nhập văn bản */
+                    .tdb-input, .tdb-textarea, .tdb-select {
+                        width: 100%;
+                        background: #1e293b;
+                        border: 1px solid #334155;
+                        border-radius: 6px;
+                        color: #ffffff;
+                        padding: 8px 12px;
+                        font-size: 13px;
+                        outline: none;
+                        transition: border-color 0.15s ease;
+                        font-family: inherit;
+                    }
+                    .tdb-input:focus, .tdb-textarea:focus, .tdb-select:focus {
+                        border-color: #3b82f6;
+                        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.25);
+                    }
+                    .tdb-textarea {
+                        resize: vertical;
+                        min-height: 70px;
+                    }
+
+                    /* Khung ghi chú (Note Card) */
+                    .tdb-note-card {
+                        background: rgba(255, 255, 255, 0.04);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin-bottom: 10px;
+                        transition: background 0.15s ease;
+                    }
+                    .tdb-note-card:hover {
+                        background: rgba(255, 255, 255, 0.07);
+                    }
+                    .tdb-note-header {
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        margin-bottom: 6px;
+                    }
+                    .tdb-time-badge {
+                        background: rgba(37, 99, 235, 0.2);
+                        border: 1px solid #2563eb;
+                        color: #60a5fa;
+                        font-family: monospace;
+                        font-weight: 700;
+                        font-size: 12px;
+                        padding: 2px 8px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        transition: all 0.15s ease;
+                    }
+                    .tdb-time-badge:hover {
+                        background: #2563eb;
+                        color: #ffffff;
+                    }
+                    .tdb-note-text {
+                        font-size: 13px;
+                        color: #f1f5f9;
+                        line-height: 1.5;
+                        word-break: break-word;
+                    }
+
+                    /* Khung tạo ghi chú mới */
+                    .tdb-add-note-card {
+                        background: #1e293b;
+                        border: 1px solid #334155;
+                        border-radius: 8px;
+                        padding: 14px;
+                        margin-bottom: 14px;
+                    }
+
+                    /* Khung tài liệu học tập */
+                    .tdb-resource-card {
+                        background: rgba(255, 255, 255, 0.04);
+                        border: 1px solid rgba(255, 255, 255, 0.08);
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin-bottom: 10px;
+                        display: flex;
+                        align-items: center;
+                        justify-content: space-between;
+                        gap: 10px;
+                    }
+                    .tdb-resource-card:hover {
+                        background: rgba(255, 255, 255, 0.07);
+                    }
+                    .tdb-admin-card {
+                        background: #1e293b;
+                        border: 1px solid #334155;
+                        border-radius: 8px;
+                        padding: 14px;
+                        margin-bottom: 16px;
+                    }
+                    .tdb-admin-card-title {
+                        font-size: 13px;
+                        font-weight: 700;
+                        color: #ffffff;
+                        margin-bottom: 10px;
+                    }
+
+                    /* Trạng thái trống */
+                    .tdb-empty-text {
+                        text-align: center;
+                        color: #64748b;
+                        font-size: 13px;
+                        padding: 30px 10px;
+                        line-height: 1.5;
+                    }
+
+                    /* Thông báo Toast chống tua vượt */
+                    .tdb-toast {
+                        position: absolute;
+                        top: 24px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background: rgba(220, 38, 38, 0.95);
+                        color: #ffffff;
+                        padding: 10px 20px;
+                        border-radius: 6px;
+                        font-size: 13px;
+                        font-weight: 600;
+                        box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+                        z-index: 100;
+                        display: none;
+                        pointer-events: none;
+                    }
+
+                    /* Banner tiếp tục xem dở */
+                    .tdb-resume-banner {
+                        position: absolute;
+                        bottom: 24px;
+                        left: 50%;
+                        transform: translateX(-50%);
+                        background: rgba(15, 23, 42, 0.96);
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        border-radius: 8px;
+                        padding: 10px 18px;
+                        display: flex;
+                        align-items: center;
+                        gap: 12px;
+                        font-size: 13px;
+                        z-index: 100;
+                        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+                    }
+
+                    /* =================================================================
+                       5. CHẾ ĐỘ SÁNG (LIGHT MODE)
+                       ================================================================= */
+                    body.tdb-theme-light,
+                    .tdb-wrapper.tdb-theme-light {
+                        background-color: #f8fafc;
+                        color: #1e293b;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-topbar {
+                        background: #ffffff;
+                        border-bottom: 1px solid #e2e8f0;
+                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-topbar-title {
+                        color: #0f172a;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-topbar-subtitle {
+                        color: #64748b;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-progress-title {
+                        color: #64748b;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-progress-track {
+                        background: #e2e8f0;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-progress-text {
+                        color: #0f172a;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-btn-outline {
+                        background: #ffffff;
+                        color: #334155;
+                        border-color: #cbd5e1;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-btn-outline:hover {
+                        background: #f1f5f9;
+                        color: #0f172a;
+                        border-color: #94a3b8;
+                    }
+
+                    /* Cột phải trong Light Mode */
+                    .tdb-wrapper.tdb-theme-light .tdb-col-side {
+                        background: #ffffff;
+                        border-left: 1px solid #e2e8f0;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-side-tabs {
+                        background: #f8fafc;
+                        border-bottom: 1px solid #e2e8f0;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-tab-btn {
+                        color: #64748b;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-tab-btn:hover {
+                        background: #e2e8f0;
+                        color: #0f172a;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-tab-btn.active {
+                        background: #2563eb;
+                        color: #ffffff;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-tab-badge {
+                        background: #e2e8f0;
+                        color: #475569;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-tab-btn.active .tdb-tab-badge {
+                        background: rgba(255, 255, 255, 0.25);
+                        color: #ffffff;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-side-content {
+                        background: #ffffff;
+                        color: #1e293b;
+                    }
+
+                    /* Thẻ ghi chú & form nhập trong Light Mode */
+                    .tdb-wrapper.tdb-theme-light .tdb-note-card {
+                        background: #f8fafc;
+                        border-color: #e2e8f0;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-note-text {
+                        color: #334155;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-time-badge {
+                        background: #e0f2fe;
+                        color: #0284c7;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-time-badge:hover {
+                        background: #bae6fd;
+                        color: #0369a1;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-add-note-card {
+                        background: #f8fafc;
+                        border-color: #cbd5e1;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-textarea,
+                    .tdb-wrapper.tdb-theme-light .tdb-input {
+                        background: #ffffff;
+                        border-color: #cbd5e1;
+                        color: #0f172a;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-textarea:focus,
+                    .tdb-wrapper.tdb-theme-light .tdb-input:focus {
+                        border-color: #3b82f6;
+                    }
+
+                    /* Thẻ tài liệu trong Light Mode */
+                    .tdb-wrapper.tdb-theme-light .tdb-resource-card {
+                        background: #f8fafc;
+                        border-color: #e2e8f0;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-resource-title {
+                        color: #0f172a !important;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-resource-sub {
+                        color: #64748b !important;
+                    }
+
+                    /* Tab Mô tả trong Light Mode */
+                    .tdb-wrapper.tdb-theme-light .tdb-desc-title {
+                        color: #0f172a !important;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-desc-course {
+                        color: #2563eb !important;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-desc-box {
+                        background: #f8fafc !important;
+                        border-color: #e2e8f0 !important;
+                        color: #334155 !important;
+                    }
+
+                    /* Khung Admin trong Light Mode */
+                    .tdb-wrapper.tdb-theme-light .tdb-admin-card {
+                        background: #f8fafc;
+                        border-color: #e2e8f0;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-admin-card-title {
+                        color: #0f172a;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-empty-text {
+                        color: #94a3b8;
+                    }
+
+                    /* Khung soạn thảo câu hỏi Quiz (Dark Mode mặc định) */
+                    .tdb-q-card {
+                        background: rgba(30, 41, 59, 0.7);
+                        border: 1px solid #334155;
+                        border-radius: 8px;
+                        padding: 12px;
+                        margin-bottom: 12px;
+                        transition: all 0.2s ease;
+                    }
+                    .tdb-q-card-header {
+                        display: flex;
+                        justify-content: space-between;
+                        align-items: center;
+                        margin-bottom: 8px;
+                    }
+                    .tdb-q-title-text {
+                        font-size: 13px;
+                        font-weight: 700;
+                        color: #f1f5f9;
+                    }
+                    .tdb-q-help-text {
+                        font-size: 11px;
+                        color: #94a3b8;
+                    }
+
+                    /* Khung soạn thảo câu hỏi Quiz (Light Mode) */
+                    .tdb-wrapper.tdb-theme-light .tdb-q-card {
+                        background: #ffffff !important;
+                        border: 1px solid #e2e8f0 !important;
+                        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-q-title-text {
+                        color: #0f172a !important;
+                    }
+                    .tdb-wrapper.tdb-theme-light .tdb-q-help-text {
+                        color: #64748b !important;
+                    }
+                    .tdb-wrapper.tdb-theme-light #tdb_quiz_nav_bar {
+                        background: #eff6ff !important;
+                        border-color: #bfdbfe !important;
+                    }
+                    .tdb-wrapper.tdb-theme-light #tdb_new_quiz_title_wrap {
+                        background: #f8fafc !important;
+                        border-color: #93c5fd !important;
+                    }

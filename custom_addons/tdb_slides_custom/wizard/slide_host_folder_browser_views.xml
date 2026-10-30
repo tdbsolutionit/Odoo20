@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_slide_host_folder_browser_wizard_form" model="ir.ui.view">
+        <field name="name">slide.host.folder.browser.wizard.form</field>
+        <field name="model">slide.host.folder.browser.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Trình duyệt Thư mục Máy tính (File Explorer)">
+                <sheet>
+                    <!-- Thanh điều hướng và lối tắt -->
+                    <div class="d-flex align-items-center flex-wrap gap-2 p-2 bg-light rounded border mb-2">
+                        <button name="action_go_up" string="Lên một cấp" type="object" class="btn-outline-dark btn-sm"/>
+                        <button name="action_go_root" string="Thư mục gốc" type="object" class="btn-outline-secondary btn-sm"/>
+                        <button name="action_go_base_videos" string="Thư mục mặc định" type="object" class="btn-outline-primary btn-sm"/>
+                        <button name="action_go_project_videos" string="Thư mục dự án" type="object" class="btn-outline-secondary btn-sm"/>
+                        <button name="action_select_current_folder"
+                                string="Chọn thư mục hiện tại"
+                                type="object"
+                                class="btn-success btn-sm ms-auto fw-bold"/>
+                    </div>
+
+                    <!-- Hiển thị đường dẫn hiện tại -->
+                    <div class="alert alert-secondary py-2 mb-2 d-flex align-items-center" role="status">
+                        <strong>Đường dẫn hiện tại:</strong>
+                        <field name="current_path" class="ms-2 font-monospace fw-bold text-primary flex-grow-1" readonly="1"/>
+                    </div>
+
+                    <!-- Danh sách các video tìm thấy trong thư mục này -->
+                    <field name="video_files_html" widget="html" readonly="1"/>
+
+                    <!-- Bảng các thư mục con để người dùng bấm duyệt sâu vào trong -->
+                    <div class="mt-2">
+                        <h6 class="text-muted mb-1">Các thư mục con bên trong:</h6>
+                        <field name="line_ids" readonly="1">
+                            <list no_open="1">
+                                <field name="name" string="Tên Thư mục"/>
+                                <field name="video_count" string="Số Video bên trong" widget="badge" decoration-success="video_count &gt; 0" decoration-muted="video_count == 0"/>
+                                <button name="action_open" string="Mở" type="object" class="btn-outline-primary btn-sm"/>
+                                <button name="action_select" string="Chọn thư mục này" type="object" class="btn-primary btn-sm"/>
+                            </list>
+                        </field>
+                    </div>
+                </sheet>
+                <footer>
+                    <button name="action_select_current_folder" string="Chọn thư mục này" type="object" class="btn-primary"/>
+                    <button string="Đóng" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

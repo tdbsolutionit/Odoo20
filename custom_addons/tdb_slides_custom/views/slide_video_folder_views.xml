@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_slide_video_folder_tree" model="ir.ui.view">
+        <field name="name">slide.video.folder.tree</field>
+        <field name="model">slide.video.folder</field>
+        <field name="arch" type="xml">
+            <list string="Thư mục Video Khóa học" decoration-success="exists" decoration-warning="not exists">
+                <header>
+                    <button name="action_sync_folders_from_disk" string="Quét và đồng bộ thư mục từ máy tính" type="object" class="btn-primary"/>
+                </header>
+                <field name="name"/>
+                <field name="folder_path"/>
+                <field name="full_path"/>
+                <field name="video_count" string="Số lượng Video"/>
+                <field name="exists" widget="boolean" string="Đã tồn tại"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_slide_video_folder_form" model="ir.ui.view">
+        <field name="name">slide.video.folder.form</field>
+        <field name="model">slide.video.folder</field>
+        <field name="arch" type="xml">
+            <form string="Thư mục Video Khóa học">
+                <header>
+                    <button name="action_check_folder" string="Kiểm tra Thư mục" type="object" class="btn-primary"/>
+                    <button name="action_create_folder_on_disk" string="Tạo Thư mục trên Ổ đĩa" type="object" class="btn-secondary" invisible="exists"/>
+                    <button name="action_sync_folders_from_disk" string="Quét lại thư mục" type="object" class="btn-outline-info"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <label for="name" string="Tên gợi nhớ Thư mục"/>
+                        <h1>
+                            <field name="name" placeholder="vd: Khóa học Lập trình Python"/>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Cấu hình Đường dẫn">
+                            <button name="action_open_file_explorer"
+                                    string="Duyệt thư mục máy tính"
+                                    type="object"
+                                    class="btn-primary btn-sm mb-2"/>
+                            <field name="disk_folder" widget="selection" placeholder="Hoặc chọn thư mục có sẵn..." options="{'no_create': True}"/>
+                            <field name="folder_path" placeholder="vd: C:\Users\Thinh\Videos hoặc C:\Data"/>
+                            <field name="full_path" readonly="1"/>
+                        </group>
+                        <group string="Trạng thái Hiện tại">
+                            <field name="exists" readonly="1" widget="boolean"/>
+                            <field name="video_count" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page name="info" string="Hướng dẫn &amp; Ghi chú">
+                            <div class="alert alert-info" role="alert">
+                                <strong>Hướng dẫn sử dụng:</strong>
+                                <ul>
+                                    <li>Bạn có thể nhập tên thư mục con (ví dụ: <code>khoa_hoc_1</code>) hoặc đường dẫn đầy đủ.</li>
+                                    <li>Nếu thư mục chưa có trên máy tính, bạn có thể bấm nút <strong>"Tạo Thư mục trên Ổ đĩa"</strong> ở trên để Odoo tự tạo.</li>
+                                    <li>Sau khi chép video (định dạng .mp4, .mkv, .avi, .mov, .webm) vào thư mục trên máy tính, bấm nút <strong>"Kiểm tra Thư mục"</strong> để cập nhật danh sách video.</li>
+                                </ul>
+                            </div>
+                            <field name="description" placeholder="Nhập ghi chú thêm về thư mục này..."/>
+                        </page>
+                        <page name="courses" string="Các Khóa học đang sử dụng">
+                            <field name="channel_ids" readonly="1">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="user_id"/>
+                                    <field name="total_slides" string="Tổng số bài học"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_slide_video_folder" model="ir.actions.act_window">
+        <field name="name">Thư mục Video</field>
+        <field name="res_model">slide.video.folder</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                Tạo Thư mục Video mới để quản lý video bài học trên ổ đĩa máy tính!
+            </p>
+            <p>
+                Người dùng có thể chỉ định thư mục riêng cho từng khóa học và chủ động chọn video đưa vào bài học.
+            </p>
+        </field>
+    </record>
+
+    <menuitem id="menu_slide_video_folder"
+        name="Thư mục Video"
+        parent="website_slides.website_slides_menu_configuration"
+        action="action_slide_video_folder"
+        sequence="25"/>
+</odoo>

@@ -1,0 +1,122 @@
+/* ==========================================================================
+   TDB SLIDES CUSTOM - QUIZ STYLING (LOCKED STATE & MULTI-CHOICE SELECTION)
+   ========================================================================== */
+
+/* Thẻ cảnh báo khi bài quiz bị khóa do chưa xem video */
+.tdb-quiz-locked-card {
+    border-radius: 12px;
+    background: #fffbeb !important;
+    border: 1px solid #fde68a !important;
+    box-shadow: 0 4px 12px rgba(217, 119, 6, 0.08);
+}
+
+.tdb-quiz-locked-card h4 {
+    color: #92400e !important;
+    font-size: 1.15rem;
+}
+
+.tdb-quiz-locked-card p {
+    color: #b45309 !important;
+    font-size: 0.95rem;
+}
+
+.tdb-quiz-locked-card .btn-warning {
+    background-color: #f59e0b !important;
+    border-color: #d97706 !important;
+    color: #ffffff !important;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+}
+
+.tdb-quiz-locked-card .btn-warning:hover {
+    background-color: #d97706 !important;
+    transform: translateY(-1px);
+}
+
+/* Khi Quiz bị khóa: làm mờ câu hỏi và chặn tương tác */
+.o_wslides_js_lesson_quiz.tdb-quiz-locked .o_wslides_js_lesson_quiz_question {
+    opacity: 0.55;
+    pointer-events: none;
+    filter: grayscale(0.5);
+    user-select: none;
+}
+
+.o_wslides_js_lesson_quiz.tdb-quiz-locked .o_wslides_js_lesson_quiz_submit,
+.o_wslides_js_lesson_quiz.tdb-quiz-locked .o_wslides_js_lesson_quiz_validation {
+    display: none !important;
+}
+
+/* Style cho các phương án lựa chọn khi được click chọn */
+.o_wslides_quiz_answer.list-group-item-primary {
+    background-color: #eff6ff !important;
+    border-color: #93c5fd !important;
+    color: #1e40af !important;
+}
+
+.o_wslides_quiz_answer {
+    border-radius: 8px !important;
+    margin-bottom: 8px;
+    border: 1px solid #e2e8f0;
+    transition: all 0.15s ease-in-out;
+    cursor: pointer;
+}
+
+.o_wslides_quiz_answer:hover {
+    background-color: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+/* Checkbox và Radio trong câu hỏi quiz */
+.tdb-quiz-input {
+    width: 1.15rem;
+    height: 1.15rem;
+    cursor: pointer;
+    margin-right: 8px;
+}
+
+/* Biến đổi icon hình tròn thành ô checkbox vuông khi là câu hỏi nhiều đáp án đúng */
+.o_wslides_js_lesson_quiz_question[data-is-multi="1"] .o_wslides_quiz_answer i[data-icon="circle"],
+.list-group[data-is-multi="1"] .o_wslides_quiz_answer i[data-icon="circle"] {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 18px !important;
+    height: 18px !important;
+    border: 2px solid #94a3b8 !important;
+    border-radius: 4px !important;
+    background-color: #ffffff !important;
+    font-size: 0 !important;
+    color: transparent !important;
+    vertical-align: middle;
+    transition: all 0.15s ease-in-out;
+    box-sizing: border-box;
+}
+
+.o_wslides_js_lesson_quiz_question[data-is-multi="1"] .o_wslides_quiz_answer i[data-icon="circle"]::before,
+.list-group[data-is-multi="1"] .o_wslides_quiz_answer i[data-icon="circle"]::before {
+    content: none !important;
+    display: none !important;
+}
+
+/* Khi phương án được chọn (list-group-item-primary): ô checkbox chuyển nền xanh và hiện dấu tích trắng */
+.o_wslides_js_lesson_quiz_question[data-is-multi="1"] .o_wslides_quiz_answer.list-group-item-primary i[data-icon="circle"],
+.list-group[data-is-multi="1"] .o_wslides_quiz_answer.list-group-item-primary i[data-icon="circle"] {
+    background-color: #2563eb !important;
+    border-color: #2563eb !important;
+    position: relative;
+}
+
+.o_wslides_js_lesson_quiz_question[data-is-multi="1"] .o_wslides_quiz_answer.list-group-item-primary i[data-icon="circle"]::after,
+.list-group[data-is-multi="1"] .o_wslides_quiz_answer.list-group-item-primary i[data-icon="circle"]::after {
+    content: "" !important;
+    display: block !important;
+    width: 5px;
+    height: 9px;
+    border: solid #ffffff;
+    border-width: 0 2px 2px 0;
+    transform: rotate(45deg);
+    margin-bottom: 2px;
+}
+
+
+

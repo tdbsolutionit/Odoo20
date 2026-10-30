@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="res_config_settings_view_form_inherit_tdb_slides" model="ir.ui.view">
+        <field name="name">res.config.settings.view.form.inherit.tdb.slides</field>
+        <field name="model">res.config.settings</field>
+        <field name="inherit_id" ref="website_slides.res_config_settings_view_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//block[@id='website_slides_selection_settings']" position="inside">
+                <setting id="setting_slide_base_video_path" string="Thư mục Video Gốc trên Máy tính" help="Đường dẫn thư mục gốc chứa các thư mục video trên server/Docker (mặc định: /mnt/videos tương ứng thư mục videos trong dự án trên máy tính)">
+                    <field name="slide_base_video_path" placeholder="/mnt/videos"/>
+                </setting>
+                <setting id="setting_iis_media_server_url" string="Máy chủ Video IIS (Tùy chọn)" help="Địa chỉ URL máy chủ IIS phát video tĩnh từ ổ đĩa (ví dụ: http://localhost:8088). Giúp xem và tua video cực mượt, không tốn tài nguyên Odoo.">
+                    <field name="iis_media_server_url" placeholder="http://localhost:8088"/>
+                </setting>
+            </xpath>
+        </field>
+    </record>
+</odoo>

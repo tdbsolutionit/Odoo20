@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Template kế thừa hiển thị banner khóa bài học nếu chưa xem video tiên quyết -->
+    <template id="lesson_content_quiz_inherit_lock" inherit_id="website_slides.lesson_content_quiz">
+        <xpath expr="//div[@id='lessonQuiz']" position="before">
+            <t t-if="slide.is_quiz_locked">
+                <div class="alert alert-warning border border-warning shadow-sm rounded-3 p-4 my-3 text-center tdb-quiz-locked-card"
+                     style="background: #fffbeb; border-color: #fde68a !important;">
+                    <div class="d-flex align-items-center justify-content-center mb-2">
+                        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#d97706" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="me-2">
+                            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                        </svg>
+                        <h4 class="mb-0 fw-bold text-dark">Bài kiểm tra đang bị khóa</h4>
+                    </div>
+                    <p class="text-muted mb-3 fs-6">
+                        Bạn cần xem và hoàn thành video bài giảng <strong class="text-dark"><t t-out="slide.prerequisite_video_name or 'tiên quyết'"/></strong> trước khi tham gia làm bài kiểm tra này.
+                    </p>
+                    <a t-if="slide.prerequisite_video_url" t-att-href="slide.prerequisite_video_url" class="btn btn-warning fw-bold text-dark px-4 py-2 shadow-sm">
+                        Xem video bài giảng ngay
+                    </a>
+                </div>
+            </t>
+        </xpath>
+        <xpath expr="//div[@id='lessonQuiz']" position="attributes">
+            <attribute name="t-att-class">'o_wslides_js_lesson_quiz col %s' % ('tdb-quiz-locked' if slide.is_quiz_locked else '')</attribute>
+            <attribute name="t-att-data-is-quiz-locked">1 if slide.is_quiz_locked else 0</attribute>
+        </xpath>
+    </template>
+
+    <!-- Template kế thừa hiển thị loại câu hỏi (Single/Multiple) và checkbox/radio phù hợp -->
+    <template id="lesson_content_quiz_question_inherit_type" inherit_id="website_slides.lesson_content_quiz_question">
+        <xpath expr="//div[hasclass('list-group')]" position="attributes">
+            <attribute name="t-att-data-is-multi">'1' if (question.get('question_type') == 'multiple' or (slide.question_ids.filtered(lambda q: q.id == question['id']) and (slide.question_ids.filtered(lambda q: q.id == question['id']).question_type == 'multiple' or len(slide.question_ids.filtered(lambda q: q.id == question['id']).answer_ids.filtered(lambda a: a.is_correct)) &gt; 1))) else '0'</attribute>
+        </xpath>
+
+        <xpath expr="//div[hasclass('h4')]/span" position="after">
+            <t t-set="q_rec" t-value="slide.question_ids.filtered(lambda q: q.id == question['id'])"/>
+            <t t-set="is_multi_q" t-value="question.get('question_type') == 'multiple' or (q_rec and (q_rec.question_type == 'multiple' or len(q_rec.answer_ids.filtered(lambda a: a.is_correct)) &gt; 1))"/>
+            <span t-if="is_multi_q" class="badge rounded-pill bg-primary ms-2 px-2 py-1 align-middle" style="font-size: 11px; font-weight: 600;">
+                Nhiều đáp án đúng (Chọn tất cả đáp án đúng)
+            </span>
+            <span t-else="" class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle ms-2 px-2 py-1 align-middle" style="font-size: 11px; font-weight: 500;">
+                Một đáp án đúng
+            </span>
+        </xpath>
+
+        <xpath expr="//input[@type='radio']" position="attributes">
+            <attribute name="t-att-type">'checkbox' if (question.get('question_type') == 'multiple' or (slide.question_ids.filtered(lambda q: q.id == question['id']) and (slide.question_ids.filtered(lambda q: q.id == question['id']).question_type == 'multiple' or len(slide.question_ids.filtered(lambda q: q.id == question['id']).answer_ids.filtered(lambda a: a.is_correct)) &gt; 1))) else 'radio'</attribute>
+            <attribute name="t-att-name">('checkbox_%s' % answer['id']) if (question.get('question_type') == 'multiple' or (slide.question_ids.filtered(lambda q: q.id == question['id']) and (slide.question_ids.filtered(lambda q: q.id == question['id']).question_type == 'multiple' or len(slide.question_ids.filtered(lambda q: q.id == question['id']).answer_ids.filtered(lambda a: a.is_correct)) &gt; 1))) else question['id']</attribute>
+            <attribute name="t-att-disabled">True if not slide.channel_id.is_member or slide_completed or slide.is_quiz_locked else ''</attribute>
+            <attribute name="class" add="tdb-quiz-input" separator=" "/>
+        </xpath>
+    </template>
+</odoo>

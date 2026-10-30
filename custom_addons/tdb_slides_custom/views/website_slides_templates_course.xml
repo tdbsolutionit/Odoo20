@@ -1,0 +1,162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Phân quyền chỉ Admin / Giảng viên (can_publish) mới thấy nút Thêm video & Tạo Quiz -->
+    <template id="course_slides_list_inherit_video_folder" inherit_id="website_slides.course_slides_list">
+        <xpath expr="//div[hasclass('o_wslides_content_actions')]" position="inside">
+            <a t-if="channel.can_publish"
+               class="btn btn-primary ms-1 border tdb_btn_open_disk_video_modal fw-bold"
+               href="#"
+               role="button"
+               t-att-data-channel-id="channel.id"
+               t-att-data-channel-name="channel.name"
+               t-att-data-folder-path="channel.video_folder_path or ''"
+               t-att-data-folder-display="channel.video_folder_disk_display or ''">
+                <span>Thêm video từ thư mục ổ đĩa</span>
+            </a>
+            <a t-if="channel.can_publish"
+               class="btn btn-outline-primary ms-1 border tdb_btn_open_quick_quiz_modal fw-bold"
+               href="#"
+               role="button"
+               t-att-data-channel-id="channel.id"
+               t-att-data-channel-name="channel.name">
+                <span>Tạo bài Quiz nhanh</span>
+            </a>
+        </xpath>
+        <xpath expr="//a[hasclass('o_wslides_js_slide_upload')][@t-att-data-category-id]" position="after">
+            <a t-if="channel.can_publish"
+               class="o_text_link tdb_btn_open_disk_video_modal px-2 py-2 text-primary fw-bold"
+               role="button"
+               href="#"
+               t-att-data-channel-id="channel.id"
+               t-att-data-channel-name="channel.name"
+               t-att-data-category-id="category_id"
+               t-att-data-folder-path="channel.video_folder_path or ''"
+               t-att-data-folder-display="channel.video_folder_disk_display or ''">
+                <span>Thêm video ổ đĩa</span>
+            </a>
+            <a t-if="channel.can_publish"
+               class="o_text_link tdb_btn_open_quick_quiz_modal px-2 py-2 text-info fw-bold"
+               role="button"
+               href="#"
+               t-att-data-channel-id="channel.id"
+               t-att-data-channel-name="channel.name"
+               t-att-data-category-id="category_id">
+                <span>Tạo Quiz chương này</span>
+            </a>
+        </xpath>
+    </template>
+
+    <!-- Hiển thị mô tả bài học ngay dưới tiêu đề bài học trong danh sách khóa học (Hình 1) -->
+    <template id="course_slides_list_slide_inherit_description" inherit_id="website_slides.course_slides_list_slide">
+        <xpath expr="//div[hasclass('text-truncate')][hasclass('me-auto')]" position="attributes">
+            <attribute name="class" add="text-wrap" separator=" "/>
+        </xpath>
+        <xpath expr="//div[hasclass('text-truncate')][hasclass('me-auto')]" position="inside">
+            <t t-if="slide.description and str(slide.description).strip()">
+                <div class="o_wslides_lesson_desc text-muted mt-1"
+                     style="font-size: 12px; line-height: 1.4; white-space: normal !important; color: #64748b !important; display: block;"
+                     t-out="slide.description"/>
+            </t>
+        </xpath>
+    </template>
+
+    <!-- Đồng bộ giao diện Sáng / Tối ra toàn bộ khung Fullscreen ngoài (Cột bài học bên trái & Thanh tiêu đề) -->
+    <template id="slide_fullscreen_inherit_light_mode" inherit_id="website_slides.slide_fullscreen">
+        <xpath expr="//div[hasclass('o_wslides_fs_main')]" position="attributes">
+            <attribute name="id">tdb_wslides_fs_main</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('o_wslides_fs_main')]" position="before">
+            <style id="tdb_fs_theme_style">
+                /* Light mode cho khung Fullscreen ngoài */
+                .o_wslides_fs_main.tdb-parent-light {
+                    background-image: none !important;
+                    background-color: #f8fafc !important;
+                    color: #1e293b !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light .o_wslides_slide_fs_header {
+                    background-image: none !important;
+                    background-color: #ffffff !important;
+                    border-bottom: 1px solid #e2e8f0 !important;
+                    color: #0f172a !important;
+                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light .o_wslides_slide_fs_header a {
+                    background-color: #f1f5f9 !important;
+                    color: #334155 !important;
+                    border: 1px solid #e2e8f0 !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light .o_wslides_slide_fs_header a:hover {
+                    background-color: #e2e8f0 !important;
+                    color: #0f172a !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light .o_wslides_slide_fs_header a.active {
+                    background-color: #2563eb !important;
+                    color: #ffffff !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light .o_wslides_fs_sidebar {
+                    background-image: none !important;
+                    background-color: #ffffff !important;
+                    border-right: 1px solid #e2e8f0 !important;
+                    color: #1e293b !important;
+                    box-shadow: 2px 0 8px rgba(0, 0, 0, 0.04) !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light .o_wslides_fs_sidebar_header h1,
+                .o_wslides_fs_main.tdb-parent-light .o_wslides_fs_sidebar_header a {
+                    color: #0f172a !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light .o_wslides_progress_percentage {
+                    color: #0f172a !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light .progress {
+                    background-color: #e2e8f0 !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light .o_wslides_fs_sidebar_section {
+                    background-color: #f8fafc !important;
+                    border-bottom: 1px solid #e2e8f0 !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light .o_wslides_fs_sidebar_section a b {
+                    color: #0f172a !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light li.o_wslides_fs_sidebar_list_item:not(.active) {
+                    color: #475569 !important;
+                    background-color: transparent !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light li.o_wslides_fs_sidebar_list_item:not(.active) a {
+                    color: #334155 !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light li.o_wslides_fs_sidebar_list_item:hover {
+                    background-color: #f1f5f9 !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light li.o_wslides_fs_sidebar_list_item.active {
+                    background-color: #eff6ff !important;
+                    box-shadow: inset 3px 0 0 #2563eb !important;
+                    color: #1d4ed8 !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light li.o_wslides_fs_sidebar_list_item.active a {
+                    color: #1d4ed8 !important;
+                    font-weight: 600 !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light .text-600,
+                .o_wslides_fs_main.tdb-parent-light .text-muted,
+                .o_wslides_fs_main.tdb-parent-light i.oi {
+                    color: #64748b !important;
+                }
+                .o_wslides_fs_main.tdb-parent-light .o_wslides_fs_slide_name {
+                    color: inherit !important;
+                }
+            </style>
+            <script type="text/javascript">
+                try {
+                    const theme = localStorage.getItem("tdb_theme_mode") || "dark";
+                    if (theme === "light") {
+                        document.addEventListener("DOMContentLoaded", function() {
+                            const fsMain = document.getElementById("tdb_wslides_fs_main") || document.querySelector(".o_wslides_fs_main");
+                            if (fsMain) fsMain.classList.add("tdb-parent-light");
+                            document.body.classList.add("tdb-parent-light");
+                        });
+                    }
+                } catch(e) {}
+            </script>
+        </xpath>
+    </template>
+</odoo>

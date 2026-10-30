@@ -1,0 +1,291 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates xml:space="preserve">
+
+    <t t-name="tdb_slides_custom.SlideVideoFolderUploader">
+        <div class="slide_video_uploader_container p-3 mb-3 bg-light rounded border">
+            <!-- Nếu khóa học ĐÃ CÓ thư mục ổ đĩa được liên kết -->
+            <t t-if="this.hasLinkedFolder">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <div class="d-flex align-items-center gap-2 mb-1">
+                            <h6 class="fw-bold mb-0 text-dark">Thư mục Video của Khóa học trên Ổ đĩa</h6>
+                            <span class="badge bg-success-subtle text-success border border-success-subtle">
+                                Đã liên kết thư mục
+                            </span>
+                        </div>
+                        <div class="text-secondary small">
+                            Ổ đĩa / Thư mục lưu trữ:
+                            <strong class="text-primary font-monospace ms-1" t-out="this.currentFolderDisplay"/>
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button"
+                                class="btn btn-success btn-sm fw-bold"
+                                t-att-disabled="this.state.isUploading"
+                                t-on-click="() => this.scanDiskFolder()">
+                            Quét video có sẵn trong thư mục
+                        </button>
+                        <button type="button"
+                                class="btn btn-primary btn-sm fw-bold"
+                                t-att-disabled="this.state.isUploading"
+                                t-on-click="() => this.triggerSelectFiles()">
+                            Chọn thêm video tải lên
+                        </button>
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-sm"
+                                t-att-disabled="this.state.isUploading"
+                                t-on-click="() => this.triggerSelectFolder()">
+                            Đổi thư mục khác
+                        </button>
+                    </div>
+                </div>
+            </t>
+
+            <!-- Nếu khóa học CHƯA CÓ thư mục ổ đĩa -->
+            <t t-else="">
+                <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                    <div>
+                        <h6 class="fw-bold mb-1 text-dark">Thư mục Video của Khóa học trên Ổ đĩa</h6>
+                        <div class="text-muted small">
+                            Khóa học chưa liên kết thư mục trên ổ đĩa. Hãy chọn thư mục máy tính để khóa học lưu cố định các video vào đó.
+                        </div>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <button type="button"
+                                class="btn btn-primary btn-sm fw-bold"
+                                t-att-disabled="this.state.isUploading"
+                                t-on-click="() => this.triggerSelectFolder()">
+                            Chọn thư mục từ máy tính
+                        </button>
+                        <button type="button"
+                                class="btn btn-outline-primary btn-sm"
+                                t-att-disabled="this.state.isUploading"
+                                t-on-click="() => this.triggerSelectFiles()">
+                            Chọn file video từ máy tính
+                        </button>
+                    </div>
+                </div>
+            </t>
+
+            <!-- Bảng hiển thị danh sách video đã chọn từ File Explorer -->
+            <t t-if="this.state.showList">
+                <div class="mt-3 pt-3 border-top">
+                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-2">
+                        <div>
+                            <span class="text-muted small">Các video sẽ được tải lên và lưu vào ổ đĩa:</span>
+                            <span class="fw-bold text-primary font-monospace ms-1" t-out="this.currentFolderDisplay"/>
+                            <span class="text-muted small ms-2">
+                                (Tìm thấy <t t-out="this.state.videos.length"/> video | Đã chọn: <strong class="text-success" t-out="this.selectedCount"/>)
+                            </span>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <button type="button"
+                                    class="btn btn-outline-secondary btn-sm py-0"
+                                    t-att-disabled="this.state.isUploading"
+                                    t-on-click="() => this.toggleSelectAll()">
+                                <t t-if="this.allSelected">Bỏ chọn tất cả</t>
+                                <t t-else="">Chọn tất cả</t>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Tiến trình tải lên khi đang thực hiện -->
+                    <t t-if="this.state.isUploading">
+                        <div class="my-2 p-2 bg-white rounded border">
+                            <div class="d-flex justify-content-between small text-muted mb-1">
+                                <span>
+                                    Đang tải lên video <t t-out="this.state.currentUploadIndex"/>:
+                                    <strong class="text-dark" t-out="this.state.currentUploadName"/>
+                                </span>
+                                <span class="fw-bold text-primary"><t t-out="this.state.overallPercent"/>%</span>
+                            </div>
+                            <div class="progress" style="height: 10px;">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary"
+                                     role="progressbar"
+                                     t-att-style="'width: ' + this.state.overallPercent + '%;'"/>
+                            </div>
+                        </div>
+                    </t>
+
+                    <!-- Danh sách các video -->
+                    <div class="table-responsive bg-white rounded border mt-2" style="max-height: 320px; overflow-y: auto;">
+                        <table class="table table-sm table-hover mb-0 align-middle">
+                            <thead class="table-light sticky-top">
+                                <tr>
+                                    <th style="width: 40px;" class="text-center">
+                                        <input type="checkbox"
+                                               class="form-check-input"
+                                               t-att-checked="this.allSelected"
+                                               t-att-disabled="this.state.isUploading"
+                                               t-on-click="() => this.toggleSelectAll()"/>
+                                    </th>
+                                    <th>Tên file video</th>
+                                    <th style="width: 100px;">Dung lượng</th>
+                                    <th>Ổ đĩa / Thư mục lưu trữ trên máy tính</th>
+                                    <th>Tiêu đề bài học trên Odoo</th>
+                                    <th style="width: 100px;" class="text-center">Thiết lập</th>
+                                    <th style="width: 150px;" class="text-center">Trạng thái</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="this.state.videos" t-as="item" t-key="item.id">
+                                    <tr t-att-class="this.isItemChecked(item) ? '' : 'text-muted opacity-75'">
+                                        <td class="text-center">
+                                            <input type="checkbox"
+                                                   class="form-check-input"
+                                                   t-att-checked="this.isItemChecked(item)"
+                                                   t-on-change="(ev) => { item.selected = ev.target.checked; }"
+                                                   t-att-disabled="this.state.isUploading || item.alreadyInCourse || item.status === 'done'"/>
+                                        </td>
+                                        <td class="font-monospace small fw-bold text-dark" t-out="item.filename"/>
+                                        <td class="small text-muted" t-out="item.sizeStr"/>
+                                        <td class="font-monospace small text-primary" t-out="item.diskFolderPath + '\\' + item.filename"/>
+                                        <td>
+                                            <input type="text"
+                                                   class="form-control form-control-sm"
+                                                   t-att-value="item.title"
+                                                   placeholder="Nhập tiêu đề bài học"
+                                                   t-on-input="(ev) => { item.title = ev.target.value; }"
+                                                   t-att-disabled="this.state.isUploading || item.status === 'uploading'"/>
+                                        </td>
+                                        <td class="text-center">
+                                            <button type="button"
+                                                    class="btn btn-outline-secondary btn-sm py-0"
+                                                    t-att-disabled="this.state.isUploading || item.status === 'uploading'"
+                                                    t-on-click="() => { item.showDetails = !item.showDetails; }">
+                                                <t t-if="item.showDetails">Thu gọn</t>
+                                                <t t-else="">Thiết lập</t>
+                                            </button>
+                                            <t t-if="item.resourceFile">
+                                                <span class="badge bg-info ms-1" title="Có tài liệu đính kèm">1 file</span>
+                                            </t>
+                                        </td>
+                                        <td class="text-center">
+                                            <t t-if="item.alreadyInCourse">
+                                                <span class="badge bg-success-subtle text-success border border-success-subtle">Đã có trong khóa học</span>
+                                            </t>
+                                            <t t-elif="item.status === 'ready'">
+                                                <span class="badge bg-secondary">Sẵn sàng</span>
+                                            </t>
+                                            <t t-elif="item.status === 'uploading'">
+                                                <span class="badge bg-primary">
+                                                    Đang tải <t t-out="item.progress"/>%
+                                                </span>
+                                            </t>
+                                            <t t-elif="item.status === 'done'">
+                                                <span class="badge bg-success">Đã hoàn thành</span>
+                                            </t>
+                                            <t t-elif="item.status === 'error'">
+                                                <span class="badge bg-danger">Lỗi</span>
+                                            </t>
+                                        </td>
+                                    </tr>
+
+                                    <!-- Hàng mở rộng thiết lập chi tiết chuẩn Coursera -->
+                                    <t t-if="item.showDetails">
+                                        <tr class="bg-light border-bottom">
+                                            <td></td>
+                                            <td colspan="6" class="p-3">
+                                                <div class="row g-3 align-items-start">
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold mb-1">Chương / Phần học:</label>
+                                                        <select class="form-select form-select-sm"
+                                                                t-att-value="item.categoryId"
+                                                                t-on-change="(ev) => { item.categoryId = ev.target.value; }">
+                                                            <option value="0">-- Mặc định (Không chọn chương) --</option>
+                                                            <t t-foreach="this.state.categories" t-as="cat" t-key="cat.id">
+                                                                <option t-att-value="cat.id" t-out="cat.name"/>
+                                                            </t>
+                                                            <option value="new">+ Tạo chương mới...</option>
+                                                        </select>
+                                                        <t t-if="item.categoryId === 'new'">
+                                                            <input type="text"
+                                                                   class="form-control form-control-sm mt-1"
+                                                                   t-att-value="item.categoryName"
+                                                                   placeholder="Nhập tên chương mới..."
+                                                                   t-on-input="(ev) => { item.categoryName = ev.target.value; }"/>
+                                                        </t>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold mb-1">Mô tả bài học:</label>
+                                                        <input type="text"
+                                                               class="form-control form-control-sm"
+                                                               t-att-value="item.description"
+                                                               placeholder="Tóm tắt ngắn gọn nội dung bài học..."
+                                                               t-on-input="(ev) => { item.description = ev.target.value; }"/>
+                                                        <div class="small text-muted mt-1">
+                                                            Thời lượng: <em>Tự động nhận diện từ video</em>
+                                                        </div>
+                                                    </div>
+                                                    <div class="col-md-4">
+                                                        <label class="form-label small fw-bold mb-1">Tài liệu đính kèm (tùy chọn):</label>
+                                                        <div class="d-flex align-items-center gap-1">
+                                                            <input type="file"
+                                                                   class="form-control form-control-sm"
+                                                                   t-on-change="(ev) => this.onResourceFileChange(item, ev)"/>
+                                                            <t t-if="item.resourceFile">
+                                                                <button type="button"
+                                                                        class="btn btn-outline-danger btn-sm py-0 px-2 text-nowrap"
+                                                                        title="Gỡ bỏ tài liệu này"
+                                                                        t-on-click="() => this.clearResourceFile(item)">
+                                                                    Xóa
+                                                                </button>
+                                                            </t>
+                                                        </div>
+                                                        <t t-if="item.resourceFile">
+                                                            <div class="small text-success mt-1 text-truncate">
+                                                                Đã chọn: <strong t-out="item.resourceFile.name"/> (<t t-out="this.formatSize(item.resourceFile.size)"/>)
+                                                            </div>
+                                                        </t>
+                                                        <t t-else="">
+                                                            <div class="small text-muted mt-1">
+                                                                Đính kèm PDF, slide, bài tập liên quan...
+                                                            </div>
+                                                        </t>
+                                                    </div>
+                                                </div>
+
+                                                <!-- Nếu bài học đã có trong khóa học -> hiển thị nút cập nhật lưu thay đổi -->
+                                                <t t-if="item.alreadyInCourse || item.status === 'done'">
+                                                    <div class="d-flex justify-content-between align-items-center mt-3 pt-2 border-top">
+                                                        <span class="text-secondary small">
+                                                            Bài học đã có trong khóa học. Bạn có thể chọn chương khác hoặc sửa tên rồi bấm lưu.
+                                                        </span>
+                                                        <button type="button"
+                                                                class="btn btn-warning btn-sm fw-bold px-3 text-dark shadow-sm"
+                                                                t-att-disabled="item.isSaving || this.state.isUploading"
+                                                                t-on-click="() => this.updateExistingLesson(item)">
+                                                            <t t-if="item.isSaving">Đang lưu thay đổi...</t>
+                                                            <t t-else="">Lưu thay đổi bài học</t>
+                                                        </button>
+                                                    </div>
+                                                </t>
+                                            </td>
+                                        </tr>
+                                    </t>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Thanh nút bấm xác nhận tải lên -->
+                    <div class="d-flex align-items-center justify-content-end gap-2 mt-3">
+                        <button type="button"
+                                class="btn btn-secondary btn-sm"
+                                t-att-disabled="this.state.isUploading"
+                                t-on-click="() => this.cancelSelection()">
+                            Hủy bỏ
+                        </button>
+                        <button type="button"
+                                class="btn btn-primary btn-sm fw-bold"
+                                t-att-disabled="this.state.isUploading || this.selectedCount === 0"
+                                t-on-click="() => this.startUpload()">
+                            Đưa video vào khóa học
+                        </button>
+                    </div>
+                </div>
+            </t>
+        </div>
+    </t>
+
+</templates>

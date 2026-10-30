@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<templates id="template" xml:space="preserve">
+    <t t-name="website.slides.fullscreen.video.local">
+        <div class="player ratio ratio-16x9 embed-responsive-item h-100 bg-black d-flex align-items-center justify-content-center">
+            <iframe t-att-src="slide.embedUrl" allowFullScreen="true" frameborder="0" class="w-100 h-100" style="min-height: 100%;"></iframe>
+        </div>
+    </t>
+
+    <t t-inherit="slide.slide.quiz" t-inherit-mode="extension">
+        <xpath expr="//div[@t-foreach='quiz.questions']" position="attributes">
+            <attribute name="t-att-data-is-multi">(question.question_type === 'multiple' || (question.correct_count &amp;&amp; question.correct_count &gt; 1)) ? '1' : '0'</attribute>
+        </xpath>
+        <xpath expr="//div[hasclass('h4')]" position="inside">
+            <span t-if="question.question_type === 'multiple' || (question.correct_count &amp;&amp; question.correct_count &gt; 1)" class="badge rounded-pill bg-primary ms-2 px-2 py-1 align-middle" style="font-size: 11px; font-weight: 600;">
+                Nhiều đáp án đúng (Chọn tất cả đáp án đúng)
+            </span>
+            <span t-else="" class="badge rounded-pill bg-secondary-subtle text-secondary border border-secondary-subtle ms-2 px-2 py-1 align-middle" style="font-size: 11px; font-weight: 500;">
+                Một đáp án đúng
+            </span>
+        </xpath>
+        <xpath expr="//div[hasclass('list-group')]" position="attributes">
+            <attribute name="t-att-data-is-multi">(question.question_type === 'multiple' || (question.correct_count &amp;&amp; question.correct_count &gt; 1)) ? '1' : '0'</attribute>
+        </xpath>
+        <xpath expr="//input[@type='radio']" position="attributes">
+            <attribute name="t-att-type">(question.question_type === 'multiple' || (question.correct_count &amp;&amp; question.correct_count &gt; 1)) ? 'checkbox' : 'radio'</attribute>
+            <attribute name="t-att-name">(question.question_type === 'multiple' || (question.correct_count &amp;&amp; question.correct_count &gt; 1)) ? ('checkbox_' + answer.id) : question.id</attribute>
+            <attribute name="class" add="tdb-quiz-input" separator=" "/>
+        </xpath>
+    </t>
+</templates>

@@ -1,0 +1,8 @@
+id,name,model_id,group_id/id,operation,domain
+access_slide_video_folder_user,slide.video.folder.user,slide.video.folder,website_slides.group_website_slides_officer,crud,
+access_slide_video_folder_manager,slide.video.folder.manager,slide.video.folder,website_slides.group_website_slides_manager,crud,
+access_slide_channel_add_video_wizard_user,slide.channel.add.video.wizard.user,slide.channel.add.video.wizard,website_slides.group_website_slides_officer,crud,
+access_slide_host_folder_browser_wizard_user,slide.host.folder.browser.wizard.user,slide.host.folder.browser.wizard,website_slides.group_website_slides_officer,crud,
+access_slide_host_folder_browser_line_user,slide.host.folder.browser.line.user,slide.host.folder.browser.line,website_slides.group_website_slides_officer,crud,
+access_slide_channel_batch_video_wizard_user,slide.channel.batch.video.wizard.user,slide.channel.batch.video.wizard,website_slides.group_website_slides_officer,crud,
+access_slide_channel_batch_video_line_user,slide.channel.batch.video.line.user,slide.channel.batch.video.line,website_slides.group_website_slides_officer,crud,

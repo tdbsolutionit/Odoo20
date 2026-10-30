@@ -1,0 +1,230 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <template id="embed_local_video" name="Trình phát Video Cục bộ Chuẩn Coursera">&lt;!DOCTYPE html&gt;
+        <html style="height: 100%; width: 100%;">
+            <head>
+                <meta charset="utf-8"/>
+                <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+                <meta name="viewport" content="width=device-width, initial-scale=1"/>
+                <title t-out="slide.name"/>
+                <link rel="stylesheet" href="/tdb_slides_custom/static/src/css/slide_embed_player.css?v=1.1"/>
+            </head>
+            <body style="height: 100%; width: 100%; margin: 0; padding: 0; overflow: hidden; background: #0b0f19;">
+                <div class="tdb-wrapper"
+                     t-att-data-slide-id="slide.id"
+                     t-att-data-channel-id="channel.id"
+                     t-att-data-category-id="category_id or 0"
+                     t-att-data-is-officer="'1' if is_officer else '0'"
+                     t-att-data-csrf-token="csrf_token or ''">
+                <!-- 1. Thanh cong cu tren cung chuan Coursera -->
+                <div class="tdb-topbar">
+                    <div class="tdb-topbar-left">
+                        <div class="tdb-topbar-title" t-out="slide.name"/>
+                        <div class="tdb-topbar-subtitle" t-out="channel.name"/>
+                    </div>
+
+                    <!-- Tien do hoan thanh bai hoc ro rang -->
+                    <div class="tdb-progress-wrap">
+                        <span class="tdb-progress-title">Tiến độ:</span>
+                        <div class="tdb-progress-track">
+                            <div id="tdb_progress_bar" class="tdb-progress-fill"></div>
+                        </div>
+                        <span id="tdb_progress_label" class="tdb-progress-text">0%</span>
+                        <span id="tdb_badge_completed" class="tdb-badge-completed tdb-d-none">Đã hoàn thành</span>
+                    </div>
+
+                    <!-- Nút chuyển Light/Dark Mode và Thu nhỏ bảng bên -->
+                    <div class="tdb-topbar-right">
+                        <button type="button" class="tdb-btn tdb-btn-outline tdb-btn-sm" id="tdb_btn_toggle_theme" title="Chuyển đổi giao diện Sáng / Tối">
+                            <span id="tdb_theme_icon" style="display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px;"></span>
+                            <span id="tdb_theme_text" style="margin-left: 6px;">Chế độ sáng</span>
+                        </button>
+                        <button type="button" class="tdb-btn tdb-btn-outline tdb-btn-sm" id="tdb_btn_toggle_panel">
+                            <span id="tdb_toggle_panel_text">Thu nhỏ bảng</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 2. Bo cuc chia doi: Vua xem video vua ghi chu ben canh -->
+                <div class="tdb-body-split">
+                    <!-- Cot Trai: Video va Thong tin bai hoc -->
+                    <div class="tdb-col-main" id="tdb_col_main">
+                        <div class="tdb-video-box" oncontextmenu="return false;">
+                            <!-- Khung tỷ lệ chuẩn 16:9 gắn khít thanh điều khiển và video -->
+                            <div class="tdb-video-container" id="tdb_video_container">
+                                <video id="tdb_video" controls="controls" autoplay="autoplay" preload="metadata"
+                                       controlsList="nodownload" disablePictureInPicture="true"
+                                       oncontextmenu="return false;" playsinline="playsinline" class="tdb-video-element">
+                                    <source t-att-src="video_stream_url or ('/slides/video/stream/' + str(slide.id))" t-att-type="mime_type or 'video/mp4'"/>
+                                    Trình duyệt không hỗ trợ xem video.
+                                </video>
+
+                                <!-- Thong bao khong duoc tua vuot -->
+                                <div id="tdb_skip_toast" class="tdb-toast">
+                                    Vui lòng xem tuần tự bài giảng để nắm vững kiến thức!
+                                </div>
+
+                                <!-- Hop thoai tiep tuc xem doan da dung truoc do -->
+                                <div id="tdb_resume_banner" class="tdb-resume-banner tdb-d-none">
+                                    <span>Tiếp tục xem từ <strong id="tdb_resume_time_str" style="color: #60a5fa; font-family: monospace;">00:00</strong>?</span>
+                                    <button type="button" class="tdb-btn tdb-btn-primary tdb-btn-sm" id="tdb_btn_accept_resume">Tiếp tục</button>
+                                    <button type="button" class="tdb-btn tdb-btn-secondary tdb-btn-sm" id="tdb_btn_dismiss_resume">Bắt đầu lại</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Cột Phải: Bảng Ghi chú, Mô tả, Tài liệu, Quiz (HIỂN THỊ SONG SONG CÙNG VIDEO) -->
+                    <div class="tdb-col-side" id="tdb_col_side">
+                        <!-- Thanh tab chuyển đổi -->
+                        <div class="tdb-side-tabs">
+                            <button type="button" class="tdb-tab-btn active" id="tdb_tab_notes_btn">
+                                Ghi chú <span id="tdb_notes_count_badge" class="tdb-tab-badge">0</span>
+                            </button>
+                            <button type="button" class="tdb-tab-btn" id="tdb_tab_desc_btn">
+                                Mô tả
+                            </button>
+                            <button type="button" class="tdb-tab-btn" id="tdb_tab_res_btn">
+                                Tài liệu <span id="tdb_res_count_badge" class="tdb-tab-badge" t-out="len(resources)"/>
+                            </button>
+                            <!-- Chỉ Admin / Giảng viên mới thấy Tab Tạo / Sửa Quiz -->
+                            <t t-if="is_officer">
+                                <button type="button" class="tdb-tab-btn" id="tdb_tab_quiz_btn">
+                                    <span id="tdb_quiz_tab_label" t-out="'Chỉnh sửa Quiz' if has_quiz else 'Tạo Quiz'"/>
+                                    <span id="tdb_quiz_count_badge" class="tdb-tab-badge" t-out="quiz_count or 0"/>
+                                </button>
+                            </t>
+                        </div>
+
+                        <!-- Tab 1: Ghi chú trong video (Coursera Notes) -->
+                        <div id="tdb_panel_notes" class="tdb-side-content">
+                            <button type="button" class="tdb-btn tdb-btn-primary" style="width: 100%; margin-bottom: 12px;" id="tdb_btn_open_add_note">
+                                + Thêm ghi chú tại <span id="tdb_note_at_time" style="display: inline-block; margin-left: 6px; font-weight: 700;">00:00</span>
+                            </button>
+
+                            <!-- Form nhập ghi chú mới -->
+                            <div id="tdb_add_note_form" class="tdb-add-note-card tdb-d-none">
+                                <div style="font-size: 12px; color: #94a3b8; margin-bottom: 6px;">
+                                    Ghi chú tại mốc: <strong id="tdb_new_note_time_label" style="color: #60a5fa; font-family: monospace;">00:00</strong>
+                                </div>
+                                <textarea id="tdb_new_note_text" class="tdb-textarea" rows="3" placeholder="Nhập nội dung ghi chú trong khi xem video..."></textarea>
+                                <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px;">
+                                    <button type="button" class="tdb-btn tdb-btn-secondary tdb-btn-sm" id="tdb_btn_cancel_add_note">Hủy</button>
+                                    <button type="button" class="tdb-btn tdb-btn-success tdb-btn-sm" id="tdb_btn_confirm_add_note">Lưu ghi chú</button>
+                                </div>
+                            </div>
+
+                            <div id="tdb_notes_list">
+                                <div class="tdb-empty-text" id="tdb_notes_empty">
+                                    Bạn chưa có ghi chú nào trong bài học này.<br/>Bấm nút phía trên để vừa học vừa ghi chép kiến thức!
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Tab 2: Mô tả & Thông tin bài học (Xem song song không cần cuộn chuột) -->
+                        <div id="tdb_panel_desc" class="tdb-side-content tdb-d-none">
+                            <div class="tdb-desc-title" style="font-size: 16px; font-weight: 700; color: #ffffff; margin-bottom: 4px;" t-out="slide.name"/>
+                            <div class="tdb-desc-course" style="font-size: 12px; color: #60a5fa; margin-bottom: 16px;">Khóa học: <span t-out="channel.name"/></div>
+
+                            <div style="font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; color: #94a3b8; margin-bottom: 8px;">Nội dung bài giảng:</div>
+                            <t t-if="slide.description and slide.description.strip()">
+                                <div class="tdb-desc-box" style="font-size: 13px; color: #cbd5e1; line-height: 1.6; background: rgba(255,255,255,0.04); padding: 14px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08);" t-out="slide.description"/>
+                            </t>
+                            <t t-else="">
+                                <div class="tdb-empty-text">Bài học này chưa có mô tả chi tiết.</div>
+                            </t>
+                        </div>
+
+                        <!-- Tab 3: Tài liệu đính kèm -->
+                        <div id="tdb_panel_resources" class="tdb-side-content tdb-d-none">
+                            <!-- Khung đính kèm tài liệu mới: CHỈ ADMIN MỚI THẤY -->
+                            <t t-if="is_officer">
+                                <div class="tdb-admin-card">
+                                    <div class="tdb-admin-card-title">Đính kèm tài liệu học tập mới</div>
+                                    <input type="file" class="tdb-input" style="margin-bottom: 8px;" id="tdb_res_file_input"/>
+                                    <input type="text" class="tdb-input" style="margin-bottom: 8px;" id="tdb_res_title_input" placeholder="Tên tài liệu hiển thị (tùy chọn)"/>
+                                    <button type="button" class="tdb-btn tdb-btn-success" style="width: 100%;" id="tdb_btn_upload_res">Tải lên tài liệu</button>
+                                    <div id="tdb_res_upload_status" style="font-size: 12px; margin-top: 6px;" class="tdb-d-none"></div>
+                                </div>
+                            </t>
+
+                            <div style="font-size: 13px; font-weight: 700; color: #94a3b8; margin-bottom: 10px;">Danh sách tài liệu của bài học</div>
+                            <div id="tdb_res_list">
+                                <t t-if="len(resources) == 0">
+                                    <div class="tdb-empty-text" id="tdb_res_empty">
+                                        Bài học chưa có tài liệu đính kèm.
+                                    </div>
+                                </t>
+                                <t t-foreach="resources" t-as="res">
+                                    <div class="tdb-resource-card">
+                                        <div style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                                            <div class="tdb-resource-title" style="font-weight: 600; color: #ffffff; font-size: 13px; overflow: hidden; text-overflow: ellipsis;" t-out="res['name']"/>
+                                            <div class="tdb-resource-sub" style="font-size: 11px; color: #94a3b8; font-family: monospace;" t-out="res['file_name'] or 'Liên kết ngoài'"/>
+                                        </div>
+                                        <a t-att-href="res['download_url'] or res['link']"
+                                           target="_blank"
+                                           download="download"
+                                           class="tdb-btn tdb-btn-outline tdb-btn-sm"
+                                           style="white-space: nowrap; flex-shrink: 0;">
+                                            Tải về
+                                        </a>
+                                    </div>
+                                </t>
+                            </div>
+                        </div>
+
+                        <!-- Tab 3: Tạo / Chỉnh sửa Quiz trắc nghiệm (CHỈ ADMIN MỚI THẤY) -->
+                        <t t-if="is_officer">
+                            <div id="tdb_panel_quiz" class="tdb-side-content tdb-d-none">
+                                <!-- Thanh tiêu đề chế độ: Quiz hiện tại & Nút tạo quiz mới -->
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; gap: 8px;">
+                                    <div id="tdb_quiz_current_badge" style="font-size: 12px; font-weight: 700; color: #3b82f6;">
+                                        Quiz của video bài học
+                                    </div>
+                                    <button type="button" class="tdb-btn tdb-btn-outline tdb-btn-sm" id="tdb_btn_new_quiz_mode" style="white-space: nowrap; font-size: 11px; padding: 4px 10px;">
+                                        + Thêm một bài Quiz mới
+                                    </button>
+                                </div>
+
+                                <!-- Thanh chọn Quiz cũ (chỉ hiển thị khi có từ 2 bài quiz trở lên) -->
+                                <div id="tdb_quiz_nav_bar" class="tdb-d-none" style="display: flex; gap: 8px; align-items: center; margin-bottom: 12px; padding: 6px 10px; border-radius: 6px;">
+                                    <span style="font-size: 11px; font-weight: 600; white-space: nowrap;">Đang sửa:</span>
+                                    <select id="tdb_quiz_selector" class="tdb-input" style="flex: 1; height: 28px; padding: 2px 6px; font-size: 11px; font-weight: 600;">
+                                    </select>
+                                </div>
+
+                                <!-- Form tiêu đề khi tạo bài Quiz mới -->
+                                <div id="tdb_new_quiz_title_wrap" class="tdb-d-none" style="margin-bottom: 12px; padding: 10px; border: 1px dashed #3b82f6; border-radius: 6px;">
+                                    <div style="font-size: 11px; color: #3b82f6; margin-bottom: 4px; font-weight: 600;">Tiêu đề bài Quiz mới:</div>
+                                    <input type="text" id="tdb_new_quiz_title" class="tdb-input" placeholder="VD: Kiểm tra kiến thức sau video"/>
+                                    <div style="font-size: 11px; color: #94a3b8; margin-top: 4px;">Bài quiz mới này sẽ được tạo thành một bài học riêng trong chương và liên kết với video này.</div>
+                                </div>
+
+                                <div id="tdb_quiz_panel_title" style="font-size: 12px; color: #94a3b8; margin-bottom: 12px; font-weight: 500;"></div>
+
+                                <div id="tdb_quiz_questions_container"></div>
+
+                                <div style="display: flex; gap: 8px; margin-top: 12px;">
+                                    <button type="button" class="tdb-btn tdb-btn-outline tdb-btn-sm" style="flex: 1;" id="tdb_btn_add_quiz_q">+ Thêm câu hỏi</button>
+                                    <button type="button" class="tdb-btn tdb-btn-primary tdb-btn-sm" style="flex: 1;" id="tdb_btn_save_quiz">
+                                        <span id="tdb_save_quiz_text">Cập nhật bài trắc nghiệm</span>
+                                    </button>
+                                </div>
+                                <div id="tdb_quiz_delete_wrap" style="margin-top: 8px; text-align: center;">
+                                    <button type="button" class="tdb-btn-danger-link" id="tdb_btn_delete_quiz" style="font-size: 11px;">
+                                        &#215; Xóa bài Quiz này
+                                    </button>
+                                </div>
+                                <div id="tdb_quiz_status" style="font-size: 12px; margin-top: 8px; text-align: center;" class="tdb-d-none"></div>
+                            </div>
+                        </t>
+                    </div>
+                </div>
+            </div>
+
+            <script id="tdb_initial_quiz_data" type="application/json" t-out="all_quizzes_json or '[]'"></script>
+            <script type="text/javascript" src="/tdb_slides_custom/static/src/js/slide_embed_player.js?v=1.4"></script>
+            </body>
+        </html>
+    </template>
+</odoo>
