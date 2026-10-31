@@ -156,8 +156,8 @@ def main():
 TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng sự hài lòng nhờ đồng hành và cung cấp dịch vụ chất lượng cao
                     </p>
                     <p class="pt-2">
-                        <a class="btn btn-secondary rounded-pill px-4 py-2 me-3 fw-bold text-white shadow-sm" href="/contactus">Khám phá thêm</a>
-                        <a class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold text-white shadow-sm" href="/contactus">Liên hệ</a>
+                        <a class="btn btn-light rounded-pill px-4 py-2 me-3 fw-bold text-dark shadow-sm" href="/contactus">Khám phá thêm</a>
+                        <a class="btn btn-primary rounded-pill px-4 py-2 fw-bold text-white shadow-sm" href="/contactus">Liên hệ</a>
                     </p>
                 </div>
             </section>
