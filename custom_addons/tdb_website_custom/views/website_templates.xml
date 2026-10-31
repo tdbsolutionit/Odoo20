@@ -2,7 +2,7 @@
 <odoo>
     <!-- 1. Kế thừa website.placeholder_header_brand để thay thế Logo TDB Solution chuẩn trên toàn hệ thống (Desktop & Mobile) -->
     <template id="tdb_header_brand" inherit_id="website.placeholder_header_brand" priority="1">
-        <xpath expr="//a[hasclass('navbar-brand')]" position="replace">
+        <xpath expr="//span[@id='o_header_brand_placeholder']" position="replace">
             <a href="/" class="navbar-brand logo me-3 me-xl-4 d-flex align-items-center" data-name="Navbar Logo">
                 <img src="/tdb_website_custom/static/src/img/tdb_logo.png"
                      class="img img-fluid tdb_navbar_logo"
