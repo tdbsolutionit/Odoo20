@@ -75,4 +75,14 @@
         </xpath>
     </t>
 
+    <!-- 3. Kế thừa web.SearchBar để chuẩn hóa thuộc tính cho thanh tìm kiếm toàn hệ thống -->
+    <t t-inherit="web.SearchBar" t-inherit-mode="extension">
+        <xpath expr="//input[hasclass('o_searchview_input')]" position="attributes">
+            <attribute name="name">search</attribute>
+            <attribute name="id">o_searchview_input</attribute>
+            <attribute name="aria-label">Tìm kiếm</attribute>
+            <attribute name="autocomplete">off</attribute>
+        </xpath>
+    </t>
+
 </templates>
