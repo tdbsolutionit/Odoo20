@@ -1,9 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- 1. Kế thừa Header để thay thế Logo và hiển thị thanh điều hướng chuẩn TDB Solution -->
-    <template id="tdb_header_custom" inherit_id="website.layout" priority="1">
-        <!-- Thay thế Logo TDB Solution trên Navbar Desktop -->
-        <xpath expr="//header//a[hasclass('navbar-brand')]" position="replace">
+    <!-- 1. Kế thừa website.placeholder_header_brand để thay thế Logo TDB Solution chuẩn trên toàn hệ thống (Desktop & Mobile) -->
+    <template id="tdb_header_brand" inherit_id="website.placeholder_header_brand" priority="1">
+        <xpath expr="//a[hasclass('navbar-brand')]" position="replace">
             <a href="/" class="navbar-brand logo me-3 me-xl-4 d-flex align-items-center" data-name="Navbar Logo">
                 <img src="/tdb_website_custom/static/src/img/tdb_logo.png"
                      class="img img-fluid tdb_navbar_logo"
@@ -11,9 +10,11 @@
                      loading="lazy"/>
             </a>
         </xpath>
+    </template>
 
-        <!-- Bổ sung Hotline và nút CTA vào thanh điều hướng Header -->
-        <xpath expr="//header//div[@id='o_main_nav']" position="inside">
+    <!-- 2. Kế thừa website.template_header_default để thêm Hotline và Nút Liên hệ với chúng tôi chuẩn theo ảnh mẫu -->
+    <template id="tdb_header_cta" inherit_id="website.template_header_default" priority="1">
+        <xpath expr="//t[@t-call='website.placeholder_header_call_to_action']" position="replace">
             <div class="d-none d-xl-flex align-items-center ms-auto gap-3 tdb_header_extras">
                 <a href="tel:+84373704895" class="nav-link text-secondary p-1 d-flex align-items-center tdb_hotline_item">
                     <i class="fa fa-phone me-1 text-primary"/>
@@ -26,7 +27,7 @@
         </xpath>
     </template>
 
-    <!-- 2. Kế thừa trang chủ website.homepage để hiển thị Hero Banner chuẩn như ảnh -->
+    <!-- 3. Kế thừa trang chủ website.homepage để hiển thị Hero Banner chuẩn như ảnh -->
     <template id="tdb_homepage_custom" inherit_id="website.homepage" priority="1">
         <xpath expr="//div[@id='wrap']" position="replace">
             <div id="wrap" class="oe_structure oe_empty">
@@ -59,93 +60,94 @@
         </xpath>
     </template>
 
-    <!-- 3. Kế thừa Footer website.layout để hiển thị chân trang 3 cột chuẩn như ảnh -->
+    <!-- 4. Kế thừa Footer website.layout để hiển thị chân trang 3 cột chuẩn như ảnh -->
     <template id="tdb_footer_custom" inherit_id="website.layout" priority="1">
-        <xpath expr="//footer[@id='bottom']" position="replace">
-            <footer id="bottom" data-anchor="true" data-name="Footer" class="o_footer o_colored_level o_cc tdb_site_footer">
-                <div id="footer" class="oe_structure oe_structure_solo">
-                    <section class="s_text_block pt48 pb24" data-snippet="s_text_block" data-name="Text">
-                        <div class="container">
-                            <div class="row g-4">
-                                <!-- Cột 1: Liên kết hữu ích -->
-                                <div class="col-lg-2 col-md-4 col-sm-6">
-                                    <h5 class="tdb_footer_heading mb-3">Liên kết hữu ích</h5>
-                                    <ul class="list-unstyled tdb_footer_list">
-                                        <li><a href="/">Trang chủ</a></li>
-                                        <li><a href="/aboutus">Về chúng tôi</a></li>
-                                        <li><a href="/shop">Sản phẩm</a></li>
-                                        <li><a href="#">Dịch vụ</a></li>
-                                        <li><a href="#">Hợp pháp</a></li>
-                                        <li><a href="/contactus">Liên hệ</a></li>
-                                    </ul>
-                                </div>
-
-                                <!-- Cột 2: Về chúng tôi -->
-                                <div class="col-lg-6 col-md-8 col-sm-12 o_colored_level">
-                                    <h5 class="tdb_footer_heading mb-3">Về chúng tôi</h5>
-                                    <p class="tdb_footer_about_text">
-                                        Chúng tôi cung cấp giải pháp chuyển đổi số cho bộ phận thiết kế và quản lý kỹ thuật bằng công cụ PDM/ PLM – CIM database. Giải pháp kỹ thuật đi từ ý tưởng (ideas – R&amp;D) -&gt; thiết kế (CAD) -&gt; Phân tích mô phỏng số (CFD/ CAE/ FEA) -&gt; Sản xuất (Production) -&gt; Vận hành và quản lý bảo trì bảo dưỡng từ hệ thống tích hợp IoT (IoT – Operation and maintenance).
-                                    </p>
-                                </div>
-
-                                <!-- Cột 3: Kết nối với chúng tôi -->
-                                <div id="connect" class="col-lg-4 col-md-12 o_colored_level">
-                                    <h5 class="tdb_footer_heading mb-3">Kết nối với chúng tôi</h5>
-                                    <ul class="list-unstyled tdb_footer_contact_list">
-                                        <li>
-                                            <i class="fa fa-comment fa-fw me-2 text-primary"/>
-                                            <a href="/contactus">Liên hệ</a>
-                                        </li>
-                                        <li>
-                                            <i class="fa fa-envelope fa-fw me-2 text-primary"/>
-                                            <a href="mailto:info@tdbsolution.com.vn">info@tdbsolution.com.vn</a>
-                                        </li>
-                                        <li>
-                                            <i class="fa fa-phone fa-fw me-2 text-primary"/>
-                                            <span class="o_force_ltr"><a href="tel:+84373704895">+84 373704895</a></span>
-                                        </li>
-                                    </ul>
-                                    <!-- Mạng xã hội hình tròn trắng -->
-                                    <div class="s_social_media text-start mt-3" data-snippet="s_social_media" data-name="Social Media">
-                                        <a href="https://facebook.com" class="s_social_media_facebook tdb_social_icon" target="_blank" aria-label="Facebook">
-                                            <i class="fa fa-facebook-f"/>
-                                        </a>
-                                        <a href="https://twitter.com" class="s_social_media_twitter tdb_social_icon" target="_blank" aria-label="X">
-                                            <i class="fa fa-times"/>
-                                        </a>
-                                        <a href="https://linkedin.com" class="s_social_media_linkedin tdb_social_icon" target="_blank" aria-label="LinkedIn">
-                                            <i class="fa fa-linkedin"/>
-                                        </a>
-                                        <a href="/" class="tdb_social_icon" aria-label="Website">
-                                            <i class="fa fa-globe"/>
-                                        </a>
-                                    </div>
-                                </div>
+        <!-- Thay thế toàn bộ khối Footer chính -->
+        <xpath expr="//div[@id='footer']" position="replace">
+            <div id="footer" class="oe_structure oe_structure_solo tdb_site_footer" data-name="Footer">
+                <section class="s_text_block pt48 pb24" data-snippet="s_text_block" data-name="Text">
+                    <div class="container">
+                        <div class="row g-4">
+                            <!-- Cột 1: Liên kết hữu ích -->
+                            <div class="col-lg-2 col-md-4 col-sm-6">
+                                <h5 class="tdb_footer_heading mb-3">Liên kết hữu ích</h5>
+                                <ul class="list-unstyled tdb_footer_list">
+                                    <li><a href="/">Trang chủ</a></li>
+                                    <li><a href="/aboutus">Về chúng tôi</a></li>
+                                    <li><a href="/shop">Sản phẩm</a></li>
+                                    <li><a href="#">Dịch vụ</a></li>
+                                    <li><a href="#">Hợp pháp</a></li>
+                                    <li><a href="/contactus">Liên hệ</a></li>
+                                </ul>
                             </div>
-                        </div>
-                    </section>
-                </div>
 
-                <!-- Thanh bản quyền chân trang (Copyright) -->
-                <div class="o_footer_copyright o_colored_level o_cc tdb_copyright_section" data-name="Copyright">
-                    <div class="container py-3">
-                        <div class="row align-items-center">
-                            <div class="col-md-6 text-center text-md-start text-muted">
-                                <span class="o_footer_copyright_name">Bản quyền thuộc © TDB Solution., Co. Ltd</span>
+                            <!-- Cột 2: Về chúng tôi -->
+                            <div class="col-lg-6 col-md-8 col-sm-12 o_colored_level">
+                                <h5 class="tdb_footer_heading mb-3">Về chúng tôi</h5>
+                                <p class="tdb_footer_about_text">
+                                    Chúng tôi cung cấp giải pháp chuyển đổi số cho bộ phận thiết kế và quản lý kỹ thuật bằng công cụ PDM/ PLM – CIM database. Giải pháp kỹ thuật đi từ ý tưởng (ideas – R&amp;D) -&gt; thiết kế (CAD) -&gt; Phân tích mô phỏng số (CFD/ CAE/ FEA) -&gt; Sản xuất (Production) -&gt; Vận hành và quản lý bảo trì bảo dưỡng từ hệ thống tích hợp IoT (IoT – Operation and maintenance).
+                                </p>
                             </div>
-                            <div class="col-md-6 text-center text-md-end text-muted mt-2 mt-md-0">
-                                <div class="o_brand_promotion">
-                                    Cung cấp bởi 
-                                    <a target="_blank" class="badge text-bg-light text-decoration-none px-2 py-1 mx-1" href="https://www.odoo.com">
-                                        <img alt="Odoo" src="/web/static/img/odoo_logo_tiny.png" width="62" height="20" style="width: auto; height: 1em; vertical-align: baseline;" loading="lazy"/>
+
+                            <!-- Cột 3: Kết nối với chúng tôi -->
+                            <div id="connect" class="col-lg-4 col-md-12 o_colored_level">
+                                <h5 class="tdb_footer_heading mb-3">Kết nối với chúng tôi</h5>
+                                <ul class="list-unstyled tdb_footer_contact_list">
+                                    <li>
+                                        <i class="fa fa-comment fa-fw me-2 text-primary"/>
+                                        <a href="/contactus">Liên hệ</a>
+                                    </li>
+                                    <li>
+                                        <i class="fa fa-envelope fa-fw me-2 text-primary"/>
+                                        <a href="mailto:info@tdbsolution.com.vn">info@tdbsolution.com.vn</a>
+                                    </li>
+                                    <li>
+                                        <i class="fa fa-phone fa-fw me-2 text-primary"/>
+                                        <span class="o_force_ltr"><a href="tel:+84373704895">+84 373704895</a></span>
+                                    </li>
+                                </ul>
+                                <!-- Mạng xã hội hình tròn trắng -->
+                                <div class="s_social_media text-start mt-3" data-snippet="s_social_media" data-name="Social Media">
+                                    <a href="https://facebook.com" class="s_social_media_facebook tdb_social_icon" target="_blank" aria-label="Facebook">
+                                        <i class="fa fa-facebook-f"/>
                                     </a>
-                                    - Một <a target="_blank" class="text-muted text-decoration-underline" href="https://www.odoo.com/app/ecommerce">nền tảng thương mại điện tử mã nguồn mở hàng đầu</a>
+                                    <a href="https://twitter.com" class="s_social_media_twitter tdb_social_icon" target="_blank" aria-label="X">
+                                        <i class="fa fa-times"/>
+                                    </a>
+                                    <a href="https://linkedin.com" class="s_social_media_linkedin tdb_social_icon" target="_blank" aria-label="LinkedIn">
+                                        <i class="fa fa-linkedin"/>
+                                    </a>
+                                    <a href="/" class="tdb_social_icon" aria-label="Website">
+                                        <i class="fa fa-globe"/>
+                                    </a>
                                 </div>
                             </div>
                         </div>
                     </div>
+                </section>
+            </div>
+        </xpath>
+
+        <!-- Thay thế thanh bản quyền chân trang (Copyright) -->
+        <xpath expr="//div[hasclass('o_footer_copyright')]" position="replace">
+            <div class="o_footer_copyright o_colored_level o_cc tdb_copyright_section" data-name="Copyright">
+                <div class="container py-3">
+                    <div class="row align-items-center">
+                        <div class="col-md-6 text-center text-md-start text-muted">
+                            <span class="o_footer_copyright_name">Bản quyền thuộc © TDB Solution., Co. Ltd</span>
+                        </div>
+                        <div class="col-md-6 text-center text-md-end text-muted mt-2 mt-md-0">
+                            <div class="o_brand_promotion">
+                                Cung cấp bởi 
+                                <a target="_blank" class="badge text-bg-light text-decoration-none px-2 py-1 mx-1" href="https://www.odoo.com">
+                                    <img alt="Odoo" src="/web/static/img/odoo_logo_tiny.png" width="62" height="20" style="width: auto; height: 1em; vertical-align: baseline;" loading="lazy"/>
+                                </a>
+                                - Một <a target="_blank" class="text-muted text-decoration-underline" href="https://www.odoo.com/app/ecommerce">nền tảng thương mại điện tử mã nguồn mở hàng đầu</a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
-            </footer>
+            </div>
         </xpath>
     </template>
 </odoo>
