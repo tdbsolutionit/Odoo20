@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 {
     'name': 'Custom Editor Toolbar & WYSIWYG Enhancements',
     'version': '1.0',
@@ -10,10 +11,8 @@ Module chuẩn hóa giao diện Odoo 20:
 - Tùy chỉnh bộ chọn kiểu chữ và tổ chức nhóm nút khoa học.
     """,
     'author': 'Antigravity / Odoo Team',
-    'depends': ['web', 'html_editor', 'sale'],
-    'data': [
-        'views/sale_order_views.xml',
-    ],
+    'depends': ['web', 'html_editor'],
+    'data': [],
     'assets': {
         'web.assets_backend': [
             'custom_editor_toolbar/static/src/scss/font_size_selector.scss',

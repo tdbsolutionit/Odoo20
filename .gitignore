@@ -34,6 +34,10 @@ addons/*
 # NHƯNG GIỮ LẠI các module bạn đã tải về (dms, plm)
 !addons/dms/
 !addons/plm/
+!addons/vn_core/
+!addons/l10n_vn_vas_reports/
+!addons/l10n_vn_stock_reports/
+!addons/l10n_vn_mrp_reports/
 !addons/README.md
 
 # Logs and OS files
