@@ -1,7 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<odoo>
-    <!-- Gỡ bỏ binding của báo cáo PDF gốc khỏi menu Print để ưu tiên dùng Popup Preview Báo giá TDB -->
-    <record id="sale.action_report_saleorder" model="ir.actions.report">
-        <field name="binding_model_id" eval="False"/>
-    </record>
-</odoo>
