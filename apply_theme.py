@@ -81,8 +81,66 @@ def main():
                 print("[OK] Đã nạp Logo TDB Solution chuẩn vào Website & Company")
             except Exception as e:
                 print(f"[Bỏ qua lỗi logo]: {e}")
+                
+            # Đăng ký logo vào ir.attachment
+            try:
+                att_model = env['ir.attachment']
+                logo_att = att_model.search([('url', '=', '/tdb_website_custom/static/src/img/tdb_logo.png')], limit=1)
+                l_b64 = base64.b64encode(raw_bytes).decode('ascii')
+                if logo_att:
+                    logo_att.write({'datas': l_b64, 'public': True})
+                else:
+                    att_model.create({
+                        'name': 'tdb_logo.png',
+                        'type': 'binary',
+                        'datas': l_b64,
+                        'mimetype': 'image/png',
+                        'public': True,
+                        'url': '/tdb_website_custom/static/src/img/tdb_logo.png',
+                    })
+            except Exception as e:
+                print(f"[Lưu ý logo attachment]: {e}")
         else:
             print(f"[CẢNH BÁO] Không tìm thấy file logo tại: {logo_path}")
+
+        # 2b. Nạp ảnh Banner Hero BG-TapThe từ folder Picture vào Odoo Attachment
+        for bg_filename in ['BG-TapThe.webp', 'BG-TapThe.jpg']:
+            candidates = [
+                os.path.join(odoo_dir, 'Picture', bg_filename),
+                os.path.join(current_dir, 'Picture', bg_filename),
+                os.path.join(odoo_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img', bg_filename),
+                os.path.join(current_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img', bg_filename),
+            ]
+            found_bg = None
+            for p in candidates:
+                if os.path.exists(p):
+                    found_bg = p
+                    break
+            if found_bg:
+                try:
+                    with open(found_bg, 'rb') as f:
+                        bg_bytes = f.read()
+                    bg_b64 = base64.b64encode(bg_bytes).decode('ascii')
+                    mimetype = 'image/webp' if bg_filename.endswith('.webp') else 'image/jpeg'
+                    att_model = env['ir.attachment']
+                    att = att_model.search([('url', '=', f'/tdb_website_custom/static/src/img/{bg_filename}')], limit=1)
+                    if not att:
+                        att = att_model.search([('name', '=', bg_filename), ('public', '=', True)], limit=1)
+                    vals = {
+                        'name': bg_filename,
+                        'type': 'binary',
+                        'datas': bg_b64,
+                        'mimetype': mimetype,
+                        'public': True,
+                        'url': f'/tdb_website_custom/static/src/img/{bg_filename}',
+                    }
+                    if att:
+                        att.write(vals)
+                    else:
+                        att_model.create(vals)
+                    print(f"[OK] Đã nạp thành công ảnh '{bg_filename}' từ '{found_bg}' vào Odoo Attachment!")
+                except Exception as e:
+                    print(f"[Lưu ý nạp ảnh {bg_filename}]: {e}")
 
         # 3. Chuẩn bị mã nguồn HTML chuẩn cho Homepage Hero Banner (Gọi website.layout)
         homepage_arch = """<t t-name="website.homepage">
@@ -231,14 +289,26 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
                     })
             print(f"[OK] Đã đồng bộ Menu điều hướng cho website '{ws.name}'")
 
-        # 6. Xóa cache view và template để Odoo nạp giao diện mới ngay lập tức
+        # 6. Kích hoạt tùy chọn Header nếu có
+        for view_key in [
+            'website.template_header_default_call_to_action',
+            'website.header_call_to_action',
+            'website.template_header_call_to_action',
+            'website.option_header_brand_logo',
+        ]:
+            opt_view = env['ir.ui.view'].search([('key', '=', view_key)], limit=1)
+            if opt_view and not opt_view.active:
+                opt_view.write({'active': True})
+                print(f"[OK] Đã kích hoạt tùy chọn Header: {view_key}")
+
+        # 7. Xóa cache view và template để Odoo nạp giao diện mới ngay lập tức
         try:
             env.registry.clear_cache()
             print("[OK] Đã xóa cache QWeb template và View cache")
         except Exception:
             pass
 
-        # 7. Commit thay đổi vào database PostgreSQL
+        # 8. Commit thay đổi vào database PostgreSQL
         cr.commit()
         print("\n" + "="*65)
         print(">>> HOÀN TẤT THÀNH CÔNG! GIAO DIỆN TDB SOLUTION ĐÃ ĐƯỢC PHỤC HỒI & ÁP DỤNG! <<<")
