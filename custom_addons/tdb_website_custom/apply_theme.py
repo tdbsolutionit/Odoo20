@@ -5,9 +5,7 @@ import os
 import sys
 
 def main():
-    # Detect current directory and odoo configuration
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    # If placed inside custom_addons/tdb_website_custom, go up 2 levels
     if os.path.basename(current_dir) == 'tdb_website_custom':
         odoo_dir = os.path.dirname(os.path.dirname(current_dir))
     else:
@@ -19,6 +17,10 @@ def main():
     try:
         import odoo
         from odoo.tools import config
+        try:
+            from odoo.modules.registry import Registry
+        except ImportError:
+            from odoo.orm.registry import Registry
     except ImportError as e:
         print(f"Error importing odoo: {e}. Please ensure you are running in the Odoo virtual environment.")
         return
@@ -28,9 +30,12 @@ def main():
         config_path = 'odoo.conf'
 
     print(">>> Dang ket noi database odoo20...")
-    config.parse_config(['-c', config_path, '-d', 'odoo20'])
+    try:
+        config.parse_config(['-c', config_path, '-d', 'odoo20'], setup_logging=False)
+    except TypeError:
+        config.parse_config(['-c', config_path, '-d', 'odoo20'])
     
-    registry = odoo.registry('odoo20')
+    registry = Registry('odoo20')
     with registry.cursor() as cr:
         env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {})
 
