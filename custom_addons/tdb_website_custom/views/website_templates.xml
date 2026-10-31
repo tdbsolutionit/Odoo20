@@ -1,8 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- 1. Kế thừa website.placeholder_header_brand để thay thế Logo TDB Solution chuẩn trên toàn hệ thống (Desktop & Mobile) -->
-    <template id="tdb_header_brand" inherit_id="website.placeholder_header_brand" priority="1">
-        <xpath expr="//span[@id='o_header_brand_placeholder']" position="replace">
+    <!-- 1. Kế thừa website.template_header_default để thay thế Logo và thêm Hotline + Nút CTA chuẩn nhận diện TDB Solution -->
+    <template id="tdb_header_custom" inherit_id="website.template_header_default" priority="1">
+        <!-- Thay thế Logo TDB Solution -->
+        <xpath expr="//t[@t-call='website.placeholder_header_brand']" position="replace">
             <a href="/" class="navbar-brand logo me-3 me-xl-4 d-flex align-items-center" data-name="Navbar Logo">
                 <img src="/tdb_website_custom/static/src/img/tdb_logo.png"
                      class="img img-fluid tdb_navbar_logo"
@@ -10,10 +11,8 @@
                      loading="lazy"/>
             </a>
         </xpath>
-    </template>
 
-    <!-- 2. Kế thừa website.template_header_default để thêm Hotline và Nút Liên hệ với chúng tôi chuẩn theo ảnh mẫu -->
-    <template id="tdb_header_cta" inherit_id="website.template_header_default" priority="1">
+        <!-- Bổ sung Hotline và nút CTA vào thanh điều hướng Header -->
         <xpath expr="//t[@t-call='website.placeholder_header_call_to_action']" position="replace">
             <div class="d-none d-xl-flex align-items-center ms-auto gap-3 tdb_header_extras">
                 <a href="tel:+84373704895" class="nav-link text-secondary p-1 d-flex align-items-center tdb_hotline_item">
@@ -27,7 +26,7 @@
         </xpath>
     </template>
 
-    <!-- 3. Kế thừa trang chủ website.homepage để hiển thị Hero Banner chuẩn như ảnh -->
+    <!-- 2. Kế thừa trang chủ website.homepage để hiển thị Hero Banner chuẩn như ảnh -->
     <template id="tdb_homepage_custom" inherit_id="website.homepage" priority="1">
         <xpath expr="//div[@id='wrap']" position="replace">
             <div id="wrap" class="oe_structure oe_empty">
@@ -60,7 +59,7 @@
         </xpath>
     </template>
 
-    <!-- 4. Kế thừa Footer website.layout để hiển thị chân trang 3 cột chuẩn như ảnh -->
+    <!-- 3. Kế thừa Footer website.layout để hiển thị chân trang 3 cột chuẩn như ảnh -->
     <template id="tdb_footer_custom" inherit_id="website.layout" priority="1">
         <!-- Thay thế toàn bộ khối Footer chính -->
         <xpath expr="//div[@id='footer']" position="replace">
