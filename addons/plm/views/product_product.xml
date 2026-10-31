@@ -542,8 +542,7 @@
             <xpath expr="//templates/t[1]" position="after">
                 <t t-name="previews">
                     <div style="display: -webkit-inline-box;  padding-left: 10px;">
-                        <t t-foreach="record.linkeddocuments.raw_value" t-as="documentId">
-                            <t t-debug="plm"/>
+                        <t t-foreach="record.linkeddocuments.raw_value" t-as="documentId" t-key="documentId">
                             <div>
                                 <a type="object"
                                    role="button"

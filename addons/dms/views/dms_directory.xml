@@ -296,7 +296,10 @@
                                     <img
                                         t-att-src="record.icon_url.raw_value"
                                         alt="Icon"
+                                        width="70"
+                                        height="70"
                                         class="img img-fluid object-fit-cover"
+                                        style="width:70px; height:70px; aspect-ratio:1/1;"
                                     />
                                 </div>
                                 <div class="col-8">
@@ -306,7 +309,7 @@
                                         widget="many2many_tags"
                                         options="{'color_field': 'color'}"
                                     />
-                                    <field name="write_date" widget="date" />
+                                    <field name="write_date" widget="datetime" />
                                 </div>
                             </div>
                             <footer class="mt-auto pt-0 ms-1">
@@ -357,7 +360,9 @@
                                         t-att-title="record.create_uid.value"
                                         t-att-alt="record.create_uid.value"
                                         class="oe_kanban_avatar"
-                                        style="max-width:20px;"
+                                        width="20"
+                                        height="20"
+                                        style="width:20px; height:20px; aspect-ratio:1/1;"
                                     />
                                 </div>
                             </footer>

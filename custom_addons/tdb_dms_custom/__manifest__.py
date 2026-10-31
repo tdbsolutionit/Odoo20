@@ -17,9 +17,9 @@ Module tùy biến DMS cho TDB Solution:
     'data': [
         'security/ir.access.csv',
         'data/recycle_bin_data.xml',
-        'views/create_subfolder_wizard_views.xml',
-        'views/file_date_filter_wizard_views.xml',
-        'views/directory_views.xml',
+        'wizard/create_subfolder_wizard_views.xml',
+        'wizard/file_date_filter_wizard_views.xml',
+        'views/dms_directory_views.xml',
         'views/dms_file_views.xml',
     ],
     'installable': True,
