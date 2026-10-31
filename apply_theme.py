@@ -4,6 +4,20 @@ import base64
 import os
 import sys
 
+def make_binary_value(raw_bytes, filename="tdb_logo.png"):
+    """Tao BinaryValue chuan cho Odoo 20"""
+    try:
+        from odoo.tools import BinaryBytes
+        return BinaryBytes(raw_bytes, filename=filename)
+    except Exception:
+        pass
+    try:
+        from odoo.orm.fields_binary import BinaryValue
+        return BinaryValue(raw_bytes, filename=filename)
+    except Exception:
+        pass
+    return base64.b64encode(raw_bytes)
+
 def main():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     if os.path.basename(current_dir) == 'tdb_website_custom':
@@ -57,12 +71,16 @@ def main():
             
         if os.path.exists(logo_path):
             with open(logo_path, 'rb') as f:
-                logo_b64 = base64.b64encode(f.read())
-            if company:
-                company.write({'logo': logo_b64})
-            for ws in env['website'].search([]):
-                ws.write({'logo': logo_b64, 'name': 'TDB Solution'})
-            print("[OK] Da nap Logo TDB Solution chuan vao Website & Company")
+                raw_bytes = f.read()
+            logo_val = make_binary_value(raw_bytes, "tdb_logo.png")
+            try:
+                if company:
+                    company.write({'logo': logo_val})
+                for ws in env['website'].search([]):
+                    ws.write({'logo': logo_val, 'name': 'TDB Solution'})
+                print("[OK] Da nap Logo TDB Solution chuan vao Website & Company")
+            except Exception as e:
+                print(f"[Bo qua loi logo]: {e}")
         else:
             print(f"[CANH BAO] Khong tim thay file logo tai: {logo_path}")
 
