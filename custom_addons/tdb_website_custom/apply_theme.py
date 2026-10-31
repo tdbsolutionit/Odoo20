@@ -84,7 +84,7 @@ def main():
         else:
             print(f"[CANH BAO] Khong tim thay file logo tai: {logo_path}")
 
-        # 3. Cap nhat Trang chu (Homepage) PHAI CO <t t-call="website.layout"> de load day du Header, CSS va Footer
+        # 3. Cap nhat Trang chu (Homepage)
         homepage_html = """<t t-name="website.homepage">
     <t t-call="website.layout">
         <t t-set="pageName" t-value="'homepage'"/>
@@ -114,53 +114,64 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
         for page in homepage_pages:
             if page.view_id:
                 page.view_id.write({'arch_db': homepage_html})
-        print("[OK] Da cap nhat Hero Banner vao Homepage (kem t-call website.layout de load day du CSS, Header, Footer)")
+        print("[OK] Da cap nhat Hero Banner vao Homepage")
 
-        # 4. Cap nhat Footer 3 cot chuan TDB Solution
-        footer_html = """<div id="footer" class="oe_structure oe_structure_solo" style="background-color: #0b1320; color: #94a3b8;">
-    <section class="s_text_block pt48 pb24" data-snippet="s_text_block" data-name="Text">
-        <div class="container">
-            <div class="row g-4">
-                <div class="col-lg-2 col-md-4 col-sm-6">
-                    <h5 class="mb-3 text-white fw-bold">Liên kết hữu ích</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><a href="/" class="text-decoration-none" style="color: #94a3b8;">Trang chủ</a></li>
-                        <li class="mb-2"><a href="/aboutus" class="text-decoration-none" style="color: #94a3b8;">Về chúng tôi</a></li>
-                        <li class="mb-2"><a href="/shop" class="text-decoration-none" style="color: #94a3b8;">Sản phẩm</a></li>
-                        <li class="mb-2"><a href="#" class="text-decoration-none" style="color: #94a3b8;">Dịch vụ</a></li>
-                        <li class="mb-2"><a href="#" class="text-decoration-none" style="color: #94a3b8;">Hợp pháp</a></li>
-                        <li class="mb-2"><a href="/contactus" class="text-decoration-none" style="color: #94a3b8;">Liên hệ</a></li>
-                    </ul>
-                </div>
-                <div class="col-lg-6 col-md-8 col-sm-12">
-                    <h5 class="mb-3 text-white fw-bold">Về chúng tôi</h5>
-                    <p style="line-height: 1.7; color: #cbd5e1;">
-                        Chúng tôi cung cấp giải pháp chuyển đổi số cho bộ phận thiết kế và quản lý kỹ thuật bằng công cụ PDM/ PLM – CIM database. Giải pháp kỹ thuật đi từ ý tưởng (ideas – R&amp;D) -&gt; thiết kế (CAD) -&gt; Phân tích mô phỏng số (CFD/ CAE/ FEA) -&gt; Sản xuất (Production) -&gt; Vận hành và quản lý bảo trì bảo dưỡng từ hệ thống tích hợp IoT (IoT – Operation and maintenance).
-                    </p>
-                </div>
-                <div id="connect" class="col-lg-4 col-md-12">
-                    <h5 class="mb-3 text-white fw-bold">Kết nối với chúng tôi</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><i class="fa fa-comment fa-fw me-2 text-primary"></i><a href="/contactus" class="text-decoration-none" style="color: #94a3b8;">Liên hệ</a></li>
-                        <li class="mb-2"><i class="fa fa-envelope fa-fw me-2 text-primary"></i><a href="mailto:info@tdbsolution.com.vn" class="text-decoration-none" style="color: #94a3b8;">info@tdbsolution.com.vn</a></li>
-                        <li class="mb-2"><i class="fa fa-phone fa-fw me-2 text-primary"></i><span class="o_force_ltr"><a href="tel:+84373704895" class="text-decoration-none" style="color: #94a3b8;">+84 373704895</a></span></li>
-                    </ul>
-                    <div class="s_social_media text-start mt-3">
-                        <a href="https://facebook.com" class="btn btn-light rounded-circle p-2 me-2 text-primary" target="_blank" aria-label="Facebook"><i class="fa fa-facebook-f fa-fw"></i></a>
-                        <a href="https://twitter.com" class="btn btn-light rounded-circle p-2 me-2 text-info" target="_blank" aria-label="X"><i class="fa fa-twitter fa-fw"></i></a>
-                        <a href="https://linkedin.com" class="btn btn-light rounded-circle p-2 me-2 text-primary" target="_blank" aria-label="LinkedIn"><i class="fa fa-linkedin fa-fw"></i></a>
-                        <a href="/" class="btn btn-light rounded-circle p-2 text-dark" aria-label="Website"><i class="fa fa-globe fa-fw"></i></a>
+        # 4. Cap nhat Footer chuan voi the bao xpath hop le
+        footer_xpath = """<xpath expr="//div[@id='footer']" position="replace">
+    <div id="footer" class="oe_structure oe_structure_solo" style="background-color: #0b1320; color: #94a3b8;">
+        <section class="s_text_block pt48 pb24" data-snippet="s_text_block" data-name="Text">
+            <div class="container">
+                <div class="row g-4">
+                    <div class="col-lg-2 col-md-4 col-sm-6">
+                        <h5 class="mb-3 text-white fw-bold">Liên kết hữu ích</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><a href="/" class="text-decoration-none" style="color: #94a3b8;">Trang chủ</a></li>
+                            <li class="mb-2"><a href="/aboutus" class="text-decoration-none" style="color: #94a3b8;">Về chúng tôi</a></li>
+                            <li class="mb-2"><a href="/shop" class="text-decoration-none" style="color: #94a3b8;">Sản phẩm</a></li>
+                            <li class="mb-2"><a href="#" class="text-decoration-none" style="color: #94a3b8;">Dịch vụ</a></li>
+                            <li class="mb-2"><a href="#" class="text-decoration-none" style="color: #94a3b8;">Hợp pháp</a></li>
+                            <li class="mb-2"><a href="/contactus" class="text-decoration-none" style="color: #94a3b8;">Liên hệ</a></li>
+                        </ul>
+                    </div>
+                    <div class="col-lg-6 col-md-8 col-sm-12">
+                        <h5 class="mb-3 text-white fw-bold">Về chúng tôi</h5>
+                        <p style="line-height: 1.7; color: #cbd5e1;">
+                            Chúng tôi cung cấp giải pháp chuyển đổi số cho bộ phận thiết kế và quản lý kỹ thuật bằng công cụ PDM/ PLM – CIM database. Giải pháp kỹ thuật đi từ ý tưởng (ideas – R&amp;D) -&gt; thiết kế (CAD) -&gt; Phân tích mô phỏng số (CFD/ CAE/ FEA) -&gt; Sản xuất (Production) -&gt; Vận hành và quản lý bảo trì bảo dưỡng từ hệ thống tích hợp IoT (IoT – Operation and maintenance).
+                        </p>
+                    </div>
+                    <div id="connect" class="col-lg-4 col-md-12">
+                        <h5 class="mb-3 text-white fw-bold">Kết nối với chúng tôi</h5>
+                        <ul class="list-unstyled">
+                            <li class="mb-2"><i class="fa fa-comment fa-fw me-2 text-primary"></i><a href="/contactus" class="text-decoration-none" style="color: #94a3b8;">Liên hệ</a></li>
+                            <li class="mb-2"><i class="fa fa-envelope fa-fw me-2 text-primary"></i><a href="mailto:info@tdbsolution.com.vn" class="text-decoration-none" style="color: #94a3b8;">info@tdbsolution.com.vn</a></li>
+                            <li class="mb-2"><i class="fa fa-phone fa-fw me-2 text-primary"></i><span class="o_force_ltr"><a href="tel:+84373704895" class="text-decoration-none" style="color: #94a3b8;">+84 373704895</a></span></li>
+                        </ul>
+                        <div class="s_social_media text-start mt-3">
+                            <a href="https://facebook.com" class="btn btn-light rounded-circle p-2 me-2 text-primary" target="_blank" aria-label="Facebook"><i class="fa fa-facebook-f fa-fw"></i></a>
+                            <a href="https://twitter.com" class="btn btn-light rounded-circle p-2 me-2 text-info" target="_blank" aria-label="X"><i class="fa fa-twitter fa-fw"></i></a>
+                            <a href="https://linkedin.com" class="btn btn-light rounded-circle p-2 me-2 text-primary" target="_blank" aria-label="LinkedIn"><i class="fa fa-linkedin fa-fw"></i></a>
+                            <a href="/" class="btn btn-light rounded-circle p-2 text-dark" aria-label="Website"><i class="fa fa-globe fa-fw"></i></a>
+                        </div>
                     </div>
                 </div>
             </div>
-        </div>
-    </section>
-</div>"""
+        </section>
+    </div>
+</xpath>"""
+
+        # Sua view 1953 bi loi dinh dang
+        v1953 = env['ir.ui.view'].browse(1953)
+        if v1953.exists():
+            try:
+                v1953.write({'arch_db': footer_xpath})
+                print("[OK] Da sua loi template 1953 thanh cong")
+            except Exception as e:
+                print(f"[Luu y v1953]: {e}")
 
         footer_views = env['ir.ui.view'].search([('key', 'in', ['website.footer_custom', 'website.template_footer_default', 'website.footer_default'])])
         for f_view in footer_views:
             try:
-                f_view.write({'arch_db': footer_html})
+                f_view.write({'arch_db': footer_xpath})
             except Exception:
                 pass
         print("[OK] Da cap nhat Footer 3 cot chuan TDB Solution")
