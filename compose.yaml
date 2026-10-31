@@ -1,0 +1,43 @@
+services:
+  db:
+    image: postgres:18
+    container_name: odoo20-db
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-postgres}
+      POSTGRES_USER: ${POSTGRES_USER:-odoo}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-odoo}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-odoo} -d ${POSTGRES_DB:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  odoo:
+    build: .
+    image: odoo:20.0-custom
+    container_name: odoo20
+    command: ["/opt/odoo/venv/bin/python3", "/opt/odoo/src/odoo-bin", "-c", "/etc/odoo/odoo.conf"]
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      HOST: db
+      PORT: 5432
+      USER: ${POSTGRES_USER:-odoo}
+      PASSWORD: ${POSTGRES_PASSWORD:-odoo}
+    ports:
+      - "${ODOO_PORT:-8069}:8069"
+    volumes:
+      - odoo-data:/var/lib/odoo
+      - ./custom_addons:/mnt/custom_addons
+      - ./addons:/mnt/extra-addons
+      - ./config:/etc/odoo
+      - ./videos:/mnt/videos
+    restart: unless-stopped
+
+volumes:
+  postgres-data:
+  odoo-data:

@@ -9,16 +9,16 @@
 # ================================================================================
 
 param(
-    [string]$DbName = "odoo20",
-    [string]$MasterPwd = "MatKhauMoi",
-    [string]$DbUser = "odoo20",
-    [string]$DbPassword = "tdb@2026",
-    [string]$DbHost = "localhost",
-    [int]$DbPort = 5432,
+    [string]$DbName = $(if ($env:ODOO_DB_NAME) { $env:ODOO_DB_NAME } else { "odoo20" }),
+    [string]$MasterPwd = $(if ($env:ODOO_MASTER_PWD) { $env:ODOO_MASTER_PWD } else { "" }),
+    [string]$DbUser = $(if ($env:ODOO_DB_USER) { $env:ODOO_DB_USER } else { "odoo" }),
+    [string]$DbPassword = $(if ($env:ODOO_DB_PASSWORD) { $env:ODOO_DB_PASSWORD } else { "" }),
+    [string]$DbHost = $(if ($env:ODOO_DB_HOST) { $env:ODOO_DB_HOST } else { "localhost" }),
+    [int]$DbPort = $(if ($env:ODOO_DB_PORT) { [int]$env:ODOO_DB_PORT } else { 5432 }),
     [string]$PgDumpPath = "",
-    [string]$DataDir = "C:\odoo20\data",
-    [string]$OdooUrl = "http://127.0.0.1:8080",
-    [string]$BackupDir = "C:\odoo_backups"
+    [string]$DataDir = $(if ($env:ODOO_DATA_DIR) { $env:ODOO_DATA_DIR } else { "C:\odoo20\data" }),
+    [string]$OdooUrl = $(if ($env:ODOO_URL) { $env:ODOO_URL } else { "http://127.0.0.1:8069" }),
+    [string]$BackupDir = $(if ($env:ODOO_BACKUP_DIR) { $env:ODOO_BACKUP_DIR } else { "C:\odoo_backups" })
 )
 
 # 1. Khoi tao thu muc luu tru

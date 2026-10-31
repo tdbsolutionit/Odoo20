@@ -1,0 +1,30 @@
+[options]
+; Mật khẩu quản trị cơ sở dữ liệu (Master Password)
+admin_passwd = admin_master_password_change_me
+
+; Kết nối CSDL PostgreSQL
+db_host = db
+db_port = 5432
+db_user = odoo
+db_password = your_secure_password_here
+
+; Đường dẫn Addons (Theo đúng thứ tự ưu tiên kiến trúc Odoo)
+addons_path = /mnt/custom_addons,/mnt/extra-addons,/opt/odoo/src/odoo/addons,/opt/odoo/src/addons
+
+; Thư mục lưu trữ dữ liệu tệp đính kèm (Filestore)
+data_dir = /var/lib/odoo
+
+; Thiết lập mạng và giao diện
+list_db = True
+http_interface = 0.0.0.0
+http_port = 8069
+
+[colors]
+pid = never
+loglevel = auto
+session_id = never
+http_request_line = auto
+http_response_body = auto
+perf = auto
+cursor_mode = auto
+sql = auto
