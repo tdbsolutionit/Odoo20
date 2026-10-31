@@ -14,12 +14,14 @@
                         <div class="o_home_menu_search_box">
                             <i class="oi me-2 text-white-50" data-icon="search"/>
                             <input type="text"
+                                   id="o_home_menu_search_input"
+                                   name="search_apps"
+                                   autocomplete="off"
                                    class="o_home_menu_search_input"
                                    placeholder="Tìm kiếm ứng dụng..."
                                    t-att-value="this.state.searchQuery"
                                    t-on-input="(ev) => { this.state.searchQuery = ev.target.value; }"
-                                   t-on-keydown="(ev) => this.onSearchKeyDown(ev)"
-                                   autofocus="1"/>
+                                   t-on-keydown="(ev) => this.onSearchKeyDown(ev)"/>
                             <i t-if="this.state.searchQuery"
                                class="oi ms-2 text-white-50 cursor-pointer"
                                data-icon="close"
