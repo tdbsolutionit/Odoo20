@@ -129,54 +129,76 @@ patch(NavBar.prototype, {
  */
 if (typeof window !== "undefined") {
     let a11yTimeout = null;
-    let fieldCounter = 0;
+    let isRunning = false;
 
     const fixAccessibilityIssues = () => {
-        // 1. Chuẩn hóa tất cả các trường input, textarea, select thiếu name, id, hoặc aria-label
-        const formFields = document.querySelectorAll(
-            "input:not([data-a11y-checked]), textarea:not([data-a11y-checked]), select:not([data-a11y-checked])"
-        );
+        if (isRunning) return;
+        isRunning = true;
 
-        formFields.forEach((el) => {
-            el.setAttribute("data-a11y-checked", "true");
-            fieldCounter++;
+        try {
+            // 1. Chuẩn hóa thẻ <label for="xxx"> (Khắc phục lỗi "Incorrect use of <label for=FORM_ELEMENT>")
+            document.querySelectorAll("label[for]").forEach((label) => {
+                const targetId = label.getAttribute("for");
+                if (!targetId || document.getElementById(targetId)) return;
 
-            // Bổ sung name nếu thiếu
-            if (!el.getAttribute("name")) {
-                const baseName = el.placeholder || el.getAttribute("aria-label") || el.className?.split(" ")[0] || "field";
-                const cleanName = baseName.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/^_+|_+$/g, "") || "field";
-                el.setAttribute("name", `${cleanName}_${fieldCounter}`);
-            }
+                // Tìm trong cùng dòng / ô input lân cận (Odoo Form Grid)
+                const container = label.closest(".o_wrap_field, tr, .row, .o_group_col, .o_inner_group, .o_cell") || label.parentElement?.parentElement;
+                let target = container?.querySelector("input, select, textarea, .o_field_widget");
 
-            // Bổ sung id nếu thiếu
-            if (!el.getAttribute("id")) {
-                el.setAttribute("id", `o_a11y_field_${fieldCounter}`);
-            }
-
-            // Bổ sung aria-label nếu thiếu và không có label liên kết
-            const hasLabel = el.id && document.querySelector(`label[for="${el.id}"]`);
-            if (!el.getAttribute("aria-label") && !hasLabel) {
-                const labelText = el.placeholder || el.title || el.getAttribute("name") || "Nhập dữ liệu";
-                el.setAttribute("aria-label", labelText);
-            }
-        });
-
-        // 2. Chuẩn hóa thẻ <label for="xxx"> trong trang Settings nếu ID chưa khớp
-        document.querySelectorAll("label[for]").forEach((label) => {
-            const targetId = label.getAttribute("for");
-            if (targetId && !document.getElementById(targetId)) {
-                const input = label.querySelector("input") || label.parentElement?.querySelector("input");
-                if (input && (!input.id || input.id.startsWith("o_a11y_field_"))) {
-                    input.id = targetId;
+                // Nếu chưa thấy, tìm theo tên trường tương ứng (ví dụ: for="name_0" -> tìm field "name")
+                if (!target) {
+                    const rawField = targetId.replace(/_\d+$/, "");
+                    target = document.querySelector(`.o_field_widget[name="${rawField}"] input, .o_field_widget[name="${rawField}"]`);
                 }
-            }
-        });
+
+                if (target) {
+                    target.id = targetId;
+                } else {
+                    const nextCell = label.closest(".o_cell")?.nextElementSibling;
+                    if (nextCell) {
+                        nextCell.id = targetId;
+                    } else if (label.parentElement) {
+                        label.parentElement.id = targetId;
+                    }
+                }
+            });
+
+            // 2. Chuẩn hóa tất cả các trường input/select/textarea (Khắc phục "No label" và "Missing id or name")
+            document.querySelectorAll("input, select, textarea").forEach((el, idx) => {
+                // Bổ sung ID nếu chưa có
+                if (!el.id) {
+                    el.id = `o_field_id_${idx}`;
+                }
+
+                // Bổ sung Name nếu chưa có
+                if (!el.getAttribute("name")) {
+                    const clean = (el.placeholder || el.getAttribute("aria-label") || el.type || "field")
+                        .toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/^_+|_+$/g, "") || "field";
+                    el.setAttribute("name", `${clean}_${idx}`);
+                }
+
+                // Bổ sung thẻ <label> chuẩn nếu chưa có (Khắc phục "No label associated with a form field")
+                if (el.type !== "hidden") {
+                    const hasLabel = document.querySelector(`label[for="${el.id}"]`) || el.closest("label");
+                    if (!hasLabel) {
+                        const lbl = document.createElement("label");
+                        lbl.setAttribute("for", el.id);
+                        lbl.className = "visually-hidden";
+                        lbl.style.cssText = "position:absolute!important;width:1px!important;height:1px!important;padding:0!important;margin:-1px!important;overflow:hidden!important;clip:rect(0,0,0,0)!important;white-space:nowrap!important;border:0!important;";
+                        lbl.textContent = el.placeholder || el.getAttribute("aria-label") || el.name || "Input";
+                        el.parentNode?.insertBefore(lbl, el);
+                    }
+                }
+            });
+        } catch (e) {
+            // Không làm ảnh hưởng logic nghiệp vụ
+        } finally {
+            isRunning = false;
+        }
     };
 
     const debouncedFix = () => {
-        if (a11yTimeout) {
-            cancelAnimationFrame(a11yTimeout);
-        }
+        if (a11yTimeout) cancelAnimationFrame(a11yTimeout);
         a11yTimeout = requestAnimationFrame(fixAccessibilityIssues);
     };
 
@@ -186,11 +208,7 @@ if (typeof window !== "undefined") {
         debouncedFix();
     }
 
-    // Lắng nghe thay đổi DOM khi chuyển trang / mở popup trong Odoo
     const observer = new MutationObserver(debouncedFix);
-    observer.observe(document.documentElement, {
-        childList: true,
-        subtree: true,
-    });
+    observer.observe(document.documentElement, { childList: true, subtree: true });
 }
 
