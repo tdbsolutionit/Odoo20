@@ -119,3 +119,78 @@ patch(NavBar.prototype, {
         return apps.filter((app) => app && app.name && app.name.toLowerCase().includes(query));
     },
 });
+
+/**
+ * Tự động chuẩn hóa Accessibility (A11y) & Autofill cho toàn bộ giao diện Odoo
+ * Giải quyết triệt để các cảnh báo trong tab Issues của Google Chrome:
+ * 1. A form field element should have an id or name attribute
+ * 2. No label associated with a form field
+ * 3. Incorrect use of <label for=FORM_ELEMENT>
+ */
+if (typeof window !== "undefined") {
+    let a11yTimeout = null;
+    let fieldCounter = 0;
+
+    const fixAccessibilityIssues = () => {
+        // 1. Chuẩn hóa tất cả các trường input, textarea, select thiếu name, id, hoặc aria-label
+        const formFields = document.querySelectorAll(
+            "input:not([data-a11y-checked]), textarea:not([data-a11y-checked]), select:not([data-a11y-checked])"
+        );
+
+        formFields.forEach((el) => {
+            el.setAttribute("data-a11y-checked", "true");
+            fieldCounter++;
+
+            // Bổ sung name nếu thiếu
+            if (!el.getAttribute("name")) {
+                const baseName = el.placeholder || el.getAttribute("aria-label") || el.className?.split(" ")[0] || "field";
+                const cleanName = baseName.toLowerCase().replace(/[^a-z0-9]/g, "_").replace(/^_+|_+$/g, "") || "field";
+                el.setAttribute("name", `${cleanName}_${fieldCounter}`);
+            }
+
+            // Bổ sung id nếu thiếu
+            if (!el.getAttribute("id")) {
+                el.setAttribute("id", `o_a11y_field_${fieldCounter}`);
+            }
+
+            // Bổ sung aria-label nếu thiếu và không có label liên kết
+            const hasLabel = el.id && document.querySelector(`label[for="${el.id}"]`);
+            if (!el.getAttribute("aria-label") && !hasLabel) {
+                const labelText = el.placeholder || el.title || el.getAttribute("name") || "Nhập dữ liệu";
+                el.setAttribute("aria-label", labelText);
+            }
+        });
+
+        // 2. Chuẩn hóa thẻ <label for="xxx"> trong trang Settings nếu ID chưa khớp
+        document.querySelectorAll("label[for]").forEach((label) => {
+            const targetId = label.getAttribute("for");
+            if (targetId && !document.getElementById(targetId)) {
+                const input = label.querySelector("input") || label.parentElement?.querySelector("input");
+                if (input && (!input.id || input.id.startsWith("o_a11y_field_"))) {
+                    input.id = targetId;
+                }
+            }
+        });
+    };
+
+    const debouncedFix = () => {
+        if (a11yTimeout) {
+            cancelAnimationFrame(a11yTimeout);
+        }
+        a11yTimeout = requestAnimationFrame(fixAccessibilityIssues);
+    };
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", debouncedFix);
+    } else {
+        debouncedFix();
+    }
+
+    // Lắng nghe thay đổi DOM khi chuyển trang / mở popup trong Odoo
+    const observer = new MutationObserver(debouncedFix);
+    observer.observe(document.documentElement, {
+        childList: true,
+        subtree: true,
+    });
+}
+
