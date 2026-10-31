@@ -5,7 +5,7 @@ import os
 import sys
 
 def make_binary_value(raw_bytes, filename="tdb_logo.png"):
-    """Tao BinaryValue chuan cho Odoo 20"""
+    """Tạo BinaryValue chuẩn cho Odoo 20"""
     try:
         from odoo.tools import BinaryBytes
         return BinaryBytes(raw_bytes, filename=filename)
@@ -43,7 +43,7 @@ def main():
     if not os.path.exists(config_path):
         config_path = 'odoo.conf'
 
-    print(">>> Dang ket noi database odoo20...")
+    print(">>> Đang kết nối database odoo20...")
     try:
         config.parse_config(['-c', config_path, '-d', 'odoo20'], setup_logging=False)
     except TypeError:
@@ -53,7 +53,7 @@ def main():
     with registry.cursor() as cr:
         env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {})
 
-        # 1. Cap nhat thong tin Cong ty & Website
+        # 1. Cập nhật thông tin Công ty & Website
         company = env.ref('base.main_company', raise_if_not_found=False) or env['res.company'].search([], limit=1)
         if company:
             company.write({
@@ -62,9 +62,9 @@ def main():
                 'email': 'info@tdbsolution.com.vn',
                 'website': 'https://tdbsolution.com.vn',
             })
-            print("[OK] Da cap nhat thong tin cong ty: TDB Solution, Hotline +84 373704895, info@tdbsolution.com.vn")
+            print("[OK] Đã cập nhật thông tin công ty: TDB Solution, Hotline +84 373704895, info@tdbsolution.com.vn")
 
-        # 2. Nap Logo TDB Solution vao Website va Company
+        # 2. Nạp Logo TDB Solution vào Website và Company
         logo_path = os.path.join(odoo_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img', 'tdb_logo.png')
         if not os.path.exists(logo_path):
             logo_path = os.path.join(current_dir, 'static', 'src', 'img', 'tdb_logo.png')
@@ -78,28 +78,28 @@ def main():
                     company.write({'logo': logo_val})
                 for ws in env['website'].search([]):
                     ws.write({'logo': logo_val, 'name': 'TDB Solution'})
-                print("[OK] Da nap Logo TDB Solution chuan vao Website & Company")
+                print("[OK] Đã nạp Logo TDB Solution chuẩn vào Website & Company")
             except Exception as e:
-                print(f"[Bo qua loi logo]: {e}")
+                print(f"[Bỏ qua lỗi logo]: {e}")
         else:
-            print(f"[CANH BAO] Khong tim thay file logo tai: {logo_path}")
+            print(f"[CẢNH BÁO] Không tìm thấy file logo tại: {logo_path}")
 
-        # 3. Cap nhat Trang chu (Homepage)
-        homepage_html = """<t t-name="website.homepage">
+        # 3. Chuẩn bị mã nguồn HTML chuẩn cho Homepage Hero Banner (Gọi website.layout)
+        homepage_arch = """<t t-name="website.homepage">
     <t t-call="website.layout">
         <t t-set="pageName" t-value="'homepage'"/>
         <div id="wrap" class="oe_structure oe_empty">
             <section class="s_cover parallax s_parallax_is_fixed o_cc o_cc5 pt232 pb232 o_colored_level" data-scroll-background-ratio="1" data-snippet="s_cover" data-name="Ảnh bìa">
-                <span class="s_parallax_bg oe_img_bg o_bg_img_center o_bg_img_origin_border_box" style="background-position: 50% 65%; background-image: url(&quot;/tdb_website_custom/static/src/img/BG-TapThe.webp&quot;);" data-mimetype="image/webp"></span>
+                <span class="s_parallax_bg oe_img_bg o_bg_img_center o_bg_img_origin_border_box" style="background-position: 50% 75%; background-image: url(&quot;/tdb_website_custom/static/src/img/BG-TapThe.webp&quot;);" data-mimetype="image/webp"></span>
                 <div class="o_we_bg_filter bg-black-50"></div>
-                <div class="container s_allow_columns text-center text-white">
+                <div class="container s_allow_columns text-center text-white position-relative" style="z-index: 2;">
                     <h1 class="display-3 fw-bold mb-3" style="text-shadow: 0 2px 10px rgba(0,0,0,0.6);">Technical and Digital Benefits</h1>
                     <p class="lead mb-4 mx-auto" style="max-width: 820px; line-height: 1.65; text-shadow: 0 1px 6px rgba(0,0,0,0.6);">
 TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng sự hài lòng nhờ đồng hành và cung cấp dịch vụ chất lượng cao
                     </p>
                     <p class="pt-2">
-                        <a class="btn btn-light rounded-pill px-4 py-2 me-3 fw-bold text-dark shadow-sm" href="/contactus">Khám phá thêm</a>
-                        <a class="btn btn-primary rounded-pill px-4 py-2 fw-bold text-white shadow-sm" href="/contactus">Liên hệ</a>
+                        <a class="btn btn-secondary rounded-pill px-4 py-2 me-3 fw-bold text-white shadow-sm" href="/contactus">Khám phá thêm</a>
+                        <a class="btn btn-outline-secondary rounded-pill px-4 py-2 fw-bold text-white shadow-sm" href="/contactus">Liên hệ</a>
                     </p>
                 </div>
             </section>
@@ -107,22 +107,34 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
     </t>
 </t>"""
 
+        # Phục hồi view 1953 (Template Trang chủ bị ghi đè nhầm trước đó)
+        v1953 = env['ir.ui.view'].browse(1953)
+        if v1953.exists():
+            try:
+                v1953.write({'arch_db': homepage_arch})
+                print(f"[OK] Đã khôi phục view 1953 (key={v1953.key}, name={v1953.name}) về giao diện Homepage đầy đủ!")
+            except Exception as e:
+                print(f"[Lỗi v1953]: {e}")
+
+        # Cập nhật tất cả các view liên quan đến homepage
         homepage_views = env['ir.ui.view'].search([('key', '=', 'website.homepage')])
         for hp_view in homepage_views:
-            hp_view.write({'arch_db': homepage_html})
+            hp_view.write({'arch_db': homepage_arch})
+            print(f"[OK] Đã cập nhật view {hp_view.id} (key=website.homepage)")
+
+        # Cập nhật website.page trỏ về / và /home
         homepage_pages = env['website.page'].search([('url', 'in', ['/', '/home'])])
         for page in homepage_pages:
             if page.view_id:
-                page.view_id.write({'arch_db': homepage_html})
-        print("[OK] Da cap nhat Hero Banner vao Homepage")
+                page.view_id.write({'arch_db': homepage_arch})
+                print(f"[OK] Đã cập nhật website.page url='{page.url}' (view_id={page.view_id.id})")
 
-        # 4. Cap nhat Footer chuan voi the bao xpath hop le
-        footer_xpath = """<xpath expr="//div[@id='footer']" position="replace">
-    <div id="footer" class="oe_structure oe_structure_solo" style="background-color: #0b1320; color: #94a3b8;">
-        <section class="s_text_block pt48 pb24" data-snippet="s_text_block" data-name="Text">
+        # 4. Nội dung Footer 3 cột chuẩn TDB Solution
+        footer_inner_content = """<div id="footer" class="oe_structure oe_structure_solo" style="background-color: #0b1320; color: #94a3b8;">
+        <section class="s_text_block pt40 pb16" data-snippet="s_text_block" data-name="Text">
             <div class="container">
-                <div class="row g-4">
-                    <div class="col-lg-2 col-md-4 col-sm-6">
+                <div class="row">
+                    <div class="col-lg-2 pt24 pb24">
                         <h5 class="mb-3 text-white fw-bold">Liên kết hữu ích</h5>
                         <ul class="list-unstyled">
                             <li class="mb-2"><a href="/" class="text-decoration-none" style="color: #94a3b8;">Trang chủ</a></li>
@@ -133,13 +145,13 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
                             <li class="mb-2"><a href="/contactus" class="text-decoration-none" style="color: #94a3b8;">Liên hệ</a></li>
                         </ul>
                     </div>
-                    <div class="col-lg-6 col-md-8 col-sm-12">
+                    <div class="col-lg-5 pt24 pb24">
                         <h5 class="mb-3 text-white fw-bold">Về chúng tôi</h5>
                         <p style="line-height: 1.7; color: #cbd5e1;">
                             Chúng tôi cung cấp giải pháp chuyển đổi số cho bộ phận thiết kế và quản lý kỹ thuật bằng công cụ PDM/ PLM – CIM database. Giải pháp kỹ thuật đi từ ý tưởng (ideas – R&amp;D) -&gt; thiết kế (CAD) -&gt; Phân tích mô phỏng số (CFD/ CAE/ FEA) -&gt; Sản xuất (Production) -&gt; Vận hành và quản lý bảo trì bảo dưỡng từ hệ thống tích hợp IoT (IoT – Operation and maintenance).
                         </p>
                     </div>
-                    <div id="connect" class="col-lg-4 col-md-12">
+                    <div id="connect" class="col-lg-4 offset-lg-1 pt24 pb24">
                         <h5 class="mb-3 text-white fw-bold">Kết nối với chúng tôi</h5>
                         <ul class="list-unstyled">
                             <li class="mb-2"><i class="fa fa-comment fa-fw me-2 text-primary"></i><a href="/contactus" class="text-decoration-none" style="color: #94a3b8;">Liên hệ</a></li>
@@ -156,27 +168,42 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
                 </div>
             </div>
         </section>
-    </div>
-</xpath>"""
+    </div>"""
 
-        # Sua view 1953 bi loi dinh dang
-        v1953 = env['ir.ui.view'].browse(1953)
-        if v1953.exists():
-            try:
-                v1953.write({'arch_db': footer_xpath})
-                print("[OK] Da sua loi template 1953 thanh cong")
-            except Exception as e:
-                print(f"[Luu y v1953]: {e}")
+        # Footer dạng XPath cho các view kế thừa (có inherit_id)
+        footer_xpath_arch = f"""<data>
+    <xpath expr="//div[@id='footer']" position="replace">
+        {footer_inner_content}
+    </xpath>
+</data>"""
 
+        # Footer dạng Standalone cho các view gốc (không có inherit_id)
+        footer_standalone_arch = f"""<t t-name="website.template_footer_default">
+    {footer_inner_content}
+</t>"""
+
+        # Phục hồi / cập nhật các view footer phù hợp với từng loại (inherit vs primary)
         footer_views = env['ir.ui.view'].search([('key', 'in', ['website.footer_custom', 'website.template_footer_default', 'website.footer_default'])])
         for f_view in footer_views:
             try:
-                f_view.write({'arch_db': footer_xpath})
-            except Exception:
-                pass
-        print("[OK] Da cap nhat Footer 3 cot chuan TDB Solution")
+                if f_view.inherit_id:
+                    f_view.write({'arch_db': footer_xpath_arch})
+                    print(f"[OK] Đã cập nhật view kế thừa footer: {f_view.key} (id={f_view.id})")
+                else:
+                    f_view.write({'arch_db': footer_standalone_arch})
+                    print(f"[OK] Đã cập nhật view gốc footer: {f_view.key} (id={f_view.id})")
+            except Exception as e:
+                print(f"[Lưu ý footer {f_view.key}]: {e}")
 
-        # 5. Cap nhat Menu dieu huong Website
+        # Kiểm tra website.layout để đảm bảo không bị dính thẻ xpath lỗi
+        layout_view = env['ir.ui.view'].search([('key', '=', 'website.layout')], limit=1)
+        if layout_view and '<xpath' in (layout_view.arch_db or ''):
+            print("[CẢNH BÁO] website.layout bị dính thẻ xpath lỗi! Đang làm sạch...")
+            # Xóa các xpath không hợp lệ khỏi layout chính
+            clean_arch = layout_view.arch_db.replace('<xpath expr="//div[@id=\'footer\']" position="replace">', '').replace('</xpath>', '')
+            layout_view.write({'arch_db': clean_arch})
+
+        # 5. Cập nhật Menu điều hướng Website chuẩn
         menu_model = env['website.menu']
         for ws in env['website'].search([]):
             root_menu = ws.menu_id
@@ -202,13 +229,20 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
                         'website_id': ws.id,
                         'sequence': seq,
                     })
-            print(f"[OK] Da dong bo Menu dieu huong cho website '{ws.name}'")
+            print(f"[OK] Đã đồng bộ Menu điều hướng cho website '{ws.name}'")
 
-        # 6. Commit thay doi vao database PostgreSQL
+        # 6. Xóa cache view và template để Odoo nạp giao diện mới ngay lập tức
+        try:
+            env.registry.clear_cache()
+            print("[OK] Đã xóa cache QWeb template và View cache")
+        except Exception:
+            pass
+
+        # 7. Commit thay đổi vào database PostgreSQL
         cr.commit()
-        print("\n" + "="*60)
-        print(">>> THANH CONG! TOAN BO GIAO DIEN TDB SOLUTION DA DUOC CAP NHAT VAO DATABASE! <<<")
-        print("="*60)
+        print("\n" + "="*65)
+        print(">>> HOÀN TẤT THÀNH CÔNG! GIAO DIỆN TDB SOLUTION ĐÃ ĐƯỢC PHỤC HỒI & ÁP DỤNG! <<<")
+        print("="*65)
 
 if __name__ == '__main__':
     main()
