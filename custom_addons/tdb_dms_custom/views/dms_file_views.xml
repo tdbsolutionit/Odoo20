@@ -5,6 +5,7 @@
         <field name="name">dms.file.form.inherit.tdb</field>
         <field name="model">dms.file</field>
         <field name="inherit_id" ref="dms.view_dms_file_form" />
+        <field name="priority">1</field>
         <field name="arch" type="xml">
             <xpath expr="//header" position="inside">
                 <button
@@ -23,10 +24,8 @@
                     invisible="not is_in_recycle_bin"
                 />
             </xpath>
-            <xpath expr="//sheet" position="before">
-                <field name="is_in_recycle_bin" invisible="1" />
-            </xpath>
             <xpath expr="//sheet" position="inside">
+                <field name="is_in_recycle_bin" invisible="1" />
                 <widget
                     name="web_ribbon"
                     title="Thùng Rác"

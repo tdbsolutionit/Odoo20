@@ -443,6 +443,7 @@
     <record id="view_dms_file_form" model="ir.ui.view">
         <field name="name">dms_file.form</field>
         <field name="model">dms.file</field>
+        <field name="priority">1</field>
         <field name="arch" type="xml">
             <form string="Files">
                 <header>
@@ -628,6 +629,14 @@
         <field name="res_model">dms.file</field>
         <field name="view_mode">kanban,list,graph,pivot,form</field>
         <field name="domain">[("is_hidden", "=", False)]</field>
+        <field
+            name="view_ids"
+            eval="[(5, 0, 0),
+                (0, 0, {'view_mode': 'kanban', 'view_id': ref('view_dms_file_kanban')}),
+                (0, 0, {'view_mode': 'list', 'view_id': ref('view_dms_file_tree')}),
+                (0, 0, {'view_mode': 'form', 'view_id': ref('view_dms_file_form')}),
+            ]"
+        />
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
                 Add a new File.
@@ -727,6 +736,7 @@
         <field name="name">dms_file.form</field>
         <field name="model">dms.file</field>
         <field name="inherit_id" ref="view_dms_file_form" />
+        <field name="priority">99</field>
         <field name="mode">primary</field>
         <field name="arch" type="xml">
             <xpath expr="//header" position="attributes">
@@ -771,6 +781,7 @@
     <record id="view_dms_file_preview_modal" model="ir.ui.view">
         <field name="name">dms.file.preview.modal</field>
         <field name="model">dms.file</field>
+        <field name="priority">999</field>
         <field name="arch" type="xml">
             <form string="Xem trước tài liệu" class="o_dms_preview_box">
                 <field name="can_download" invisible="1"/>
