@@ -1,0 +1,361 @@
+// =============================================================================
+// TDB SOLUTION – COMPONENT: LOGIN CARD
+// =============================================================================
+
+.login-card {
+    width: 420px !important;
+    max-width: 100% !important;
+    background: $pure-white !important;
+    border-radius: 26px !important;
+    padding: 40px 36px 32px !important;
+    box-shadow: $shadow-card !important;
+    border: 1.5px solid rgba(240, 230, 210, 0.7) !important;
+    box-sizing: border-box !important;
+    text-align: left !important;
+}
+
+// Logo trong Card
+.card-logo-wrap {
+    text-align: center !important;
+    margin-bottom: 16px !important;
+
+    img, .card-logo {
+        height: 42px !important;
+        width: auto !important;
+        max-width: 100% !important;
+        object-fit: contain !important;
+        display: inline-block !important;
+    }
+}
+
+.card-title {
+    font-size: 26px !important;
+    font-weight: 800 !important;
+    color: $dark-navy !important;
+    text-align: center !important;
+    margin: 0 0 6px 0 !important;
+    letter-spacing: -0.01em !important;
+}
+
+.card-subtitle {
+    font-size: 13.5px !important;
+    color: $text-gray !important;
+    text-align: center !important;
+    line-height: 1.5 !important;
+    margin: 0 0 22px 0 !important;
+}
+
+// Thông báo lỗi
+.form-error {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 8px !important;
+    padding: 10px 14px !important;
+    background: #FEF2F2 !important;
+    border: 1px solid #FECACA !important;
+    border-radius: 10px !important;
+    color: #991B1B !important;
+    font-size: 12.5px !important;
+    line-height: 1.4 !important;
+    margin-bottom: 14px !important;
+}
+
+.form-group {
+    margin-bottom: 16px !important;
+    text-align: left !important;
+}
+
+.form-label {
+    display: block !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    color: $dark-navy !important;
+    margin-bottom: 6px !important;
+}
+
+// Input Fields
+.input-wrap {
+    position: relative !important;
+    width: 100% !important;
+
+    input {
+        width: 100% !important;
+        height: 48px !important;
+        padding: 0 16px 0 44px !important;
+        font-family: inherit !important;
+        font-size: 14px !important;
+        color: $dark-navy !important;
+        background: $pure-white !important;
+        border: 1.5px solid $card-border !important;
+        border-radius: 12px !important;
+        outline: none !important;
+        transition: $transition-fast !important;
+        box-sizing: border-box !important;
+
+        &:hover {
+            border-color: #E2D4BC !important;
+        }
+
+        &:focus {
+            border-color: $primary-gold !important;
+            box-shadow: 0 0 0 3px rgba(234, 160, 21, 0.16) !important;
+            background: $pure-white !important;
+        }
+
+        &::placeholder {
+            color: $text-light !important;
+        }
+    }
+}
+
+.input-icon {
+    position: absolute !important;
+    left: 14px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: $primary-gold !important;
+    pointer-events: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 2 !important;
+
+    svg {
+        width: 17px !important;
+        height: 17px !important;
+        stroke: $primary-gold !important;
+        stroke-width: 2 !important;
+    }
+}
+
+.pwd-toggle {
+    position: absolute !important;
+    right: 12px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    background: transparent !important;
+    border: none !important;
+    padding: 6px !important;
+    cursor: pointer !important;
+    color: $text-light !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 6px !important;
+    transition: color 0.15s ease !important;
+    z-index: 3 !important;
+
+    &:hover {
+        color: $primary-gold !important;
+    }
+
+    svg {
+        width: 17px !important;
+        height: 17px !important;
+        stroke: currentColor !important;
+        stroke-width: 2 !important;
+    }
+}
+
+// Row Checkbox & Quên mật khẩu
+.form-options {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    margin: 14px 0 20px 0 !important;
+    font-size: 13px !important;
+}
+
+.cbx {
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    font-size: 13px !important;
+    color: $dark-navy !important;
+
+    input {
+        position: absolute !important;
+        opacity: 0 !important;
+        pointer-events: none !important;
+    }
+
+    .box {
+        width: 18px !important;
+        height: 18px !important;
+        border: 1.5px solid $card-border !important;
+        border-radius: 5px !important;
+        display: inline-flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        flex-shrink: 0 !important;
+        background: $pure-white !important;
+        box-sizing: border-box !important;
+        transition: $transition-fast !important;
+
+        svg {
+            width: 12px !important;
+            height: 12px !important;
+            stroke: $pure-white !important;
+            stroke-width: 3 !important;
+            fill: none !important;
+            opacity: 0 !important;
+            transition: opacity 0.15s ease !important;
+        }
+    }
+
+    input:checked + .box {
+        background: $primary-gold !important;
+        border-color: $primary-gold !important;
+
+        svg {
+            opacity: 1 !important;
+        }
+    }
+}
+
+.cbx-label {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: $dark-navy !important;
+}
+
+.form-forgot {
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    color: $primary-gold !important;
+    text-decoration: none !important;
+    transition: color 0.15s ease !important;
+    white-space: nowrap !important;
+
+    &:hover {
+        color: $dark-gold !important;
+        text-decoration: underline !important;
+    }
+}
+
+// Ẩn triệt để liên kết và nút thừa
+.field-password a,
+.field-password .small,
+a[href*="reset_password"],
+a[href*="signup"],
+button[value*="become"],
+.btn-link[value*="become"],
+.o_login_auth {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+}
+
+// Nút Đăng nhập bo tròn
+.form-submit-wrap {
+    margin-top: 6px !important;
+}
+
+.btn-submit {
+    width: 100% !important;
+    height: 50px !important;
+    background: $primary-gold !important;
+    color: $pure-white !important;
+    border: none !important;
+    border-radius: 25px !important;
+    font-family: inherit !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    transition: $transition-base !important;
+    box-shadow: $shadow-button !important;
+    padding: 0 !important;
+
+    &:hover {
+        background: $dark-gold !important;
+        box-shadow: 0 6px 18px rgba(217, 119, 6, 0.42) !important;
+        transform: translateY(-1px) !important;
+    }
+
+    &:active {
+        transform: translateY(0) !important;
+    }
+
+    svg {
+        width: 17px !important;
+        height: 17px !important;
+        stroke: $pure-white !important;
+        fill: none !important;
+        stroke-width: 2 !important;
+    }
+}
+
+// Đường kẻ "Hoặc"
+.divider-or {
+    display: flex !important;
+    align-items: center !important;
+    text-align: center !important;
+    margin: 16px 0 14px 0 !important;
+    color: $text-light !important;
+    font-size: 12.5px !important;
+
+    &::before, &::after {
+        content: '' !important;
+        flex: 1 !important;
+        border-bottom: 1px solid #E5E7EB !important;
+    }
+
+    span {
+        padding: 0 12px !important;
+    }
+}
+
+// Nút Demo
+.demo-btn-wrap {
+    width: 100% !important;
+}
+
+.btn-demo {
+    width: 100% !important;
+    height: 42px !important;
+    border: 1.5px solid $border-gold !important;
+    background: #FFFDF9 !important;
+    border-radius: 24px !important;
+    font-family: inherit !important;
+    font-size: 13.5px !important;
+    font-weight: 600 !important;
+    color: $primary-gold !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    transition: $transition-fast !important;
+    padding: 0 !important;
+
+    &:hover {
+        background: $light-gold !important;
+        border-color: $primary-gold !important;
+    }
+
+    svg {
+        width: 16px !important;
+        height: 16px !important;
+        stroke: $primary-gold !important;
+        fill: none !important;
+        stroke-width: 2 !important;
+    }
+}
+
+// Chân card đăng nhập
+.card-footer {
+    text-align: center !important;
+    font-size: 12px !important;
+    color: $text-light !important;
+    margin-top: 20px !important;
+}

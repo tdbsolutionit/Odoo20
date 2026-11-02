@@ -1,0 +1,24 @@
+// =============================================================================
+// TDB SOLUTION – BASE RESET & GLOBAL STYLES
+// =============================================================================
+
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    font-family: $font-family-base !important;
+    background: $bg-cream !important;
+    color: $dark-navy !important;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden !important;
+}
+
+// Ẩn toàn bộ header/footer mặc định của Odoo
+header, footer, #top, #bottom, #oe_main_menu_navbar,
+.o_header_standard, .o_footer, .o_footer_copyright,
+.oe_website_login_container > .container {
+    display: none !important;
+}

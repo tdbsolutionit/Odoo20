@@ -1,0 +1,41 @@
+// =============================================================================
+// TDB SOLUTION – LAYOUT WRAPPER & COLUMNS
+// =============================================================================
+
+.login-wrapper {
+    position: relative !important;
+    width: 100vw !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    background-color: $bg-cream !important;
+    background-image: url('/tdb_website_custom/static/src/img/login_bg.webp?v=20261102_clean_v4') !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-size: cover !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+}
+
+// Cột trái: Trình bày Giá Trị Cốt Lõi
+.presentation-side {
+    flex: 1.2 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: space-between !important;
+    padding: 44px 60px 40px !important;
+    position: relative !important;
+    z-index: 2 !important;
+    box-sizing: border-box !important;
+}
+
+// Cột phải: Khung Login Card nổi
+.login-card-side {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 30px 60px 30px 30px !important;
+    z-index: 5 !important;
+    box-sizing: border-box !important;
+}

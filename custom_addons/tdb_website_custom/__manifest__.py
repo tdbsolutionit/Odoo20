@@ -25,6 +25,12 @@ Module tùy biến giao diện TDB Solution:
     ],
     'assets': {
         'web.assets_frontend': [
+            'tdb_website_custom/static/src/scss/abstract/_variables.scss',
+            'tdb_website_custom/static/src/scss/base/_reset.scss',
+            'tdb_website_custom/static/src/scss/layout/_wrapper.scss',
+            'tdb_website_custom/static/src/scss/components/_presentation.scss',
+            'tdb_website_custom/static/src/scss/components/_login_card.scss',
+            'tdb_website_custom/static/src/scss/layout/_responsive.scss',
             'tdb_website_custom/static/src/scss/login_custom.scss',
         ],
     },

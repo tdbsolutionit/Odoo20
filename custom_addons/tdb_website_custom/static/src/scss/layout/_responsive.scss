@@ -1,0 +1,88 @@
+// =============================================================================
+// TDB SOLUTION – RESPONSIVE BREAKPOINTS
+// =============================================================================
+
+@media (max-width: 1100px) {
+    .login-wrapper {
+        flex-direction: column !important;
+        height: auto !important;
+        overflow-y: auto !important;
+        padding-bottom: 40px !important;
+    }
+
+    .presentation-side {
+        padding: 30px 24px !important;
+        align-items: center !important;
+    }
+
+    .top-brand-logo {
+        align-self: flex-start !important;
+        margin-bottom: 20px !important;
+    }
+
+    .core-title {
+        font-size: 38px !important;
+    }
+
+    .values-row {
+        flex-wrap: wrap !important;
+    }
+
+    .value-card {
+        max-width: 280px !important;
+        flex: 1 1 220px !important;
+    }
+
+    .login-card-side {
+        padding: 20px 24px !important;
+        width: 100% !important;
+    }
+
+    .page-footer-left {
+        display: none !important;
+    }
+}
+
+@media (max-width: 768px) {
+    .presentation-side {
+        padding: 24px 16px !important;
+    }
+
+    .top-brand-logo img,
+    .brand-logo-img {
+        height: 44px !important;
+    }
+
+    .core-title {
+        font-size: 30px !important;
+        gap: 10px !important;
+    }
+
+    .title-gold-line {
+        width: 80px !important;
+        height: 4px !important;
+    }
+
+    .core-subtitle {
+        font-size: 15px !important;
+        margin-top: 14px !important;
+    }
+
+    .values-row {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 16px !important;
+    }
+
+    .value-card {
+        max-width: 100% !important;
+        width: 100% !important;
+    }
+
+    .login-card {
+        width: 100% !important;
+        max-width: 380px !important;
+        padding: 32px 24px 24px !important;
+        border-radius: 20px !important;
+    }
+}
