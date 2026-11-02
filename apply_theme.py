@@ -516,7 +516,7 @@ html, body {
     padding: 0 !important;
     display: flex !important;
     background-color: #FAF6EE !important;
-    background-image: url('/tdb_website_custom/static/src/img/login_bg.webp?v=20261102_clean_v3') !important;
+    background-image: url('/tdb_website_custom/static/src/img/login_bg.webp?v=20261102_clean_v4') !important;
     background-repeat: no-repeat !important;
     background-position: center center !important;
     background-size: cover !important;
@@ -702,11 +702,11 @@ html, body {
 }
 
 .login-card {
-    width: 410px !important;
+    width: 420px !important;
     max-width: 100% !important;
     background: #FFFFFF !important;
     border-radius: 26px !important;
-    padding: 38px 34px 30px !important;
+    padding: 40px 36px 32px !important;
     box-shadow: 0 20px 50px rgba(210, 160, 50, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04) !important;
     border: 1.5px solid rgba(240, 230, 210, 0.7) !important;
     box-sizing: border-box !important;
