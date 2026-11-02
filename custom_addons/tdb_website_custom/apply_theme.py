@@ -237,6 +237,112 @@ def main():
             except Exception as e:
                 print(f"[Lưu ý cập nhật company]: {e}")
 
+        # Cập nhật trang Liên hệ (/contactus) chuẩn 100% với 3 icon (fa-map-marker, fa-phone, fa-envelope)
+        print("\n>>> 3.1 Đang cập nhật trang Liên hệ (/contactus) với 3 icon địa chỉ, hotline, email chuẩn mẫu...")
+        contactus_arch = """<t t-name="website.contactus">
+    <t t-call="website.layout">
+        <t t-set="additional_title">Liên hệ</t>
+        <span class="hidden" data-for="contactus_form" data-values="{'email_to': 'info@tdbsolution.com.vn', 'name': '', 'phone': '', 'email_from': '', 'company': '', 'subject': '', 'contact_name': '', 'partner_name': '', 'description': ''}"></span>
+        <div id="wrap" class="oe_structure oe_empty">
+            <section class="s_title parallax s_parallax_is_fixed bg-black-50 pt24 pb24" data-vcss="001" data-snippet="s_title" data-scroll-background-ratio="1" data-name="Tiêu đề">
+                <span class="s_parallax_bg oe_img_bg" style="background-image: url('/web/image/website.s_parallax_default_image'); background-position: 50% 0;"></span>
+                <div class="o_we_bg_filter bg-black-50"></div>
+                <div class="container">
+                    <h1>Liên hệ</h1>
+                </div>
+            </section>
+            <section class="s_text_block pt40 pb40 o_colored_level" data-snippet="s_text_block" data-name="Văn bản">
+                <div class="s_allow_columns container">
+                    <div class="row">
+                        <div class="col-lg-7 mt-4 mt-lg-0">
+                            <p class="lead">
+                                Hãy liên hệ khi bạn gặp bất cứ vấn đề nào liên quan đến công ty hoặc dịch vụ của chúng tôi.<br/>
+                                Chúng tôi sẽ cố gắng phản hồi trong thời gian sớm nhất.
+                            </p>
+                            <section class="s_website_form" data-vcss="001" data-snippet="s_website_form" data-name="Biểu mẫu">
+                                <div class="container">
+                                    <form id="contactus_form" action="/website/form/" method="post" enctype="multipart/form-data" class="o_mark_required" data-mark="*" data-model_name="mail.mail" data-success-mode="redirect" data-success-page="/contactus-thank-you" data-pre-fill="true">
+                                        <div class="s_website_form_rows row s_col_no_bgcolor">
+                                            <div class="mb-3 col-lg-6 s_website_form_field s_website_form_custom s_website_form_required" data-type="char" data-name="Field">
+                                                <label class="s_website_form_label" style="width: 200px" for="contact1">
+                                                    <span class="s_website_form_label_content">Tên</span>
+                                                    <span class="s_website_form_mark"> *</span>
+                                                </label>
+                                                <input id="contact1" type="text" class="form-control s_website_form_input" name="name" required="" data-fill-with="name"/>
+                                            </div>
+                                            <div class="mb-3 col-lg-6 s_website_form_field s_website_form_custom" data-type="char" data-name="Field">
+                                                <label class="s_website_form_label" style="width: 200px" for="contact2">
+                                                    <span class="s_website_form_label_content">Số điện thoại</span>
+                                                </label>
+                                                <input id="contact2" type="tel" class="form-control s_website_form_input" name="phone" data-fill-with="phone"/>
+                                            </div>
+                                            <div class="mb-3 col-lg-6 s_website_form_field s_website_form_required s_website_form_model_required" data-type="email" data-name="Field">
+                                                <label class="s_website_form_label" style="width: 200px" for="contact3">
+                                                    <span class="s_website_form_label_content">Email</span>
+                                                    <span class="s_website_form_mark"> *</span>
+                                                </label>
+                                                <input id="contact3" type="email" class="form-control s_website_form_input" name="email_from" required="" data-fill-with="email"/>
+                                            </div>
+                                            <div class="mb-3 col-lg-6 s_website_form_field s_website_form_custom" data-type="char" data-name="Field">
+                                                <label class="s_website_form_label" style="width: 200px" for="contact4">
+                                                    <span class="s_website_form_label_content">Công ty</span>
+                                                </label>
+                                                <input id="contact4" type="text" class="form-control s_website_form_input" name="company" data-fill-with="commercial_company_name"/>
+                                            </div>
+                                            <div class="mb-3 col-12 s_website_form_field s_website_form_required s_website_form_model_required" data-type="char" data-name="Field">
+                                                <label class="s_website_form_label" style="width: 200px" for="contact5">
+                                                    <span class="s_website_form_label_content">Chủ đề</span>
+                                                    <span class="s_website_form_mark"> *</span>
+                                                </label>
+                                                <input id="contact5" type="text" class="form-control s_website_form_input" name="subject" required=""/>
+                                            </div>
+                                            <div class="mb-3 col-12 s_website_form_field s_website_form_custom s_website_form_required" data-type="text" data-name="Field">
+                                                <label class="s_website_form_label" style="width: 200px" for="contact6">
+                                                    <span class="s_website_form_label_content">Câu hỏi</span>
+                                                    <span class="s_website_form_mark"> *</span>
+                                                </label>
+                                                <textarea id="contact6" class="form-control s_website_form_input" name="description" required="" rows="8"></textarea>
+                                            </div>
+                                            <div class="mb-0 py-2 col-12 s_website_form_submit s_website_form_no_submit_label text-end" data-name="Submit Button">
+                                                <div style="width: 200px;" class="s_website_form_label"></div>
+                                                <a href="#" role="button" class="btn btn-primary s_website_form_send">Gửi</a>
+                                                <span id="s_website_form_result"></span>
+                                            </div>
+                                        </div>
+                                    </form>
+                                </div>
+                            </section>
+                        </div>
+                        <div class="col-lg-4 offset-lg-1 mt-4 mt-lg-0 o_colored_level">
+                            <h5>TDB Solution</h5>
+                            <ul class="list-unstyled mb-0 ps-2">
+                                <li><i class="fa fa-map-marker fa-fw me-2"></i><span class="o_force_ltr">KDC Van Phuc, TP Thu Duc, TP Ho Chi Minh, Viet Nam</span></li>
+                                <li><i class="fa fa-phone fa-fw me-2"></i><span class="o_force_ltr">+84 37 370 4895</span></li>
+                                <li><i class="fa fa-1x fa-fw fa-envelope me-2"></i>info@tdbsolution.com.vn</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </t>
+</t>"""
+        for cv in env['ir.ui.view'].search([('key', '=', 'website.contactus')]):
+            try:
+                cv.write({'arch_db': contactus_arch})
+                print(f"[OK] Đã cập nhật view {cv.key or cv.id} với 3 icon liên hệ chuẩn mẫu!")
+            except Exception as e:
+                print(f"[Lưu ý contactus view {cv.id}]: {e}")
+
+        for cp in env['website.page'].search([('url', '=', '/contactus')]):
+            if cp.view_id:
+                try:
+                    cp.view_id.write({'arch_db': contactus_arch})
+                    print(f"[OK] Đã cập nhật website.page '/contactus' (view_id={cp.view_id.id})!")
+                except Exception as e:
+                    print(f"[Lưu ý contactus page]: {e}")
+
+
         # Nạp Logo TDB Solution vào Website và Company
         logo_path = os.path.join(odoo_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img', 'tdb_logo.png')
         if not os.path.exists(logo_path):
@@ -313,9 +419,56 @@ def main():
                     print(f"[Lưu ý nạp ảnh {bg_filename}]: {e}")
 
         # =========================================================================
-        # 4. CHUẨN HÓA HEADER (HOTLINE +84 373704895 VÀ NÚT LIÊN HỆ VỚI CHÚNG TÔI)
+        # 4. CHUẨN HÓA HEADER (NÚT GIỎ HÀNG, HOTLINE +84 373704895 VÀ NÚT LIÊN HỆ)
         # =========================================================================
-        print("\n>>> 4. Đang chuẩn hóa Header (Hotline +84 373704895 và Nút Liên hệ với chúng tôi)...")
+        print("\n>>> 4. Đang chuẩn hóa Header (Nút Giỏ hàng, Hotline +84 373704895 và Nút Liên hệ)...")
+        # 4.1 Đảm bảo cài đặt website_sale để hỗ trợ giỏ hàng
+        try:
+            ws_mod = env['ir.module.module'].search([('name', '=', 'website_sale')], limit=1)
+            if ws_mod and ws_mod.state != 'installed':
+                ws_mod.button_immediate_install()
+                print("[OK] Đã kích hoạt module website_sale để hỗ trợ giỏ hàng!")
+        except Exception as e:
+            print(f"[Lưu ý module website_sale]: {e}")
+
+        # 4.2 Kích hoạt tất cả view Header Cart trong Odoo
+        for cv in env['ir.ui.view'].search([
+            '|', '|', '|',
+            ('key', '=', 'website_sale.header_cart_link'),
+            ('key', '=', 'website_sale.template_header_default'),
+            ('key', 'ilike', '%header_cart%'),
+            ('arch_db', 'ilike', '%o_wsale_my_cart%'),
+        ]):
+            if not cv.active:
+                cv.write({'active': True})
+                print(f"[OK] Đã kích hoạt view giỏ hàng: {cv.key or cv.id}")
+
+        # 4.3 Đảm bảo thẻ giỏ hàng <li class="o_wsale_my_cart"> có mặt trong view header
+        cart_li_html = """<li class="divider d-none"></li>
+<li class="o_wsale_my_cart">
+    <a href="/shop/cart" aria-label="Giỏ hàng thương mại điện tử" class="o_navlink_background btn position-relative rounded-circle p-1 text-center text-reset">
+        <div>
+            <i class="fa fa-shopping-cart fa-stack"></i>
+            <sup class="my_cart_quantity badge bg-primary position-absolute top-0 end-0 mt-n1 me-n1 rounded-pill d-none" data-order-id="">0</sup>
+        </div>
+    </a>
+</li>"""
+        for hv in env['ir.ui.view'].search([('key', 'in', ['website.template_header_default', 'website.default_header'])]):
+            h_arch = hv.arch_db or ''
+            if 'o_wsale_my_cart' not in h_arch and 'navbar-nav' in h_arch:
+                for target_ul in ['class="navbar-nav align-items-center', 'class="navbar-nav ms-auto', 'class="navbar-nav me-auto']:
+                    if target_ul in h_arch:
+                        idx = h_arch.find(target_ul)
+                        end_tag = h_arch.find('>', idx) + 1
+                        h_arch = h_arch[:end_tag] + '\n' + cart_li_html + h_arch[end_tag:]
+                        try:
+                            hv.write({'arch_db': h_arch})
+                            print(f"[OK] Đã bổ sung nút Giỏ hàng vào header view: {hv.key}")
+                        except Exception as e:
+                            print(f"[Lưu ý chèn cart vào {hv.key}]: {e}")
+                        break
+
+        # 4.4 Thay thế hotline và nút Liên hệ
         phone_views = env['ir.ui.view'].search([
             '|', '|',
             ('arch_db', 'ilike', '%555-555-5556%'),
