@@ -11,7 +11,7 @@ except ImportError:
 
 class TdbRootController(Website):
 
-    @http.route('/', type='http', auth='public', website=True, sitemap=False)
+    @http.route(['/', '/home'], type='http', auth='public', website=True, sitemap=False)
     def index(self, **kw):
         """
         Khi truy cập địa chỉ IP hoặc domain trang chủ (/),

@@ -35,24 +35,59 @@ def make_binary_value(raw_bytes, filename="tdb_logo.png"):
 def setup_tdb_root_redirection(env):
     """
     Yêu cầu: Nhập địa chỉ IP / domain (/) thì qua thẳng trang đăng nhập (/web/login).
-    - Cấu hình homepage_url = False để controller redirect 303 đổi URL trên thanh địa chỉ.
-    - Cập nhật view website.homepage có sẵn thẻ meta refresh và JS redirect tức thì sang /web/login.
+    Xử lý đa tầng triệt để:
+    1. Cấu hình website.rewrite: Chuyển hướng HTTP 302 từ '/' sang '/web/login' cho mọi website.
+    2. Cấu hình website.page: Tắt header/footer trên tất cả trang chủ và nạp mã redirect.
+    3. Ghi đè view website.homepage: Xóa COW view, ghi đè view gốc với script JS và meta refresh sang /web/login.
+    4. Thêm view guard trên website.layout: Nếu trình duyệt truy cập '/' thì JS lập tức chuyển hướng sang /web/login.
+    5. Đặt homepage_url trên website thành '/web/login'.
     """
     print("\n>>> [1/7] Thiết lập tự động chuyển hướng trang chủ (/) sang /web/login...")
-    for ws in env['website'].search([]):
-        vals = {}
-        if hasattr(ws, 'homepage_url'):
-            vals['homepage_url'] = False
-        if vals:
-            try:
-                ws.write(vals)
-                print(f"[OK] Đã cấu hình website '{ws.name}' để redirect sang /web/login")
-            except Exception as e:
-                print(f"Lưu ý homepage_url: {e}")
+    View = env['ir.ui.view']
 
-    hp_view = env.ref('website.homepage', raise_if_not_found=False)
-    if hp_view:
-        hp_arch = """<t t-name="website.homepage">
+    # 1. Cấu hình website.rewrite (HTTP 302 Redirect cấp HTTP Router)
+    if 'website.rewrite' in env:
+        Rewrite = env['website.rewrite']
+        # Dọn dẹp các quy tắc rewrite cũ cho '/' để không xung đột
+        old_rewrites = Rewrite.search([('url_from', '=', '/')])
+        for rw in old_rewrites:
+            try:
+                rw.unlink()
+            except Exception:
+                pass
+
+        # Tạo quy tắc toàn cục (website_id = False)
+        try:
+            r_global = Rewrite.create({
+                'name': 'TDB Solution Redirect / to /web/login (Global)',
+                'url_from': '/',
+                'url_to': '/web/login',
+                'redirect_type': '302',
+                'active': True,
+                'sequence': 1,
+            })
+            print(f"[OK] Đã tạo website.rewrite toàn cục (id={r_global.id}): '/' -> '/web/login' (302)")
+        except Exception as e:
+            print(f"[Lưu ý website.rewrite global]: {e}")
+
+        # Tạo quy tắc cho từng website cụ thể
+        for ws in env['website'].search([]):
+            try:
+                r_ws = Rewrite.create({
+                    'name': f'TDB Solution Redirect / to /web/login ({ws.name})',
+                    'url_from': '/',
+                    'url_to': '/web/login',
+                    'redirect_type': '302',
+                    'website_id': ws.id,
+                    'active': True,
+                    'sequence': 1,
+                })
+                print(f"[OK] Đã tạo website.rewrite cho website '{ws.name}' (id={r_ws.id})")
+            except Exception as e:
+                print(f"[Lưu ý website.rewrite {ws.name}]: {e}")
+
+    # 2. Định nghĩa mã chuyển hướng HTML/JS thuần túy cho Homepage View
+    hp_arch = """<t name="Homepage" t-name="website.homepage">
     <html>
         <head>
             <meta http-equiv="refresh" content="0; url=/web/login"/>
@@ -61,15 +96,97 @@ def setup_tdb_root_redirection(env):
             </script>
         </head>
         <body style="margin:0;padding:0;background:#ffffff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#64748b;">
-            Đang chuyển hướng đến trang đăng nhập: <a href="/web/login">/web/login</a>
+            <script type="text/javascript">
+                window.location.replace('/web/login');
+            </script>
+            Đang chuyển hướng sang trang đăng nhập: <a href="/web/login">/web/login</a>
         </body>
     </html>
 </t>"""
+
+    # 3. Dọn dẹp COW view và ghi đè toàn bộ view website.homepage
+    hp_views = View.search(['|', ('key', '=', 'website.homepage'), ('name', '=', 'Homepage')])
+    for v in hp_views:
+        if v.website_id:
+            try:
+                v.unlink()
+                print(f"[OK] Đã xóa COW view '{v.key}' (id={v.id}, website_id={v.website_id.id})")
+                continue
+            except Exception as e:
+                print(f"[Lưu ý xóa COW view {v.id}]: {e}")
         try:
-            hp_view.write({'arch_db': hp_arch})
-            print("[OK] Đã cấu hình website.homepage tự động chuyển hướng sang /web/login!")
+            v.write({'arch_db': hp_arch})
+            print(f"[OK] Đã cập nhật mã chuyển hướng vào view '{v.key or v.name}' (id={v.id})")
         except Exception as e:
-            print(f"Lưu ý cấu hình website.homepage: {e}")
+            print(f"[Lưu ý ghi đè view {v.id}]: {e}")
+
+    # 4. Cấu hình website.page (Ẩn header/footer và nạp mã redirect)
+    if 'website.page' in env:
+        Page = env['website.page']
+        pages = Page.search(['|', ('url', 'in', ['/', '', '/home']), ('is_homepage', '=', True)])
+        for p in pages:
+            try:
+                p.write({
+                    'header_visible': False,
+                    'footer_visible': False,
+                    'header_overlay': False,
+                })
+                print(f"[OK] Đã tắt header/footer trên website.page (id={p.id}, url='{p.url}')")
+            except Exception as e:
+                print(f"[Lưu ý website.page {p.id}]: {e}")
+
+            if p.view_id:
+                try:
+                    p.view_id.write({'arch_db': hp_arch})
+                    print(f"[OK] Đã nạp mã chuyển hướng vào page.view_id (id={p.view_id.id})")
+                except Exception as e:
+                    print(f"[Lưu ý page.view_id {p.view_id.id}]: {e}")
+
+    # 5. Cấu hình website model (homepage_url)
+    for ws in env['website'].search([]):
+        vals = {}
+        if hasattr(ws, 'homepage_url'):
+            vals['homepage_url'] = '/web/login'
+        if vals:
+            try:
+                ws.write(vals)
+                print(f"[OK] Đã cấu hình website '{ws.name}' homepage_url = '/web/login'")
+            except Exception as e:
+                print(f"Lưu ý homepage_url: {e}")
+
+    # 6. Thêm View Guard bảo vệ trên website.layout (Dự phòng tối cao)
+    layout_view = env.ref('website.layout', raise_if_not_found=False)
+    if layout_view:
+        guard_arch = """<data>
+            <xpath expr="//div[@id='wrapwrap']" position="before">
+                <script type="text/javascript">
+                    if (window.location.pathname === '/' || window.location.pathname === '') {
+                        window.location.replace('/web/login');
+                    }
+                </script>
+            </xpath>
+        </data>"""
+        guard_view = View.search([('key', '=', 'tdb_website_custom.tdb_root_guard')], limit=1)
+        if guard_view:
+            try:
+                guard_view.write({'arch_db': guard_arch, 'active': True})
+                print(f"[OK] Đã cập nhật view bảo vệ tdb_root_guard (id={guard_view.id})")
+            except Exception as e:
+                print(f"[Lưu ý cập nhật tdb_root_guard]: {e}")
+        else:
+            try:
+                gv = View.create({
+                    'name': 'TDB Root Guard',
+                    'key': 'tdb_website_custom.tdb_root_guard',
+                    'type': 'qweb',
+                    'inherit_id': layout_view.id,
+                    'arch_db': guard_arch,
+                    'active': True,
+                    'priority': 1,
+                })
+                print(f"[OK] Đã tạo mới view bảo vệ tdb_root_guard (id={gv.id}) trên website.layout!")
+            except Exception as e:
+                print(f"[Lưu ý tạo tdb_root_guard]: {e}")
 
 
 def setup_vietnamese_language(env):
@@ -245,19 +362,20 @@ def setup_picture_attachments(env, odoo_dir, current_dir):
                 mimetype = 'image/jpeg'
 
             att_model = env['ir.attachment']
-            att = att_model.search([('url', '=', f'/tdb_website_custom/static/src/img/{bg_filename}')], limit=1)
-            vals = {
-                'name': bg_filename,
-                'type': 'binary',
-                'datas': b64_data,
-                'mimetype': mimetype,
-                'public': True,
-                'url': f'/tdb_website_custom/static/src/img/{bg_filename}',
-            }
-            if att:
-                att.write(vals)
-            else:
-                att_model.create(vals)
+            for att_url in [f'/tdb_website_custom/static/src/img/{bg_filename}', f'/web/image/{bg_filename}']:
+                att = att_model.search([('url', '=', att_url)], limit=1)
+                vals = {
+                    'name': bg_filename,
+                    'type': 'binary',
+                    'datas': b64_data,
+                    'mimetype': mimetype,
+                    'public': True,
+                    'url': att_url,
+                }
+                if att:
+                    att.write(vals)
+                else:
+                    att_model.create(vals)
             print(f"[OK] Đã nạp thành công '{bg_filename}' vào ir.attachment!")
 
 
@@ -318,6 +436,26 @@ def apply_tdb_login_interface(env, current_dir):
                 print(f"[OK] Đã vô hiệu hóa view con kế thừa web.login_layout: {cv.key or cv.id} ({cv.name})")
             except Exception as e:
                 print(f"Lưu ý vô hiệu hóa view con {cv.id}: {e}")
+
+        logo_b64 = ""
+        for s_dir in [
+            os.path.join(current_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img'),
+            os.path.join(current_dir, 'static', 'src', 'img'),
+            r'C:\odoo20\odoo\custom_addons\tdb_website_custom\static\src\img',
+        ]:
+            logo_candidate = os.path.join(s_dir, 'tdb_logo.png')
+            if os.path.exists(logo_candidate):
+                try:
+                    with open(logo_candidate, 'rb') as lf:
+                        logo_b64 = base64.b64encode(lf.read()).decode('ascii')
+                    break
+                except Exception:
+                    pass
+
+        if logo_b64:
+            logo_img_tag = f'<img src="/tdb_website_custom/static/src/img/tdb_logo.png" onerror="this.onerror=null;this.src=\'data:image/png;base64,{logo_b64}\';" alt="TDB Solution"/>'
+        else:
+            logo_img_tag = '<img src="/tdb_website_custom/static/src/img/tdb_logo.png" alt="TDB Solution"/>'
 
         # Cập nhật trực tiếp arch_db của web.login_layout
         tdb_layout_arch = """<t t-name="web.login_layout">
@@ -667,7 +805,7 @@ html, body {
             <main class="form-side">
                 <div class="form-inner">
                     <div class="tdb-logo-wrap">
-                        <img src="/tdb_website_custom/static/src/img/tdb_logo.png" alt="TDB Solution"/>
+                        """ + logo_img_tag + """
                     </div>
 
                     <div class="form-header">
