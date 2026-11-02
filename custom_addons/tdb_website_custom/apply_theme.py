@@ -100,10 +100,60 @@ def main():
         env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {})
 
         # =========================================================================
-        # 0. LÀM SẠCH VÀ KHÔI PHỤC WEBSITE.LAYOUT (XÓA CHUỖI TEXT BỊ LỘ TRÊN ĐẦU TRANG)
+        # 1. THIẾT LẬP TOÀN BỘ NGÔN NGỮ TIẾNG VIỆT (VI_VN) CHO HỆ THỐNG & WEBSITE
         # =========================================================================
-        print(">>> 0. Đang kiểm tra và làm sạch các view bị lỗi hiển thị text đầu trang...")
-        # Tìm tất cả các view bị dính chuỗi text thuộc tính bị vỡ tag
+        print("\n>>> 1. Đang kích hoạt và nạp gói ngôn ngữ Tiếng Việt (vi_VN)...")
+        vi_lang = env['res.lang'].with_context(active_test=False).search([('code', '=', 'vi_VN')], limit=1)
+        if vi_lang:
+            if not vi_lang.active:
+                vi_lang.write({'active': True})
+            print(f"[OK] Đã kích hoạt ngôn ngữ Tiếng Việt (id={vi_lang.id}, code=vi_VN)")
+        else:
+            try:
+                env['res.lang']._activate_lang('vi_VN')
+                vi_lang = env['res.lang'].search([('code', '=', 'vi_VN')], limit=1)
+                print("[OK] Đã cài đặt thành công ngôn ngữ Tiếng Việt vào hệ thống!")
+            except Exception as e:
+                print(f"[Lưu ý cài đặt vi_VN]: {e}")
+
+        # Nạp bản dịch Tiếng Việt từ các module nếu cần
+        try:
+            LangInstall = env['base.language.install']
+            if 'lang_ids' in LangInstall._fields and vi_lang:
+                installer = LangInstall.create({'lang_ids': [(6, 0, [vi_lang.id])]})
+                installer.lang_install()
+                print("[OK] Đã đồng bộ gói dịch thuật Tiếng Việt cho toàn bộ module!")
+            elif 'lang' in LangInstall._fields:
+                installer = LangInstall.create({'lang': 'vi_VN'})
+                installer.lang_install()
+                print("[OK] Đã đồng bộ gói dịch thuật Tiếng Việt!")
+        except Exception as e:
+            print(f"[Lưu ý lang_install]: {e}")
+
+        # Thiết lập Tiếng Việt làm ngôn ngữ mặc định của Website
+        for ws in env['website'].search([]):
+            vals = {}
+            if vi_lang:
+                if vi_lang.id not in ws.language_ids.ids:
+                    vals['language_ids'] = [(4, vi_lang.id)]
+                vals['default_lang_id'] = vi_lang.id
+            if vals:
+                ws.write(vals)
+            print(f"[OK] Đã thiết lập Tiếng Việt làm ngôn ngữ MẶC ĐỊNH cho Website '{ws.name}'")
+
+        # Đặt Tiếng Việt cho tài khoản Admin & Partner
+        admin_user = env.ref('base.user_admin', raise_if_not_found=False)
+        if admin_user:
+            admin_user.write({'lang': 'vi_VN'})
+            print("[OK] Đã đặt ngôn ngữ tài khoản Administrator sang Tiếng Việt")
+        partner_admin = env.ref('base.partner_admin', raise_if_not_found=False)
+        if partner_admin:
+            partner_admin.write({'lang': 'vi_VN'})
+
+        # =========================================================================
+        # 2. LÀM SẠCH VÀ KHÔI PHỤC WEBSITE.LAYOUT (XÓA CHUỖI TEXT BỊ LỘ TRÊN ĐẦU TRANG)
+        # =========================================================================
+        print("\n>>> 2. Đang kiểm tra và làm sạch các view bị lỗi hiển thị text đầu trang...")
         corrupted_views = env['ir.ui.view'].search([
             '|',
             ('arch_db', 'ilike', '%extra_items_toggle_aria_label%'),
@@ -122,7 +172,6 @@ def main():
             if not reset_done:
                 restore_view_from_fs(env, cv, odoo_dir)
 
-        # Đảm bảo website.layout luôn chuẩn sạch
         layout_views = env['ir.ui.view'].search([('key', '=', 'website.layout')])
         for lv in layout_views:
             arch = lv.arch_db or ''
@@ -138,7 +187,7 @@ def main():
                         pass
                 if not fixed:
                     restore_view_from_fs(env, lv, odoo_dir)
-                # Nếu vẫn còn vướng, nạp trực tiếp cấu trúc layout chuẩn sạch không bao giờ vỡ tag
+                
                 lv_check = env['ir.ui.view'].browse(lv.id)
                 if 'extra_items_toggle_aria_label' in (lv_check.arch_db or ''):
                     clean_layout_arch = """<t t-name="website.layout">
@@ -178,18 +227,27 @@ def main():
                     lv.write({'arch_db': clean_layout_arch})
                     print("[OK] Đã ghi đè cấu trúc layout sạch chuẩn cho website.layout!")
 
-        # 1. Cập nhật thông tin Công ty & Website
+        # =========================================================================
+        # 3. CẬP NHẬT THÔNG TIN CÔNG TY & TRANG LIÊN HỆ (/contactus)
+        # =========================================================================
+        print("\n>>> 3. Đang cập nhật thông tin công ty và trang Liên hệ (/contactus)...")
         company = env.ref('base.main_company', raise_if_not_found=False) or env['res.company'].search([], limit=1)
         if company:
+            vietnam = env.ref('base.vn', raise_if_not_found=False) or env['res.country'].search([('code', '=', 'VN')], limit=1)
+            hcm = env['res.country.state'].search([('country_id', '=', vietnam.id if vietnam else False), ('name', 'ilike', 'Hồ Chí Minh')], limit=1)
             company.write({
                 'name': 'TDB Solution',
-                'phone': '+84 373704895',
+                'street': 'KDC Van Phuc',
+                'city': 'TP Thu Duc',
+                'state_id': hcm.id if hcm else False,
+                'country_id': vietnam.id if vietnam else False,
+                'phone': '+84 37 3704895',
                 'email': 'info@tdbsolution.com.vn',
                 'website': 'https://tdbsolution.com.vn',
             })
-            print("[OK] Đã cập nhật thông tin công ty: TDB Solution, Hotline +84 373704895, info@tdbsolution.com.vn")
+            print("[OK] Đã cập nhật đầy đủ thông tin: TDB Solution, KDC Van Phuc, TP Thu Duc, TP Ho Chi Minh, Hotline +84 37 3704895, info@tdbsolution.com.vn")
 
-        # 2. Nạp Logo TDB Solution vào Website và Company
+        # Nạp Logo TDB Solution vào Website và Company
         logo_path = os.path.join(odoo_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img', 'tdb_logo.png')
         if not os.path.exists(logo_path):
             logo_path = os.path.join(current_dir, 'static', 'src', 'img', 'tdb_logo.png')
@@ -225,7 +283,7 @@ def main():
             except Exception as e:
                 print(f"[Lưu ý logo attachment]: {e}")
 
-        # 2b. Nạp ảnh Banner Hero BG-TapThe từ folder Picture vào Odoo Attachment
+        # Nạp ảnh Banner Hero BG-TapThe từ folder Picture vào Odoo Attachment
         for bg_filename in ['BG-TapThe.webp', 'BG-TapThe.jpg']:
             candidates = [
                 os.path.join(odoo_dir, 'Picture', bg_filename),
@@ -264,7 +322,44 @@ def main():
                 except Exception as e:
                     print(f"[Lưu ý nạp ảnh {bg_filename}]: {e}")
 
-        # 3. Chuẩn bị mã nguồn HTML chuẩn cho Homepage Hero Banner (Gọi website.layout)
+        # =========================================================================
+        # 4. CHUẨN HÓA HEADER (HOTLINE +84 373704895 VÀ NÚT LIÊN HỆ VỚI CHÚNG TÔI)
+        # =========================================================================
+        print("\n>>> 4. Đang chuẩn hóa Header (Hotline +84 373704895 và Nút Liên hệ với chúng tôi)...")
+        phone_views = env['ir.ui.view'].search([
+            '|', '|',
+            ('arch_db', 'ilike', '%555-555-5556%'),
+            ('arch_db', 'ilike', '%555 555 5556%'),
+            ('arch_db', 'ilike', '%Contact Us%')
+        ])
+        for pv in phone_views:
+            try:
+                n_arch = pv.arch_db
+                n_arch = n_arch.replace('+1 555-555-5556', '+84 373704895')
+                n_arch = n_arch.replace('+1 555 555 5556', '+84 373704895')
+                n_arch = n_arch.replace('+15555555556', '+84373704895')
+                n_arch = n_arch.replace('tel:+15555555556', 'tel:+84373704895')
+                n_arch = n_arch.replace('Contact Us', 'Liên hệ với chúng tôi')
+                pv.write({'arch_db': n_arch})
+                print(f"[OK] Đã cập nhật Hotline & Nút CTA trong view header: {pv.key or pv.id}")
+            except Exception as e:
+                print(f"[Lưu ý sửa header {pv.key}]: {e}")
+
+        for view_key in [
+            'website.template_header_default_call_to_action',
+            'website.header_call_to_action',
+            'website.template_header_call_to_action',
+            'website.option_header_brand_logo',
+        ]:
+            opt_view = env['ir.ui.view'].search([('key', '=', view_key)], limit=1)
+            if opt_view and not opt_view.active:
+                opt_view.write({'active': True})
+                print(f"[OK] Đã kích hoạt tùy chọn Header: {view_key}")
+
+        # =========================================================================
+        # 5. CẬP NHẬT TRANG CHỦ HERO BANNER (CHUẨN 2 NÚT BẤM BO TRÒN TRẮNG VÀ XANH)
+        # =========================================================================
+        print("\n>>> 5. Đang cập nhật Trang chủ Hero Banner chuẩn...")
         homepage_arch = """<t t-name="website.homepage">
     <t t-call="website.layout">
         <t t-set="pageName" t-value="'homepage'"/>
@@ -287,7 +382,6 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
     </t>
 </t>"""
 
-        # Phục hồi view 1953
         v1953 = env['ir.ui.view'].browse(1953)
         if v1953.exists():
             try:
@@ -296,20 +390,21 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
             except Exception as e:
                 print(f"[Lỗi v1953]: {e}")
 
-        # Cập nhật tất cả các view liên quan đến homepage
         homepage_views = env['ir.ui.view'].search([('key', '=', 'website.homepage')])
         for hp_view in homepage_views:
             hp_view.write({'arch_db': homepage_arch})
             print(f"[OK] Đã cập nhật view {hp_view.id} (key=website.homepage)")
 
-        # Cập nhật website.page trỏ về / và /home
         homepage_pages = env['website.page'].search([('url', 'in', ['/', '/home'])])
         for page in homepage_pages:
             if page.view_id:
                 page.view_id.write({'arch_db': homepage_arch})
                 print(f"[OK] Đã cập nhật website.page url='{page.url}' (view_id={page.view_id.id})")
 
-        # 4. Nội dung Footer 3 cột chuẩn TDB Solution
+        # =========================================================================
+        # 6. CẬP NHẬT FOOTER 3 CỘT VÀ 4 ICON TRÒN (FA-HOME CHUẨN MẪU)
+        # =========================================================================
+        print("\n>>> 6. Đang cập nhật Footer 3 cột và 4 biểu tượng mạng xã hội (fa-home)...")
         footer_inner_content = """<div id="footer" class="oe_structure oe_structure_solo" style="background-color: #0b1320; color: #94a3b8;">
         <section class="s_text_block pt40 pb16" data-snippet="s_text_block" data-name="Text">
             <div class="container">
@@ -342,7 +437,7 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
                             <a href="https://facebook.com" class="btn btn-light rounded-circle p-2 me-2 text-primary" target="_blank" aria-label="Facebook"><i class="fa fa-facebook-f fa-fw"></i></a>
                             <a href="https://twitter.com" class="btn btn-light rounded-circle p-2 me-2 text-info" target="_blank" aria-label="X"><i class="fa fa-twitter fa-fw"></i></a>
                             <a href="https://linkedin.com" class="btn btn-light rounded-circle p-2 me-2 text-primary" target="_blank" aria-label="LinkedIn"><i class="fa fa-linkedin fa-fw"></i></a>
-                            <a href="/" class="btn btn-light rounded-circle p-2 text-dark" aria-label="Website"><i class="fa fa-globe fa-fw"></i></a>
+                            <a href="/" class="btn btn-light rounded-circle p-2 text-dark" aria-label="Website"><i class="fa fa-home fa-fw"></i></a>
                         </div>
                     </div>
                 </div>
@@ -372,7 +467,10 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
             except Exception as e:
                 print(f"[Lưu ý footer {f_view.key}]: {e}")
 
-        # 5. Cập nhật Menu điều hướng Website chuẩn
+        # =========================================================================
+        # 7. CẬP NHẬT MENU ĐIỀU HƯỚNG WEBSITE CHUẨN TIẾNG VIỆT
+        # =========================================================================
+        print("\n>>> 7. Đang đồng bộ Menu điều hướng 6 mục tiếng Việt...")
         menu_model = env['website.menu']
         for ws in env['website'].search([]):
             root_menu = ws.menu_id
@@ -400,30 +498,19 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
                     })
             print(f"[OK] Đã đồng bộ Menu điều hướng cho website '{ws.name}'")
 
-        # 6. Kích hoạt tùy chọn Header nếu có
-        for view_key in [
-            'website.template_header_default_call_to_action',
-            'website.header_call_to_action',
-            'website.template_header_call_to_action',
-            'website.option_header_brand_logo',
-        ]:
-            opt_view = env['ir.ui.view'].search([('key', '=', view_key)], limit=1)
-            if opt_view and not opt_view.active:
-                opt_view.write({'active': True})
-                print(f"[OK] Đã kích hoạt tùy chọn Header: {view_key}")
-
-        # 7. Xóa cache view và template để Odoo nạp giao diện mới ngay lập tức
+        # =========================================================================
+        # 8. XÓA SẠCH CACHE VÀ COMMIT THAY ĐỔI VÀO POSTGRESQL
+        # =========================================================================
         try:
             env.registry.clear_cache()
-            print("[OK] Đã xóa cache QWeb template và View cache")
+            print("\n[OK] Đã xóa cache QWeb template và View cache")
         except Exception:
             pass
 
-        # 8. Commit thay đổi vào database PostgreSQL
         cr.commit()
-        print("\n" + "="*65)
-        print(">>> HOÀN TẤT THÀNH CÔNG! ĐÃ LÀM SẠCH VÀ ÁP DỤNG GIAO DIỆN TDB SOLUTION! <<<")
-        print("="*65)
+        print("\n" + "="*70)
+        print(">>> HOÀN TẤT THÀNH CÔNG! HỆ THỐNG ĐÃ ĐƯỢC CHUYỂN SANG TIẾNG VIỆT & CHUẨN GIAO DIỆN! <<<")
+        print("="*70)
 
 if __name__ == '__main__':
     main()
