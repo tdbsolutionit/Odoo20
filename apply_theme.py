@@ -249,21 +249,72 @@ def apply_bace_login_interface(env, current_dir):
     """
     Yêu cầu Hình 2: Áp dụng giao diện Đăng nhập B-ACE SME chia 2 cột tỉ lệ 8:2
     chuẩn theo http://192.168.103.8:3000/login
+    Cập nhật trực tiếp web.login_layout và web.login mà không dùng xpath kế thừa
+    để tránh hoàn toàn lỗi 'cannot be located in parent view' khi website được cài đặt.
     """
     print("\n>>> [5/6] Áp dụng giao diện Đăng nhập B-ACE SME tỉ lệ 8:2...")
-    
-    # Đọc nội dung file views/login_templates.xml
-    login_xml_path = os.path.join(current_dir, 'views', 'login_templates.xml')
-    if not os.path.exists(login_xml_path):
-        login_xml_path = os.path.join(current_dir, 'custom_addons', 'tdb_website_custom', 'views', 'login_templates.xml')
 
-    # Nạp trực tiếp view layout đăng nhập vào database
-    bace_login_layout_arch = """<data>
-    <xpath expr="//div[hasclass('container')]" position="replace">
+    View = env['ir.ui.view']
+
+    # 1. Gỡ bỏ các view kế thừa cũ đã tạo trước đó để tránh xung đột xpath
+    for xml_key in ['tdb_website_custom.bace_login_layout', 'tdb_website_custom.bace_login_form']:
+        for v in View.search([('key', '=', xml_key)]):
+            try:
+                v.unlink()
+                print(f"[OK] Đã gỡ bỏ view kế thừa cũ '{xml_key}' (id={v.id})")
+            except Exception:
+                try:
+                    v.write({'active': False})
+                except Exception:
+                    pass
+
+    # Xóa bản ghi trong ir.model.data nếu có
+    imd_records = env['ir.model.data'].search([
+        ('module', '=', 'tdb_website_custom'),
+        ('name', 'in', ['bace_login_layout', 'bace_login_form'])
+    ])
+    if imd_records:
+        imd_records.unlink()
+
+    # 2. Xóa các COW view của web.login_layout hoặc web.login (nếu có)
+    cow_views = View.search([
+        ('key', 'in', ['web.login_layout', 'web.login']),
+        ('website_id', '!=', False)
+    ])
+    for cv in cow_views:
+        try:
+            cv.unlink()
+            print(f"[OK] Đã xóa COW view '{cv.key}' (id={cv.id})")
+        except Exception:
+            pass
+
+    # 3. Vô hiệu hóa website.login_layout và tất cả các view con kế thừa web.login_layout
+    layout_target = env.ref('web.login_layout', raise_if_not_found=False)
+    if layout_target:
+        child_views = View.search([
+            ('inherit_id', '=', layout_target.id),
+            ('id', '!=', layout_target.id),
+            ('active', '=', True)
+        ])
+        for cv in child_views:
+            try:
+                cv.write({'active': False})
+                print(f"[OK] Đã vô hiệu hóa view con kế thừa web.login_layout: {cv.key or cv.id} ({cv.name})")
+            except Exception as e:
+                print(f"Lưu ý vô hiệu hóa view con {cv.id}: {e}")
+
+        # Cập nhật trực tiếp arch_db của web.login_layout theo tỉ lệ 8:2 chuẩn xác
+        bace_layout_arch = """<t t-name="web.login_layout">
+    <t t-call="web.frontend_layout">
+        <t t-set="html_data" t-value="{'style': 'height: 100%;'}"/>
+        <t t-set="body_classname" t-value="'bace-login-body'"/>
         <div class="login-grid">
+            <!-- Cột trái (80%): Ảnh nền tập thể HD từ thư mục Picture -->
             <aside class="hero-side">
                 <div class="hero-image-overlay"/>
             </aside>
+
+            <!-- Cột phải (20%): Form đăng nhập B-ACE SME -->
             <main class="form-side">
                 <div class="form-inner">
                     <div class="mobile-logo">
@@ -282,6 +333,7 @@ def apply_bace_login_interface(env, current_dir):
                         <p class="form-subtitle">Chào mừng trở lại! Vui lòng đăng nhập để tiếp tục.</p>
                     </div>
 
+                    <!-- Vị trí cắm form đăng nhập -->
                     <t t-out="0"/>
 
                     <div class="demo-box">
@@ -294,7 +346,7 @@ def apply_bace_login_interface(env, current_dir):
                         <div class="demo-box-text">
                             <strong>Demo:</strong>
                             <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin@b-ace.vn';if(p)p.value='password';" style="cursor:pointer;" title="Nhấp để điền">admin@b-ace.vn</code>
-                            <span style="margin:0 4px;color:#cbd5e1">·</span>
+                            <span style="margin:0 4px;color:#cbd5e1">&#183;</span>
                             <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin@b-ace.vn';if(p)p.value='password';" style="cursor:pointer;" title="Nhấp để điền">password</code>
                         </div>
                     </div>
@@ -305,23 +357,32 @@ def apply_bace_login_interface(env, current_dir):
                 </div>
             </main>
         </div>
-    </xpath>
-</data>"""
+    </t>
+</t>"""
+        try:
+            layout_target.write({'arch_db': bace_layout_arch})
+            print("[OK] Đã cập nhật trực tiếp web.login_layout chuẩn B-ACE SME (tỉ lệ 8:2)!")
+        except Exception as e:
+            print(f"[CẢNH BÁO web.login_layout]: {e}")
 
-    bace_login_form_arch = """<data>
-    <xpath expr="//form[hasclass('oe_login_form')]" position="replace">
+    # 4. Cập nhật trực tiếp web.login
+    login_target = env.ref('web.login', raise_if_not_found=False)
+    if login_target:
+        bace_login_arch = """<t t-name="web.login">
+    <t t-call="web.login_layout">
+        <t t-set="title">Đăng nhập | B-ACE SME</t>
         <form class="oe_login_form" role="form" t-attf-action="/web/login" method="post" onsubmit="this.action = '/web/login' + location.hash">
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
             <div class="form-error" t-if="error" role="alert">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <span><t t-out="error"/></span>
             </div>
             <div class="alert alert-success" t-if="message" role="status">
                 <t t-out="message"/>
             </div>
 
-            <div class="form-group">
+            <div class="form-group field-login">
                 <label class="form-label" for="login">Email</label>
                 <div class="input-wrap">
                     <svg aria-hidden="true" class="lucide lucide-mail icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
@@ -332,7 +393,7 @@ def apply_bace_login_interface(env, current_dir):
                 </div>
             </div>
 
-            <div class="form-group">
+            <div class="form-group field-password">
                 <label class="form-label" for="password">Mật khẩu</label>
                 <div class="input-wrap">
                     <svg aria-hidden="true" class="lucide lucide-lock icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
@@ -363,61 +424,31 @@ def apply_bace_login_interface(env, current_dir):
             </div>
 
             <input type="hidden" name="redirect" t-att-value="redirect"/>
-            <button class="btn-submit" type="submit">
-                <svg aria-hidden="true" class="lucide lucide-log-in" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
-                    <path d="m10 17 5-5-5-5"/>
-                    <path d="M15 12H3"/>
-                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
-                </svg>
-                Đăng nhập
-            </button>
 
-            <t t-if="debug">
-                <div class="text-center mt-3">
-                    <button type="submit" name="redirect" value="/web/become" class="btn btn-link btn-sm text-muted">Đăng nhập tài khoản Siêu Quản Trị (Superuser)</button>
-                </div>
-            </t>
+            <div class="oe_login_buttons">
+                <button class="btn-submit" type="submit">
+                    <svg aria-hidden="true" class="lucide lucide-log-in" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+                        <path d="m10 17 5-5-5-5"/>
+                        <path d="M15 12H3"/>
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                    </svg>
+                    Đăng nhập
+                </button>
+                <t t-if="debug">
+                    <div class="text-center mt-3">
+                        <button type="submit" name="redirect" value="/web/become" class="btn btn-link btn-sm text-muted">Đăng nhập tài khoản Siêu Quản Trị (Superuser)</button>
+                    </div>
+                </t>
+                <div class="o_login_auth"/>
+            </div>
         </form>
-    </xpath>
-</data>"""
-
-    View = env['ir.ui.view']
-
-    # 1. Đăng ký / cập nhật view kế thừa web.login_layout
-    layout_target = env.ref('web.login_layout', raise_if_not_found=False)
-    if layout_target:
-        v_layout = View.search([('key', '=', 'tdb_website_custom.bace_login_layout')], limit=1)
-        if not v_layout:
-            v_layout = View.create({
-                'name': 'B-ACE SME Login Layout (8:2)',
-                'key': 'tdb_website_custom.bace_login_layout',
-                'type': 'qweb',
-                'inherit_id': layout_target.id,
-                'arch_db': bace_login_layout_arch,
-                'priority': 99,
-            })
-            print("[OK] Đã tạo view kế thừa B-ACE Login Layout tỉ lệ 8:2!")
-        else:
-            v_layout.write({'arch_db': bace_login_layout_arch, 'active': True})
-            print("[OK] Đã cập nhật view B-ACE Login Layout tỉ lệ 8:2!")
-
-    # 2. Đăng ký / cập nhật view kế thừa web.login
-    login_target = env.ref('web.login', raise_if_not_found=False)
-    if login_target:
-        v_form = View.search([('key', '=', 'tdb_website_custom.bace_login_form')], limit=1)
-        if not v_form:
-            v_form = View.create({
-                'name': 'B-ACE SME Login Form',
-                'key': 'tdb_website_custom.bace_login_form',
-                'type': 'qweb',
-                'inherit_id': login_target.id,
-                'arch_db': bace_login_form_arch,
-                'priority': 99,
-            })
-            print("[OK] Đã tạo view kế thừa B-ACE Login Form!")
-        else:
-            v_form.write({'arch_db': bace_login_form_arch, 'active': True})
-            print("[OK] Đã cập nhật view B-ACE Login Form!")
+    </t>
+</t>"""
+        try:
+            login_target.write({'arch_db': bace_login_arch})
+            print("[OK] Đã cập nhật trực tiếp web.login chuẩn B-ACE SME!")
+        except Exception as e:
+            print(f"[CẢNH BÁO web.login]: {e}")
 
 
 def main():
@@ -467,6 +498,18 @@ def main():
         try:
             env.registry.clear_cache()
             print("\n[OK] Đã xóa cache QWeb template và View cache")
+        except Exception:
+            pass
+
+        # Xóa các asset cache compiled trong ir.attachment để CSS mới ăn ngay
+        try:
+            cached_assets = env['ir.attachment'].search([
+                ('name', 'ilike', '%.assets_%'),
+                ('url', 'ilike', '/web/assets/%')
+            ])
+            if cached_assets:
+                cached_assets.unlink()
+                print(f"[OK] Đã làm mới {len(cached_assets)} bundle asset cache!")
         except Exception:
             pass
 

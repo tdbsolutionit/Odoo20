@@ -16,3 +16,4 @@ class BaceRootController(http.Controller):
         if not request.session.uid or request.env.user._is_public():
             return request.redirect('/web/login')
         return request.redirect('/web')
+
