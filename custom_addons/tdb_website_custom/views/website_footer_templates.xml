@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Kế thừa Footer website.layout để hiển thị chân trang 3 cột chuẩn nhận diện TDB Solution -->
+    <template id="tdb_footer_custom" inherit_id="website.layout" priority="1">
+        <!-- Thay thế toàn bộ khối Footer chính -->
+        <xpath expr="//div[@id='footer']" position="replace">
+            <div id="footer" class="oe_structure oe_structure_solo tdb_site_footer" data-name="Footer" style="background-color: #0b1320; color: #94a3b8;">
+                <section class="s_text_block pt40 pb16" data-snippet="s_text_block" data-name="Text">
+                    <div class="container">
+                        <div class="row">
+                            <!-- Cột 1: Liên kết hữu ích -->
+                            <div class="col-lg-2 pt24 pb24">
+                                <h5 class="tdb_footer_heading mb-3 text-white fw-bold">Liên kết hữu ích</h5>
+                                <ul class="list-unstyled tdb_footer_list">
+                                    <li class="mb-2"><a href="/" class="text-decoration-none" style="color: #94a3b8;">Trang chủ</a></li>
+                                    <li class="mb-2"><a href="/aboutus" class="text-decoration-none" style="color: #94a3b8;">Về chúng tôi</a></li>
+                                    <li class="mb-2"><a href="/shop" class="text-decoration-none" style="color: #94a3b8;">Sản phẩm</a></li>
+                                    <li class="mb-2"><a href="#" class="text-decoration-none" style="color: #94a3b8;">Dịch vụ</a></li>
+                                    <li class="mb-2"><a href="#" class="text-decoration-none" style="color: #94a3b8;">Hợp pháp</a></li>
+                                    <li class="mb-2"><a href="/contactus" class="text-decoration-none" style="color: #94a3b8;">Liên hệ</a></li>
+                                </ul>
+                            </div>
+
+                            <!-- Cột 2: Về chúng tôi -->
+                            <div class="col-lg-5 pt24 pb24 o_colored_level">
+                                <h5 class="tdb_footer_heading mb-3 text-white fw-bold">Về chúng tôi</h5>
+                                <p class="tdb_footer_about_text" style="line-height: 1.7; color: #cbd5e1;">
+                                    Chúng tôi cung cấp giải pháp chuyển đổi số cho bộ phận thiết kế và quản lý kỹ thuật bằng công cụ PDM/ PLM – CIM database. Giải pháp kỹ thuật đi từ ý tưởng (ideas – R&amp;D) -&gt; thiết kế (CAD) -&gt; Phân tích mô phỏng số (CFD/ CAE/ FEA) -&gt; Sản xuất (Production) -&gt; Vận hành và quản lý bảo trì bảo dưỡng từ hệ thống tích hợp IoT (IoT – Operation and maintenance).
+                                </p>
+                            </div>
+
+                            <!-- Cột 3: Kết nối với chúng tôi -->
+                            <div id="connect" class="col-lg-4 offset-lg-1 pt24 pb24 o_colored_level">
+                                <h5 class="tdb_footer_heading mb-3 text-white fw-bold">Kết nối với chúng tôi</h5>
+                                <ul class="list-unstyled tdb_footer_contact_list">
+                                    <li class="mb-2">
+                                        <i class="fa fa-comment fa-fw me-2 text-primary"/>
+                                        <a href="/contactus" class="text-decoration-none" style="color: #94a3b8;">Liên hệ</a>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fa fa-envelope fa-fw me-2 text-primary"/>
+                                        <a href="mailto:info@tdbsolution.com.vn" class="text-decoration-none" style="color: #94a3b8;">info@tdbsolution.com.vn</a>
+                                    </li>
+                                    <li class="mb-2">
+                                        <i class="fa fa-phone fa-fw me-2 text-primary"/>
+                                        <span class="o_force_ltr"><a href="tel:+84373704895" class="text-decoration-none" style="color: #94a3b8;">+84 373704895</a></span>
+                                    </li>
+                                </ul>
+                                <!-- Mạng xã hội hình tròn -->
+                                <div class="s_social_media text-start mt-3" data-snippet="s_social_media" data-name="Social Media">
+                                    <a href="https://facebook.com" class="btn btn-light rounded-circle p-2 me-2 text-primary" target="_blank" aria-label="Facebook">
+                                        <i class="fa fa-facebook-f fa-fw"/>
+                                    </a>
+                                    <a href="https://twitter.com" class="btn btn-light rounded-circle p-2 me-2 text-info" target="_blank" aria-label="X">
+                                        <i class="fa fa-twitter fa-fw"/>
+                                    </a>
+                                    <a href="https://linkedin.com" class="btn btn-light rounded-circle p-2 me-2 text-primary" target="_blank" aria-label="LinkedIn">
+                                        <i class="fa fa-linkedin fa-fw"/>
+                                    </a>
+                                    <a href="/" class="btn btn-light rounded-circle p-2 text-dark" aria-label="Website">
+                                        <i class="fa fa-home fa-fw"/>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </xpath>
+
+        <!-- Thay thế thanh bản quyền chân trang (Copyright) -->
+        <xpath expr="//footer//span[hasclass('o_footer_copyright_name')]" position="replace">
+            <span class="o_footer_copyright_name me-2">Bản quyền thuộc © TDB Solution., Co. Ltd</span>
+        </xpath>
+    </template>
+</odoo>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- 1. Kế thừa Header để luôn có Nút Giỏ Hàng (Cart Icon) trước ô Tìm Kiếm chuẩn nhận diện -->
+    <template id="tdb_header_cart_link" inherit_id="website.template_header_default" priority="20">
+        <xpath expr="//t[@t-call='website.placeholder_header_search_box']" position="before">
+            <li class="divider d-none"/>
+            <li class="o_wsale_my_cart">
+                <a href="/shop/cart" aria-label="Giỏ hàng thương mại điện tử" class="o_navlink_background btn position-relative rounded-circle p-1 text-center text-reset">
+                    <div>
+                        <i class="fa fa-shopping-cart fa-stack"/>
+                        <sup class="my_cart_quantity badge bg-primary position-absolute top-0 end-0 mt-n1 me-n1 rounded-pill d-none" data-order-id="">0</sup>
+                    </div>
+                </a>
+            </li>
+        </xpath>
+    </template>
+
+    <!-- 2. Chuẩn hóa Hotline TDB Solution trong Header (+84 373704895) -->
+    <template id="tdb_header_phone" inherit_id="website.header_text_element" priority="20">
+        <xpath expr="//li" position="replace">
+            <li t-attf-class="#{_item_class}">
+                <div t-attf-class="s_text_block #{_div_class}" data-name="Text">
+                    <a href="tel:+84373704895" class="nav-link o_nav-link_secondary p-2">
+                        <small>
+                            <i class="fa fa-phone fa-fw me-1 text-primary"/>
+                            <span class="o_force_ltr">+84 373704895</span>
+                        </small>
+                    </a>
+                </div>
+            </li>
+        </xpath>
+    </template>
+
+    <!-- 3. Chuẩn hóa Nút Bấm Call to Action 'Liên hệ với chúng tôi' -->
+    <template id="tdb_header_cta" inherit_id="website.header_call_to_action" priority="20">
+        <xpath expr="//a[hasclass('btn_cta')]" position="replace">
+            <a href="/contactus" class="oe_unremovable btn btn-primary btn_cta">Liên hệ với chúng tôi</a>
+        </xpath>
+    </template>
+</odoo>

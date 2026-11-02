@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Kế thừa trang Tuyển dụng (/jobs) chuẩn nhận diện TDB Solution -->
+    <template id="tdb_jobs_custom" inherit_id="website_hr_recruitment.index" priority="1">
+        <xpath expr="//div[@id='jobs_grid_right']" position="replace">
+            <div class="col-lg-4 oe_structure oe_empty" id="jobs_grid_right">
+                <section class="">
+                    <div class="container">
+                        <div class="row">
+                            <div class="col-lg-12 pb24">
+                                <img src="/website_hr_recruitment/static/src/img/job_image_8.jpg" class="img-fluid" alt="Về chúng tôi" loading="lazy"/>
+                                <p class="mt24 mb8">
+                                    Chúng tôi là một đội ngũ gồm những cá nhân đam mê với mục tiêu cải thiện cuộc sống của mọi người thông qua các sản phẩm đột phá.
+                                    Chúng tôi tạo ra những sản phẩm tuyệt vời để giải quyết các vấn đề kinh doanh của bạn.
+                                </p>
+                                <div class="s_hr pt16 pb16" data-snippet="s_hr" data-name="Separator">
+                                    <hr class="w-100 mx-auto" style="border-top-color: var(--400) !important;"/>
+                                </div>
+                                <div id="connect">
+                                    <ul class="list-unstyled text-nowrap">
+                                        <li><i class="fa fa-comment fa-fw me-2"/><span><a href="/contactus">Liên hệ</a></span></li>
+                                        <li><i class="fa fa-envelope fa-fw me-2"/><span><a href="mailto:info@tdbsolution.com.vn">info@tdbsolution.com.vn</a></span></li>
+                                        <li><i class="fa fa-phone fa-fw me-2"/><span class="o_force_ltr"><a href="tel:+84373704895">+84 37 370 4895</a></span></li>
+                                    </ul>
+                                    <div class="s_social_media text-start" data-name="Social Media" data-snippet="s_social_media">
+                                        <h5 class="s_social_media_title d-none">Theo dõi chúng tôi</h5>
+                                        <a href="https://facebook.com" class="s_social_media_facebook text-decoration-none" target="_blank" aria-label="Facebook">
+                                            <i class="fa fa-facebook rounded-empty-circle btn btn-outline-primary shadow-sm"/>
+                                        </a>
+                                        <a href="https://twitter.com" class="s_social_media_twitter text-decoration-none" target="_blank" aria-label="X">
+                                            <i class="fa fa-twitter rounded-empty-circle btn btn-outline-primary shadow-sm"/>
+                                        </a>
+                                        <a href="https://linkedin.com" class="s_social_media_linkedin text-decoration-none" target="_blank" aria-label="LinkedIn">
+                                            <i class="fa fa-linkedin rounded-empty-circle btn btn-outline-primary shadow-sm"/>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </xpath>
+    </template>
+</odoo>
