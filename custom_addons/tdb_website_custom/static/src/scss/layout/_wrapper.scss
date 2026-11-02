@@ -4,38 +4,44 @@
 
 .login-wrapper {
     position: relative !important;
-    width: 100vw !important;
+    width: 100% !important;
     min-height: 100vh !important;
+    min-height: 100dvh !important;
     margin: 0 !important;
     padding: 0 !important;
     display: flex !important;
+    flex-direction: row !important;
     background-color: $bg-cream !important;
     background-image: url('/tdb_website_custom/static/src/img/login_bg.webp?v=20261102_clean_v4') !important;
     background-repeat: no-repeat !important;
     background-position: center center !important;
     background-size: cover !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
+    overflow-x: hidden !important;
 }
 
 // Cột trái: Trình bày Giá Trị Cốt Lõi
 .presentation-side {
-    flex: 1.2 !important;
+    flex: 1.25 !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
-    padding: 44px 60px 40px !important;
+    padding: clamp(28px, 3.5vw, 48px) clamp(24px, 4vw, 64px) !important;
     position: relative !important;
     z-index: 2 !important;
     box-sizing: border-box !important;
+    min-width: 0 !important;
 }
 
 // Cột phải: Khung Login Card nổi
 .login-card-side {
+    flex: 1 !important;
+    max-width: 580px !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    padding: 30px 60px 30px 30px !important;
+    padding: clamp(24px, 3vw, 40px) clamp(20px, 3.5vw, 60px) !important;
     z-index: 5 !important;
     box-sizing: border-box !important;
+    min-width: 0 !important;
 }

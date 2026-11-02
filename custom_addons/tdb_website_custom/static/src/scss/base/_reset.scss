@@ -4,16 +4,29 @@
 
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
+// Universal Box-Sizing & Margin Reset
+*, *::before, *::after {
+    box-sizing: border-box !important;
+}
+
 html, body {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    min-height: 100% !important;
     font-family: $font-family-base !important;
     background: $bg-cream !important;
     color: $dark-navy !important;
-    -webkit-font-smoothing: antialiased;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: optimizeLegibility !important;
     overflow-x: hidden !important;
+}
+
+// Ensure images and SVGs never overflow their containers
+img, svg {
+    max-width: 100%;
+    height: auto;
 }
 
 // Ẩn toàn bộ header/footer mặc định của Odoo

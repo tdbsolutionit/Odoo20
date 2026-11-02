@@ -496,12 +496,23 @@ html, body {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    min-height: 100% !important;
     font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
     background: #FAF6EE !important;
     color: #1E293B !important;
     -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    text-rendering: optimizeLegibility !important;
     overflow-x: hidden !important;
+}
+
+*, *::before, *::after {
+    box-sizing: border-box !important;
+}
+
+img, svg {
+    max-width: 100%;
+    height: auto;
 }
 
 #top, #bottom, header, footer, .o_header_standard, .o_footer, .o_footer_copyright, .oe_website_login_container > .container, #oe_main_menu_navbar {
@@ -510,18 +521,20 @@ html, body {
 
 .login-wrapper {
     position: relative !important;
-    width: 100vw !important;
+    width: 100% !important;
     min-height: 100vh !important;
+    min-height: 100dvh !important;
     margin: 0 !important;
     padding: 0 !important;
     display: flex !important;
+    flex-direction: row !important;
     background-color: #FAF6EE !important;
     background-image: url('/tdb_website_custom/static/src/img/login_bg.webp?v=20261102_clean_v4') !important;
     background-repeat: no-repeat !important;
     background-position: center center !important;
     background-size: cover !important;
     box-sizing: border-box !important;
-    overflow: hidden !important;
+    overflow-x: hidden !important;
 }
 
 /* ---------------- Cột trái: Trình bày Giá Trị Cốt Lõi ---------------- */
@@ -1052,37 +1065,425 @@ button[value*="become"],
     margin-top: 20px !important;
 }
 
-@media (max-width: 1100px) {
+/* ==================== RESPONSIVE ENGINE (MỌI MÀN HÌNH) ==================== */
+
+/* 1. Ultra-wide & 4K Displays (> 1600px) */
+@media (min-width: 1600px) {
+    .presentation-side {
+        padding: 56px 80px 48px !important;
+    }
+    .core-content-center {
+        max-width: 1140px !important;
+    }
+    .value-card {
+        max-width: 350px !important;
+        padding: 34px 30px 30px !important;
+    }
+    .login-card {
+        max-width: 450px !important;
+        padding: 46px 40px 36px !important;
+    }
+}
+
+/* 2. Laptop nhỏ & Tablet ngang (992px - 1199px) */
+@media (max-width: 1199px) and (min-width: 992px) {
+    .presentation-side {
+        padding: 32px 36px 28px !important;
+    }
+    .top-brand-logo img,
+    .brand-logo-img {
+        height: 48px !important;
+    }
+    .core-title {
+        font-size: 44px !important;
+    }
+    .core-subtitle {
+        font-size: 15.5px !important;
+        max-width: 640px !important;
+    }
+    .values-row {
+        gap: 16px !important;
+    }
+    .value-card {
+        flex: 1 1 200px !important;
+        max-width: 280px !important;
+        padding: 22px 18px 20px !important;
+    }
+    .value-icon-box {
+        width: 44px !important;
+        height: 44px !important;
+    }
+    .value-icon-box svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+    .value-title {
+        font-size: 18px !important;
+    }
+    .value-desc {
+        font-size: 13px !important;
+    }
+    .login-card-side {
+        padding: 24px 36px 24px 20px !important;
+        max-width: 460px !important;
+    }
+    .login-card {
+        max-width: 390px !important;
+        padding: 34px 28px 26px !important;
+    }
+}
+
+/* 3. Tablet & Màn hình trung bình (768px - 991px): Chuyển bố cục dọc, BA DÒNG XUẤT HIỆN ĐẦY ĐỦ */
+@media (max-width: 991px) {
     .login-wrapper {
         flex-direction: column !important;
         height: auto !important;
+        min-height: 100vh !important;
         overflow-y: auto !important;
         padding-bottom: 40px !important;
+        background-position: center top !important;
     }
+
     .presentation-side {
-        padding: 30px 24px !important;
+        flex: none !important;
+        width: 100% !important;
+        padding: 32px 32px 16px !important;
         align-items: center !important;
+        text-align: center !important;
     }
+
     .top-brand-logo {
         align-self: flex-start !important;
-        margin-bottom: 20px !important;
+        margin-bottom: 24px !important;
     }
+
+    .top-brand-logo img,
+    .brand-logo-img {
+        height: 48px !important;
+    }
+
+    .core-content-center {
+        margin: 0 auto !important;
+        padding: 10px 0 20px !important;
+        max-width: 640px !important;
+    }
+
+    .core-heading-wrap {
+        margin-bottom: 24px !important;
+    }
+
     .core-title {
-        font-size: 34px !important;
+        font-size: 38px !important;
+        gap: 12px !important;
     }
+
+    .title-gold-line {
+        width: 90px !important;
+        height: 4px !important;
+        margin: 10px auto 0 !important;
+    }
+
+    .core-subtitle {
+        font-size: 16px !important;
+        max-width: 580px !important;
+        margin-top: 14px !important;
+    }
+
+    /* YÊU CẦU BẮT BUỘC MỤC 4: Ba dòng nội dung xuất hiện đầy đủ theo bố cục dọc */
     .values-row {
-        flex-wrap: wrap !important;
-    }
-    .value-card {
-        max-width: 280px !important;
-        flex: 1 1 220px !important;
-    }
-    .login-card-side {
-        padding: 20px 24px !important;
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 14px !important;
         width: 100% !important;
+        max-width: 540px !important;
+        margin: 22px auto 0 !important;
     }
+
+    .value-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        flex: none !important;
+        padding: 18px 22px !important;
+        border-radius: 18px !important;
+        box-shadow: 0 6px 20px rgba(220, 180, 100, 0.12) !important;
+        transform: none !important;
+    }
+
+    .value-card:hover {
+        transform: translateY(-2px) !important;
+    }
+
+    .value-card-header {
+        margin-bottom: 6px !important;
+        gap: 12px !important;
+    }
+
+    .value-icon-box {
+        width: 44px !important;
+        height: 44px !important;
+        border-radius: 12px !important;
+    }
+
+    .value-icon-box svg {
+        width: 22px !important;
+        height: 22px !important;
+    }
+
+    .value-divider {
+        width: 3px !important;
+        height: 26px !important;
+    }
+
+    .value-title {
+        font-size: 18px !important;
+    }
+
+    .value-desc {
+        font-size: 14px !important;
+        line-height: 1.5 !important;
+    }
+
     .page-footer-left {
         display: none !important;
+    }
+
+    .login-card-side {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 16px 24px 32px !important;
+    }
+
+    .login-card {
+        width: 100% !important;
+        max-width: 480px !important;
+        margin: 0 auto !important;
+        padding: 36px 32px 28px !important;
+    }
+}
+
+/* 4. Mobile & Cửa sổ nhỏ (< 768px): BA DÒNG NỘI DUNG GỌN GÀNG, ĐẦY ĐỦ */
+@media (max-width: 767px) {
+    .presentation-side {
+        padding: 24px 18px 12px !important;
+    }
+
+    .top-brand-logo {
+        margin-bottom: 16px !important;
+    }
+
+    .top-brand-logo img,
+    .brand-logo-img {
+        height: 42px !important;
+    }
+
+    .core-title {
+        font-size: 28px !important;
+        gap: 8px !important;
+    }
+
+    .title-gold-line {
+        width: 75px !important;
+        height: 3.5px !important;
+        margin: 8px auto 0 !important;
+    }
+
+    .core-subtitle {
+        font-size: 14.5px !important;
+        line-height: 1.55 !important;
+        margin-top: 12px !important;
+        padding: 0 4px !important;
+    }
+
+    /* BA DÒNG NỘI DUNG HIỂN THỊ ĐẦY ĐỦ TRÊN MOBILE (Tận Tâm, Đồng Hành, Bền Vững) */
+    .values-row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+        gap: 11px !important;
+        width: 100% !important;
+        max-width: 440px !important;
+        margin: 18px auto 0 !important;
+    }
+
+    .value-card {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 14px 16px !important;
+        border-radius: 15px !important;
+        box-shadow: 0 4px 14px rgba(220, 180, 100, 0.1) !important;
+    }
+
+    .value-card-header {
+        margin-bottom: 5px !important;
+        gap: 10px !important;
+    }
+
+    .value-icon-box {
+        width: 38px !important;
+        height: 38px !important;
+        border-radius: 10px !important;
+    }
+
+    .value-icon-box svg {
+        width: 19px !important;
+        height: 19px !important;
+    }
+
+    .value-divider {
+        width: 2.5px !important;
+        height: 22px !important;
+    }
+
+    .value-title {
+        font-size: 16.5px !important;
+    }
+
+    .value-desc {
+        font-size: 13.5px !important;
+        line-height: 1.45 !important;
+    }
+
+    .login-card-side {
+        padding: 12px 16px 28px !important;
+    }
+
+    .login-card {
+        width: 100% !important;
+        max-width: 420px !important;
+        padding: 28px 20px 24px !important;
+        border-radius: 20px !important;
+    }
+
+    .card-title {
+        font-size: 24px !important;
+    }
+
+    .card-subtitle {
+        font-size: 13px !important;
+        margin-bottom: 18px !important;
+    }
+
+    .input-wrap input {
+        height: 48px !important;
+        font-size: 14px !important;
+        padding-left: 44px !important;
+    }
+
+    .btn-submit {
+        height: 48px !important;
+        font-size: 15px !important;
+    }
+
+    .btn-demo {
+        height: 40px !important;
+        font-size: 13px !important;
+    }
+}
+
+/* 5. Mobile Siêu Nhỏ (320px - 374px) */
+@media (max-width: 374px) {
+    .presentation-side {
+        padding: 18px 12px 10px !important;
+    }
+
+    .top-brand-logo img,
+    .brand-logo-img {
+        height: 36px !important;
+    }
+
+    .core-title {
+        font-size: 24px !important;
+        gap: 6px !important;
+    }
+
+    .core-subtitle {
+        font-size: 13px !important;
+    }
+
+    .values-row {
+        gap: 8px !important;
+    }
+
+    .value-card {
+        padding: 11px 12px !important;
+        border-radius: 12px !important;
+    }
+
+    .value-icon-box {
+        width: 32px !important;
+        height: 32px !important;
+    }
+
+    .value-icon-box svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .value-divider {
+        height: 18px !important;
+        width: 2px !important;
+    }
+
+    .value-title {
+        font-size: 15px !important;
+    }
+
+    .value-desc {
+        font-size: 12px !important;
+        line-height: 1.4 !important;
+    }
+
+    .login-card-side {
+        padding: 8px 12px 24px !important;
+    }
+
+    .login-card {
+        padding: 22px 14px 18px !important;
+        border-radius: 16px !important;
+    }
+
+    .card-title {
+        font-size: 21px !important;
+    }
+
+    .card-subtitle {
+        font-size: 12px !important;
+        margin-bottom: 14px !important;
+    }
+
+    .input-wrap input {
+        height: 44px !important;
+        font-size: 13.5px !important;
+        padding-left: 40px !important;
+    }
+
+    .input-icon {
+        left: 10px !important;
+    }
+
+    .input-icon svg {
+        width: 16px !important;
+        height: 16px !important;
+    }
+
+    .btn-submit {
+        height: 44px !important;
+        font-size: 14px !important;
+    }
+
+    .btn-demo {
+        height: 38px !important;
+        font-size: 12.5px !important;
+    }
+}
+
+/* 6. HiDPI & Retina Displays (2x, 3x pixel density) */
+@media (-webkit-min-device-pixel-ratio: 2), (min-resolution: 192dpi) {
+    .login-wrapper {
+        image-rendering: -webkit-optimize-contrast;
+    }
+    .brand-logo-img,
+    .card-logo {
+        image-rendering: -webkit-optimize-contrast;
     }
 }
 ]]>

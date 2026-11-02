@@ -3,11 +3,11 @@
 // =============================================================================
 
 .login-card {
-    width: 420px !important;
-    max-width: 100% !important;
+    width: 100% !important;
+    max-width: 430px !important;
     background: $pure-white !important;
-    border-radius: 26px !important;
-    padding: 40px 36px 32px !important;
+    border-radius: clamp(18px, 2vw, 26px) !important;
+    padding: clamp(28px, 3.2vw, 42px) clamp(22px, 2.8vw, 36px) clamp(24px, 2.6vw, 32px) !important;
     box-shadow: $shadow-card !important;
     border: 1.5px solid rgba(240, 230, 210, 0.7) !important;
     box-sizing: border-box !important;
@@ -20,7 +20,7 @@
     margin-bottom: 16px !important;
 
     img, .card-logo {
-        height: 42px !important;
+        height: clamp(36px, 3vw, 44px) !important;
         width: auto !important;
         max-width: 100% !important;
         object-fit: contain !important;
@@ -29,7 +29,7 @@
 }
 
 .card-title {
-    font-size: 26px !important;
+    font-size: clamp(22px, 2vw, 28px) !important;
     font-weight: 800 !important;
     color: $dark-navy !important;
     text-align: center !important;
@@ -38,7 +38,7 @@
 }
 
 .card-subtitle {
-    font-size: 13.5px !important;
+    font-size: clamp(12.5px, 1.05vw, 14px) !important;
     color: $text-gray !important;
     text-align: center !important;
     line-height: 1.5 !important;
@@ -80,10 +80,10 @@
 
     input {
         width: 100% !important;
-        height: 48px !important;
-        padding: 0 16px 0 44px !important;
+        height: 50px !important;
+        padding: 0 16px 0 46px !important;
         font-family: inherit !important;
-        font-size: 14px !important;
+        font-size: 14.5px !important;
         color: $dark-navy !important;
         background: $pure-white !important;
         border: 1.5px solid $card-border !important;
@@ -121,8 +121,8 @@
     z-index: 2 !important;
 
     svg {
-        width: 17px !important;
-        height: 17px !important;
+        width: 18px !important;
+        height: 18px !important;
         stroke: $primary-gold !important;
         stroke-width: 2 !important;
     }
@@ -130,12 +130,14 @@
 
 .pwd-toggle {
     position: absolute !important;
-    right: 12px !important;
+    right: 10px !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
     background: transparent !important;
     border: none !important;
-    padding: 6px !important;
+    padding: 8px !important;
+    min-width: 44px !important;
+    min-height: 44px !important;
     cursor: pointer !important;
     color: $text-light !important;
     display: flex !important;
@@ -150,8 +152,8 @@
     }
 
     svg {
-        width: 17px !important;
-        height: 17px !important;
+        width: 18px !important;
+        height: 18px !important;
         stroke: currentColor !important;
         stroke-width: 2 !important;
     }
@@ -259,13 +261,13 @@ button[value*="become"],
 
 .btn-submit {
     width: 100% !important;
-    height: 50px !important;
+    height: 52px !important;
     background: $primary-gold !important;
     color: $pure-white !important;
     border: none !important;
-    border-radius: 25px !important;
+    border-radius: 26px !important;
     font-family: inherit !important;
-    font-size: 15px !important;
+    font-size: 15.5px !important;
     font-weight: 700 !important;
     cursor: pointer !important;
     display: inline-flex !important;
@@ -322,7 +324,7 @@ button[value*="become"],
 
 .btn-demo {
     width: 100% !important;
-    height: 42px !important;
+    height: 44px !important;
     border: 1.5px solid $border-gold !important;
     background: #FFFDF9 !important;
     border-radius: 24px !important;

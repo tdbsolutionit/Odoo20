@@ -10,7 +10,7 @@
 
 .top-brand-logo img,
 .brand-logo-img {
-    height: 56px !important;
+    height: clamp(42px, 3.8vw, 56px) !important;
     width: auto !important;
     display: block !important;
     object-fit: contain !important;
@@ -23,20 +23,22 @@
     align-items: center !important;
     text-align: center !important;
     margin: auto 0 !important;
-    padding: 28px 0 !important;
+    padding: clamp(20px, 2.5vw, 32px) 0 !important;
     max-width: 1040px !important;
     width: 100% !important;
     margin-left: auto !important;
     margin-right: auto !important;
+    min-width: 0 !important;
 }
 
 .core-heading-wrap {
-    margin-bottom: 36px !important;
+    margin-bottom: clamp(24px, 2.8vw, 36px) !important;
     text-align: center !important;
+    width: 100% !important;
 }
 
 .core-title {
-    font-size: 58px !important;
+    font-size: clamp(34px, 3.8vw, 58px) !important;
     font-weight: 800 !important;
     letter-spacing: -0.015em !important;
     line-height: 1.18 !important;
@@ -44,7 +46,8 @@
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 16px !important;
+    gap: clamp(10px, 1.2vw, 16px) !important;
+    flex-wrap: wrap !important;
 }
 
 .word-navy {
@@ -57,19 +60,19 @@
 }
 
 .title-gold-line {
-    width: 120px !important;
+    width: clamp(80px, 8vw, 120px) !important;
     height: 5px !important;
     background: $primary-gold !important;
     border-radius: 3px !important;
-    margin: 14px auto 0 !important;
+    margin: clamp(10px, 1.2vw, 14px) auto 0 !important;
 }
 
 .core-subtitle {
-    font-size: 19px !important;
+    font-size: clamp(14.5px, 1.25vw, 19px) !important;
     font-weight: 500 !important;
     color: $text-slate !important;
     line-height: 1.65 !important;
-    margin: 20px 0 0 0 !important;
+    margin: clamp(14px, 1.5vw, 20px) auto 0 auto !important;
     max-width: 780px !important;
 }
 
@@ -77,18 +80,19 @@
 .values-row {
     display: flex !important;
     justify-content: center !important;
-    gap: 26px !important;
+    gap: clamp(14px, 1.8vw, 26px) !important;
     width: 100% !important;
-    margin-top: 24px !important;
+    margin-top: clamp(16px, 2vw, 24px) !important;
 }
 
 .value-card {
-    flex: 1 1 280px !important;
+    flex: 1 1 260px !important;
     max-width: 330px !important;
+    min-width: 0 !important;
     background: $pure-white !important;
     border: 1.5px solid rgba(240, 230, 210, 0.95) !important;
     border-radius: 22px !important;
-    padding: 30px 28px 28px !important;
+    padding: clamp(20px, 2vw, 30px) clamp(18px, 1.8vw, 28px) clamp(18px, 1.8vw, 28px) !important;
     box-shadow: $shadow-value !important;
     text-align: left !important;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
@@ -104,13 +108,13 @@
 .value-card-header {
     display: flex !important;
     align-items: center !important;
-    gap: 14px !important;
-    margin-bottom: 14px !important;
+    gap: clamp(10px, 1.2vw, 14px) !important;
+    margin-bottom: clamp(10px, 1vw, 14px) !important;
 }
 
 .value-icon-box {
-    width: 54px !important;
-    height: 54px !important;
+    width: clamp(44px, 3.8vw, 54px) !important;
+    height: clamp(44px, 3.8vw, 54px) !important;
     border-radius: 14px !important;
     background: $light-gold !important;
     border: 1.5px solid $border-gold !important;
@@ -122,8 +126,8 @@
     box-shadow: 0 3px 8px rgba(234, 160, 21, 0.12) !important;
 
     svg {
-        width: 28px !important;
-        height: 28px !important;
+        width: clamp(22px, 2vw, 28px) !important;
+        height: clamp(22px, 2vw, 28px) !important;
         stroke: $primary-gold !important;
         stroke-width: 2.3 !important;
     }
@@ -132,14 +136,14 @@
 // Vạch màu vàng ở giữa icon và chữ theo đúng yêu cầu
 .value-divider {
     width: 3.5px !important;
-    height: 32px !important;
+    height: clamp(24px, 2.2vw, 32px) !important;
     background: $primary-gold !important;
     border-radius: 2px !important;
     flex-shrink: 0 !important;
 }
 
 .value-title {
-    font-size: 22px !important;
+    font-size: clamp(17px, 1.5vw, 22px) !important;
     font-weight: 800 !important;
     color: $dark-navy !important;
     margin: 0 !important;
@@ -147,7 +151,7 @@
 }
 
 .value-desc {
-    font-size: 15px !important;
+    font-size: clamp(13px, 1.05vw, 15px) !important;
     color: $text-gray !important;
     line-height: 1.6 !important;
     margin: 0 !important;
@@ -157,7 +161,7 @@
 // Chân trang góc dưới bên trái
 .page-footer-left {
     text-align: left !important;
-    font-size: 14px !important;
+    font-size: clamp(12px, 1vw, 14px) !important;
     color: $text-gray !important;
     font-weight: 500 !important;
     margin-top: 24px !important;
