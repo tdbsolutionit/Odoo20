@@ -32,9 +32,51 @@ def make_binary_value(raw_bytes, filename="tdb_logo.png"):
 # CÁC DỊCH VỤ CẤU HÌNH THEO YÊU CẦU MỚI
 # =============================================================================
 
+def setup_bace_root_redirection(env):
+    """
+    Yêu cầu: Nhập địa chỉ (/) thì qua thẳng trang đăng nhập (/web/login).
+    - Cấu hình homepage_url = '/web/login' trên tất cả website.
+    - Cập nhật view website.homepage có sẵn thẻ meta refresh và JS redirect tức thì.
+    """
+    print("\n>>> [1/7] Thiết lập tự động chuyển hướng trang chủ (/) sang /web/login...")
+    for ws in env['website'].search([]):
+        vals = {}
+        if hasattr(ws, 'homepage_url'):
+            vals['homepage_url'] = '/web/login'
+        if vals:
+            try:
+                ws.write(vals)
+                print(f"[OK] Đã thiết lập website '{ws.name}' homepage_url = '/web/login'")
+            except Exception as e:
+                print(f"Lưu ý homepage_url: {e}")
+
+    hp_view = env.ref('website.homepage', raise_if_not_found=False)
+    if hp_view:
+        hp_arch = """<t t-name="website.homepage">
+    <t t-call="web.layout">
+        <t t-set="head">
+            <meta http-equiv="refresh" content="0; url=/web/login"/>
+            <script type="text/javascript">
+                if (!window.location.pathname.startsWith('/web')) {
+                    window.location.replace('/web/login');
+                }
+            </script>
+        </t>
+        <div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#64748b;">
+            Đang chuyển hướng đến trang đăng nhập...
+        </div>
+    </t>
+</t>"""
+        try:
+            hp_view.write({'arch_db': hp_arch})
+            print("[OK] Đã cấu hình website.homepage tự động chuyển hướng sang /web/login!")
+        except Exception as e:
+            print(f"Lưu ý cấu hình website.homepage: {e}")
+
+
 def setup_vietnamese_language(env):
     """Kích hoạt và nạp gói ngôn ngữ Tiếng Việt (vi_VN) làm mặc định."""
-    print("\n>>> [1/6] Đảm bảo ngôn ngữ Tiếng Việt (vi_VN) được kích hoạt...")
+    print("\n>>> [2/7] Đảm bảo ngôn ngữ Tiếng Việt (vi_VN) được kích hoạt...")
     vi_lang = env['res.lang'].with_context(active_test=False).search([('code', '=', 'vi_VN')], limit=1)
     if vi_lang:
         if not vi_lang.active:
@@ -304,10 +346,363 @@ def apply_bace_login_interface(env, current_dir):
                 print(f"Lưu ý vô hiệu hóa view con {cv.id}: {e}")
 
         # Cập nhật trực tiếp arch_db của web.login_layout theo tỉ lệ 8:2 chuẩn xác
+        # Sử dụng web.layout (thay vì web.frontend_layout) để ngăn hoàn toàn website.layout chèn header/footer
+        # Nhúng kèm khối style CSS trực tiếp qua CDATA để giao diện ăn ngay lập tức không phụ thuộc asset bundle
         bace_layout_arch = """<t t-name="web.login_layout">
-    <t t-call="web.frontend_layout">
+    <t t-call="web.layout">
         <t t-set="html_data" t-value="{'style': 'height: 100%;'}"/>
         <t t-set="body_classname" t-value="'bace-login-body'"/>
+        <t t-set="head">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+            <style>
+<![CDATA[
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
+    height: 100% !important;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    background: #ffffff !important;
+    overflow-x: hidden !important;
+}
+#top, #bottom, header, footer, .o_header_standard, .o_footer_copyright, .oe_website_login_container > .container {
+    display: none !important;
+}
+.login-grid {
+    display: grid !important;
+    grid-template-columns: 8fr 2fr !important;
+    min-height: 100vh !important;
+    width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+}
+.login-grid .hero-side {
+    background-color: #0F1117 !important;
+    background-image: url('/tdb_website_custom/static/src/img/BG-TapThe.webp') !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    position: relative !important;
+    overflow: hidden !important;
+    min-height: 100vh !important;
+}
+.login-grid .hero-side::before {
+    content: "" !important;
+    position: absolute !important;
+    inset: 0 !important;
+    background: linear-gradient(180deg, rgba(15, 17, 23, 0.05) 0%, rgba(15, 17, 23, 0.25) 100%) !important;
+    pointer-events: none !important;
+}
+.login-grid .form-side {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    align-items: center !important;
+    padding: 40px 28px !important;
+    background: #ffffff !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.04) !important;
+    min-height: 100vh !important;
+}
+.form-inner {
+    width: 100% !important;
+    max-width: 360px !important;
+    margin: 0 auto !important;
+}
+.mobile-logo {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+.mobile-logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #C9A961, #A8894A);
+    box-shadow: 0 8px 20px rgba(201, 169, 97, 0.3);
+}
+.mobile-logo-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+.form-header {
+    margin-bottom: 28px !important;
+    text-align: left !important;
+}
+.form-title {
+    font-size: 28px !important;
+    font-weight: 700 !important;
+    letter-spacing: -0.03em !important;
+    color: #0a0e1a !important;
+    margin: 0 0 8px !important;
+    line-height: 1.15 !important;
+}
+.form-subtitle {
+    font-size: 13.5px !important;
+    color: #64748b !important;
+    line-height: 1.5 !important;
+    margin: 0 !important;
+}
+.form-error {
+    display: flex !important;
+    align-items: flex-start !important;
+    gap: 10px !important;
+    padding: 10px 14px !important;
+    background: #fef2f2 !important;
+    border: 1px solid #fecaca !important;
+    border-radius: 10px !important;
+    color: #991b1b !important;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    margin-bottom: 18px !important;
+}
+.form-group {
+    margin-bottom: 18px !important;
+    text-align: left !important;
+}
+.form-label {
+    display: block !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #0f172a !important;
+    margin-bottom: 7px !important;
+    letter-spacing: -0.005em !important;
+}
+.input-wrap {
+    position: relative !important;
+    width: 100% !important;
+}
+.input-wrap .icon {
+    position: absolute !important;
+    left: 15px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #94a3b8 !important;
+    pointer-events: none !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    z-index: 2 !important;
+}
+.input-wrap .icon svg {
+    width: 16px !important;
+    height: 16px !important;
+    stroke: #94a3b8 !important;
+    fill: none !important;
+}
+.input-wrap input {
+    width: 100% !important;
+    height: 48px !important;
+    padding: 0 16px 0 44px !important;
+    font-family: inherit !important;
+    font-size: 14px !important;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    outline: none !important;
+    transition: all 0.15s ease !important;
+    box-sizing: border-box !important;
+}
+.input-wrap input:hover {
+    border-color: #cbd5e1 !important;
+}
+.input-wrap input:focus {
+    border-color: #C9A961 !important;
+    box-shadow: 0 0 0 4px rgba(201, 169, 97, 0.15) !important;
+}
+.pwd-toggle {
+    position: absolute !important;
+    right: 10px !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    width: 32px !important;
+    height: 32px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    border-radius: 7px !important;
+    color: #94a3b8 !important;
+    background: transparent !important;
+    border: none !important;
+    cursor: pointer !important;
+    padding: 0 !important;
+    z-index: 2 !important;
+}
+.pwd-toggle:hover {
+    color: #0f172a !important;
+    background: #f1f5f9 !important;
+}
+.pwd-toggle svg {
+    width: 16px !important;
+    height: 16px !important;
+    stroke: currentColor !important;
+    fill: none !important;
+}
+.form-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    align-items: center !important;
+    gap: 12px !important;
+    margin-bottom: 22px !important;
+}
+.cbx {
+    position: relative !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+    cursor: pointer !important;
+    user-select: none !important;
+    font-size: 13px !important;
+    color: #0f172a !important;
+}
+.cbx input {
+    position: absolute !important;
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+.cbx .box {
+    width: 18px !important;
+    height: 18px !important;
+    border: 1.5px solid #cbd5e1 !important;
+    border-radius: 5px !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    flex-shrink: 0 !important;
+    background: #ffffff !important;
+    box-sizing: border-box !important;
+}
+.cbx input:checked + .box {
+    background: #C9A961 !important;
+    border-color: #C9A961 !important;
+}
+.cbx .box svg {
+    width: 12px !important;
+    height: 12px !important;
+    stroke: #ffffff !important;
+    stroke-width: 3 !important;
+    fill: none !important;
+    opacity: 0 !important;
+}
+.cbx input:checked + .box svg {
+    opacity: 1 !important;
+}
+.form-forgot {
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    color: #C9A961 !important;
+    text-decoration: none !important;
+    white-space: nowrap !important;
+}
+.form-forgot:hover {
+    color: #A8894A !important;
+    text-decoration: underline !important;
+}
+.btn-submit {
+    width: 100% !important;
+    height: 48px !important;
+    background: linear-gradient(135deg, #C9A961, #A8894A) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-family: inherit !important;
+    font-size: 14.5px !important;
+    font-weight: 600 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3) !important;
+    padding: 0 !important;
+}
+.btn-submit:hover {
+    box-shadow: 0 8px 24px rgba(201, 169, 97, 0.45) !important;
+    transform: translateY(-1px) !important;
+}
+.btn-submit svg {
+    width: 16px !important;
+    height: 16px !important;
+    stroke: #ffffff !important;
+    fill: none !important;
+    stroke-width: 2 !important;
+}
+.demo-box {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    margin-top: 24px !important;
+    padding: 10px 14px !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    font-size: 12.5px !important;
+    color: #475569 !important;
+    line-height: 1.5 !important;
+}
+.demo-box-icon {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 32px !important;
+    height: 32px !important;
+    border-radius: 8px !important;
+    background: #FAF5E6 !important;
+    color: #A8894A !important;
+    flex-shrink: 0 !important;
+}
+.demo-box-icon svg {
+    width: 16px !important;
+    height: 16px !important;
+    stroke: currentColor !important;
+    fill: none !important;
+}
+.demo-box-text strong {
+    color: #0f172a !important;
+    font-weight: 600 !important;
+}
+.demo-box code {
+    background: #ffffff !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    font-family: ui-monospace, SF Mono, monospace !important;
+    font-size: 11.5px !important;
+    color: #A8894A !important;
+    border: 1px solid #e2e8f0 !important;
+}
+.form-footer {
+    text-align: center !important;
+    font-size: 12px !important;
+    color: #94a3b8 !important;
+    margin-top: 24px !important;
+}
+@media (max-width: 1024px) {
+    .login-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .login-grid .hero-side {
+        display: none !important;
+    }
+    .login-grid .form-side {
+        padding: 48px 24px !important;
+    }
+    .mobile-logo {
+        display: flex !important;
+    }
+}
+]]>
+            </style>
+        </t>
         <div class="login-grid">
             <!-- Cột trái (80%): Ảnh nền tập thể HD từ thư mục Picture -->
             <aside class="hero-side">
@@ -488,6 +883,7 @@ def main():
         env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {'no_vat_validation': True})
 
         # Thực thi tuần tự các phân hệ
+        setup_bace_root_redirection(env)
         setup_vietnamese_language(env)
         cleanup_obsolete_views(env)
         remove_all_menus_and_cart(env)

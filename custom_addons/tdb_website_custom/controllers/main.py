@@ -3,8 +3,13 @@
 from odoo import http
 from odoo.http import request
 
+try:
+    from odoo.addons.website.controllers.main import Website
+except ImportError:
+    Website = http.Controller
 
-class BaceRootController(http.Controller):
+
+class BaceRootController(Website):
 
     @http.route('/', type='http', auth='public', website=True, sitemap=False)
     def index(self, **kw):
@@ -16,4 +21,3 @@ class BaceRootController(http.Controller):
         if not request.session.uid or request.env.user._is_public():
             return request.redirect('/web/login')
         return request.redirect('/web')
-
