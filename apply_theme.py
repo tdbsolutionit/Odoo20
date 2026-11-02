@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 # Copyright 2026 TDB Solution Co., Ltd.
 """
-Kịch bản tự động hóa cấu hình giao diện B-ACE SME:
-1. Bỏ toàn bộ danh mục menu (Trang chủ, Cửa hàng, Sự kiện, Khóa học, Tuyển dụng, Liên hệ) và Giỏ hàng theo Hình 1.
-2. Thiết lập giao diện Đăng nhập (/web/login) chia 2 cột tỉ lệ 8:2 chuẩn theo Hình 2 (http://192.168.103.8:3000/login):
+Kịch bản tự động hóa cấu hình giao diện TDB Solution:
+1. Tự động chuyển hướng trang chủ (/) sang thẳng trang đăng nhập (/web/login).
+2. Bỏ toàn bộ danh mục menu (Trang chủ, Cửa hàng, Sự kiện, Khóa học, Tuyển dụng, Liên hệ) và Giỏ hàng theo Hình 1.
+3. Thiết lập giao diện Đăng nhập (/web/login) chia 2 cột tỉ lệ 8:2 chuẩn nhận diện TDB Solution:
    - Cột trái (80%): Ảnh nền tập thể HD từ thư mục Picture (BG-TapThe.webp).
-   - Cột phải (20%): Form đăng nhập B-ACE SME sang trọng, tối giản, bo góc chuẩn mực với nút gradient vàng đồng.
-3. Xóa bỏ hoàn toàn các cấu hình cũ không còn phù hợp (Shop, Events, Jobs, ContactUs form, 3-column footer).
-4. Điều hướng trang chủ (/) tự động chuyển hướng người dùng chưa đăng nhập sang /web/login.
+   - Cột phải (20%): Form đăng nhập TDB Solution sang trọng, tối giản, nút gradient vàng đồng.
+4. Xóa bỏ hoàn toàn các cấu hình cũ không còn phù hợp.
 """
 import base64
 import os
@@ -29,43 +29,41 @@ def make_binary_value(raw_bytes, filename="tdb_logo.png"):
 
 
 # =============================================================================
-# CÁC DỊCH VỤ CẤU HÌNH THEO YÊU CẦU MỚI
+# CÁC DỊCH VỤ CẤU HÌNH THEO YÊU CẦU
 # =============================================================================
 
-def setup_bace_root_redirection(env):
+def setup_tdb_root_redirection(env):
     """
-    Yêu cầu: Nhập địa chỉ (/) thì qua thẳng trang đăng nhập (/web/login).
-    - Cấu hình homepage_url = '/web/login' trên tất cả website.
-    - Cập nhật view website.homepage có sẵn thẻ meta refresh và JS redirect tức thì.
+    Yêu cầu: Nhập địa chỉ IP / domain (/) thì qua thẳng trang đăng nhập (/web/login).
+    - Cấu hình homepage_url = False để controller redirect 303 đổi URL trên thanh địa chỉ.
+    - Cập nhật view website.homepage có sẵn thẻ meta refresh và JS redirect tức thì sang /web/login.
     """
     print("\n>>> [1/7] Thiết lập tự động chuyển hướng trang chủ (/) sang /web/login...")
     for ws in env['website'].search([]):
         vals = {}
         if hasattr(ws, 'homepage_url'):
-            vals['homepage_url'] = '/web/login'
+            vals['homepage_url'] = False
         if vals:
             try:
                 ws.write(vals)
-                print(f"[OK] Đã thiết lập website '{ws.name}' homepage_url = '/web/login'")
+                print(f"[OK] Đã cấu hình website '{ws.name}' để redirect sang /web/login")
             except Exception as e:
                 print(f"Lưu ý homepage_url: {e}")
 
     hp_view = env.ref('website.homepage', raise_if_not_found=False)
     if hp_view:
         hp_arch = """<t t-name="website.homepage">
-    <t t-call="web.layout">
-        <t t-set="head">
+    <html>
+        <head>
             <meta http-equiv="refresh" content="0; url=/web/login"/>
             <script type="text/javascript">
-                if (!window.location.pathname.startsWith('/web')) {
-                    window.location.replace('/web/login');
-                }
+                window.location.replace('/web/login');
             </script>
-        </t>
-        <div style="display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#64748b;">
-            Đang chuyển hướng đến trang đăng nhập...
-        </div>
-    </t>
+        </head>
+        <body style="margin:0;padding:0;background:#ffffff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#64748b;">
+            Đang chuyển hướng đến trang đăng nhập: <a href="/web/login">/web/login</a>
+        </body>
+    </html>
 </t>"""
         try:
             hp_view.write({'arch_db': hp_arch})
@@ -107,12 +105,11 @@ def setup_vietnamese_language(env):
 
 def cleanup_obsolete_views(env):
     """
-    Xóa bỏ các view và cấu hình tùy biến cũ không còn phù hợp với yêu cầu mới:
+    Xóa bỏ các view và cấu hình tùy biến cũ không còn phù hợp:
     - Khôi phục website.layout về bản gốc sạch sẽ.
     - Xóa các bản COW view bị rách tag gây tràn text ở đầu trang.
-    - Khôi phục các trang homepage, contactus, jobs, footer về mặc định Odoo.
     """
-    print("\n>>> [2/6] Dọn dẹp các view cũ và khôi phục template hệ thống...")
+    print("\n>>> [3/7] Dọn dẹp các view cũ và khôi phục template hệ thống...")
     
     # 1. Làm sạch website.layout
     layout_views = env['ir.ui.view'].search([('key', '=', 'website.layout')])
@@ -162,39 +159,14 @@ def cleanup_obsolete_views(env):
             except Exception:
                 pass
 
-    # 3. Khôi phục các view footer, contactus, jobs về mặc định
-    for v_key in [
-        'website.footer_custom',
-        'website.template_footer_default',
-        'website.contactus',
-        'website_hr_recruitment.index',
-        'website.homepage',
-    ]:
-        for v in env['ir.ui.view'].search([('key', '=', v_key)]):
-            if hasattr(v, 'reset_arch'):
-                try:
-                    v.reset_arch(mode='hard')
-                    print(f"[OK] Đã khôi phục view '{v_key}' về mặc định Odoo")
-                except Exception:
-                    pass
-
-    # Xóa view 1953 nếu có
-    v1953 = env['ir.ui.view'].browse(1953)
-    if v1953.exists() and hasattr(v1953, 'reset_arch'):
-        try:
-            v1953.reset_arch(mode='hard')
-        except Exception:
-            pass
-
 
 def remove_all_menus_and_cart(env):
     """
     Yêu cầu Hình 1: Bỏ hết các mục menu điều hướng (Trang chủ, Cửa hàng, Sự kiện,
     Khóa học, Tuyển dụng, Liên hệ) và bỏ nút Giỏ hàng 🛒.
     """
-    print("\n>>> [3/6] Xóa toàn bộ danh mục Menu và nút Giỏ hàng theo yêu cầu Hình 1...")
+    print("\n>>> [4/7] Xóa toàn bộ danh mục Menu và nút Giỏ hàng theo yêu cầu...")
     
-    # 1. Xóa toàn bộ các menu con trên thanh điều hướng website
     menu_model = env['website.menu']
     for ws in env['website'].search([]):
         if not ws.menu_id:
@@ -204,7 +176,6 @@ def remove_all_menus_and_cart(env):
             print(f"[XÓA MENU] Đã xóa menu: '{m.name}' ({m.url})")
             m.unlink()
 
-    # Xóa cả các menu rác độc lập theo tên
     for old_m in menu_model.search([
         ('name', 'in', [
             'Trang chủ', 'Cửa hàng', 'Sự kiện', 'Khóa học', 'Tuyển dụng', 'Liên hệ',
@@ -217,7 +188,6 @@ def remove_all_menus_and_cart(env):
         except Exception:
             pass
 
-    # 2. Vô hiệu hóa nút Giỏ hàng và các view liên quan đến giỏ hàng
     for cv in env['ir.ui.view'].search([
         '|', '|',
         ('key', '=', 'website_sale.header_cart_link'),
@@ -228,7 +198,6 @@ def remove_all_menus_and_cart(env):
             cv.write({'active': False})
             print(f"[OK] Đã vô hiệu hóa nút Giỏ hàng: {cv.key or cv.id}")
 
-    # Gỡ bỏ li.o_wsale_my_cart khỏi tất cả các header view nếu có
     for hv in env['ir.ui.view'].search([('key', 'in', ['website.template_header_default', 'website.default_header'])]):
         h_arch = hv.arch_db or ''
         if 'o_wsale_my_cart' in h_arch:
@@ -243,19 +212,19 @@ def remove_all_menus_and_cart(env):
 
 def setup_picture_attachments(env, odoo_dir, current_dir):
     """
-    Nạp ảnh tập thể trong thư mục Picture (BG-TapThe.webp) vào Odoo Attachment
-    để hiển thị sắc nét ở cột trái (80%) trên trang Đăng nhập.
+    Nạp ảnh tập thể trong thư mục Picture (BG-TapThe.webp) và Logo TDB vào Odoo Attachment.
     """
-    print("\n>>> [4/6] Nạp ảnh tập thể từ thư mục Picture vào hệ thống...")
+    print("\n>>> [5/7] Nạp ảnh tập thể từ thư mục Picture và Logo TDB vào hệ thống...")
     search_dirs = [
         os.path.join(odoo_dir, 'Picture'),
         os.path.join(current_dir, '..', '..', 'Picture'),
         os.path.join(current_dir, 'Picture'),
         os.path.join(odoo_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img'),
+        os.path.join(current_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img'),
         r'C:\odoo20\odoo\Picture',
     ]
 
-    for bg_filename in ['BG-TapThe.webp', 'BG-TapThe.jpg']:
+    for bg_filename in ['BG-TapThe.webp', 'BG-TapThe.jpg', 'tdb_logo.png']:
         found_path = None
         for s_dir in search_dirs:
             candidate = os.path.join(s_dir, bg_filename)
@@ -268,7 +237,12 @@ def setup_picture_attachments(env, odoo_dir, current_dir):
                 raw_bytes = f.read()
 
             b64_data = base64.b64encode(raw_bytes).decode('ascii')
-            mimetype = 'image/webp' if bg_filename.endswith('.webp') else 'image/jpeg'
+            if bg_filename.endswith('.webp'):
+                mimetype = 'image/webp'
+            elif bg_filename.endswith('.png'):
+                mimetype = 'image/png'
+            else:
+                mimetype = 'image/jpeg'
 
             att_model = env['ir.attachment']
             att = att_model.search([('url', '=', f'/tdb_website_custom/static/src/img/{bg_filename}')], limit=1)
@@ -287,19 +261,20 @@ def setup_picture_attachments(env, odoo_dir, current_dir):
             print(f"[OK] Đã nạp thành công '{bg_filename}' vào ir.attachment!")
 
 
-def apply_bace_login_interface(env, current_dir):
+def apply_tdb_login_interface(env, current_dir):
     """
-    Yêu cầu Hình 2: Áp dụng giao diện Đăng nhập B-ACE SME chia 2 cột tỉ lệ 8:2
-    chuẩn theo http://192.168.103.8:3000/login
-    Cập nhật trực tiếp web.login_layout và web.login mà không dùng xpath kế thừa
-    để tránh hoàn toàn lỗi 'cannot be located in parent view' khi website được cài đặt.
+    Thiết lập giao diện Đăng nhập TDB Solution chia 2 cột tỉ lệ 8:2 chuẩn mực:
+    - Cột trái (80%): Ảnh tập thể TDB từ thư mục Picture (BG-TapThe.webp / BG-TapThe.jpg).
+    - Cột phải (20%): Form đăng nhập TDB Solution sang trọng, tối giản, nút gradient vàng đồng.
+    - Nhúng khối CSS trực tiếp vào template body đảm bảo 100% ăn style ngay, không phụ thuộc cache asset.
     """
-    print("\n>>> [5/6] Áp dụng giao diện Đăng nhập B-ACE SME tỉ lệ 8:2...")
+    print("\n>>> [6/7] Áp dụng giao diện Đăng nhập TDB Solution tỉ lệ 8:2...")
 
     View = env['ir.ui.view']
 
-    # 1. Gỡ bỏ các view kế thừa cũ đã tạo trước đó để tránh xung đột xpath
-    for xml_key in ['tdb_website_custom.bace_login_layout', 'tdb_website_custom.bace_login_form']:
+    # 1. Gỡ bỏ các view kế thừa cũ để tránh xung đột xpath
+    for xml_key in ['tdb_website_custom.bace_login_layout', 'tdb_website_custom.bace_login_form',
+                    'tdb_website_custom.tdb_login_layout', 'tdb_website_custom.tdb_login_form']:
         for v in View.search([('key', '=', xml_key)]):
             try:
                 v.unlink()
@@ -310,10 +285,9 @@ def apply_bace_login_interface(env, current_dir):
                 except Exception:
                     pass
 
-    # Xóa bản ghi trong ir.model.data nếu có
     imd_records = env['ir.model.data'].search([
         ('module', '=', 'tdb_website_custom'),
-        ('name', 'in', ['bace_login_layout', 'bace_login_form'])
+        ('name', 'in', ['bace_login_layout', 'bace_login_form', 'tdb_login_layout', 'tdb_login_form'])
     ])
     if imd_records:
         imd_records.unlink()
@@ -345,16 +319,12 @@ def apply_bace_login_interface(env, current_dir):
             except Exception as e:
                 print(f"Lưu ý vô hiệu hóa view con {cv.id}: {e}")
 
-        # Cập nhật trực tiếp arch_db của web.login_layout theo tỉ lệ 8:2 chuẩn xác
-        # Sử dụng web.layout (thay vì web.frontend_layout) để ngăn hoàn toàn website.layout chèn header/footer
-        # Nhúng kèm khối style CSS trực tiếp qua CDATA để giao diện ăn ngay lập tức không phụ thuộc asset bundle
-        bace_layout_arch = """<t t-name="web.login_layout">
+        # Cập nhật trực tiếp arch_db của web.login_layout
+        tdb_layout_arch = """<t t-name="web.login_layout">
     <t t-call="web.layout">
         <t t-set="html_data" t-value="{'style': 'height: 100%;'}"/>
-        <t t-set="body_classname" t-value="'bace-login-body'"/>
-        <t t-set="head">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-            <style>
+        <t t-set="body_classname" t-value="'tdb-login-body'"/>
+        <style>
 <![CDATA[
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
 html, body {
@@ -377,23 +347,21 @@ html, body {
     margin: 0 !important;
     padding: 0 !important;
     background: #ffffff !important;
+    position: relative !important;
 }
 .login-grid .hero-side {
     background-color: #0F1117 !important;
-    background-image: url('/tdb_website_custom/static/src/img/BG-TapThe.webp') !important;
-    background-size: cover !important;
-    background-position: center center !important;
-    background-repeat: no-repeat !important;
     position: relative !important;
     overflow: hidden !important;
     min-height: 100vh !important;
+    width: 100% !important;
 }
-.login-grid .hero-side::before {
-    content: "" !important;
+.hero-image-overlay {
     position: absolute !important;
     inset: 0 !important;
     background: linear-gradient(180deg, rgba(15, 17, 23, 0.05) 0%, rgba(15, 17, 23, 0.25) 100%) !important;
     pointer-events: none !important;
+    z-index: 2 !important;
 }
 .login-grid .form-side {
     display: flex !important;
@@ -406,33 +374,22 @@ html, body {
     box-sizing: border-box !important;
     box-shadow: -10px 0 30px rgba(0, 0, 0, 0.04) !important;
     min-height: 100vh !important;
+    z-index: 3 !important;
 }
 .form-inner {
     width: 100% !important;
     max-width: 360px !important;
     margin: 0 auto !important;
 }
-.mobile-logo {
-    display: none;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 24px;
+.tdb-logo-wrap {
+    margin-bottom: 24px !important;
+    text-align: left !important;
 }
-.mobile-logo-icon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 11px;
-    background: linear-gradient(135deg, #C9A961, #A8894A);
-    box-shadow: 0 8px 20px rgba(201, 169, 97, 0.3);
-}
-.mobile-logo-name {
-    font-size: 18px;
-    font-weight: 700;
-    color: #0f172a;
-    letter-spacing: -0.02em;
+.tdb-logo-wrap img {
+    height: 38px !important;
+    width: auto !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
 }
 .form-header {
     margin-bottom: 28px !important;
@@ -696,36 +653,26 @@ html, body {
     .login-grid .form-side {
         padding: 48px 24px !important;
     }
-    .mobile-logo {
-        display: flex !important;
-    }
 }
 ]]>
-            </style>
-        </t>
+        </style>
         <div class="login-grid">
             <!-- Cột trái (80%): Ảnh nền tập thể HD từ thư mục Picture -->
             <aside class="hero-side">
+                <img src="/tdb_website_custom/static/src/img/BG-TapThe.webp" onerror="this.src='/tdb_website_custom/static/src/img/BG-TapThe.jpg'" alt="TDB Solution Team" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;"/>
                 <div class="hero-image-overlay"/>
             </aside>
 
-            <!-- Cột phải (20%): Form đăng nhập B-ACE SME -->
+            <!-- Cột phải (20%): Form đăng nhập TDB Solution -->
             <main class="form-side">
                 <div class="form-inner">
-                    <div class="mobile-logo">
-                        <div class="mobile-logo-icon">
-                            <svg aria-hidden="true" class="lucide lucide-layers" fill="none" height="20" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>
-                                <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>
-                                <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>
-                            </svg>
-                        </div>
-                        <span class="mobile-logo-name">B-ACE</span>
+                    <div class="tdb-logo-wrap">
+                        <img src="/tdb_website_custom/static/src/img/tdb_logo.png" alt="TDB Solution"/>
                     </div>
 
                     <div class="form-header">
                         <h2 class="form-title">Đăng nhập</h2>
-                        <p class="form-subtitle">Chào mừng trở lại! Vui lòng đăng nhập để tiếp tục.</p>
+                        <p class="form-subtitle">Chào mừng trở lại! Vui lòng đăng nhập vào hệ thống TDB Solution.</p>
                     </div>
 
                     <!-- Vị trí cắm form đăng nhập -->
@@ -740,14 +687,14 @@ html, body {
                         </div>
                         <div class="demo-box-text">
                             <strong>Demo:</strong>
-                            <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin@b-ace.vn';if(p)p.value='password';" style="cursor:pointer;" title="Nhấp để điền">admin@b-ace.vn</code>
+                            <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin';if(p)p.value='admin';" style="cursor:pointer;" title="Nhấp để điền">admin</code>
                             <span style="margin:0 4px;color:#cbd5e1">&#183;</span>
-                            <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin@b-ace.vn';if(p)p.value='password';" style="cursor:pointer;" title="Nhấp để điền">password</code>
+                            <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin';if(p)p.value='admin';" style="cursor:pointer;" title="Nhấp để điền">admin</code>
                         </div>
                     </div>
 
                     <p class="form-footer">
-                        B-ACE © 2026 · Phiên bản nội bộ
+                        TDB Solution © 2026 · Phiên bản nội bộ
                     </p>
                 </div>
             </main>
@@ -755,17 +702,17 @@ html, body {
     </t>
 </t>"""
         try:
-            layout_target.write({'arch_db': bace_layout_arch})
-            print("[OK] Đã cập nhật trực tiếp web.login_layout chuẩn B-ACE SME (tỉ lệ 8:2)!")
+            layout_target.write({'arch_db': tdb_layout_arch})
+            print("[OK] Đã cập nhật trực tiếp web.login_layout chuẩn TDB Solution (tỉ lệ 8:2)!")
         except Exception as e:
             print(f"[CẢNH BÁO web.login_layout]: {e}")
 
     # 4. Cập nhật trực tiếp web.login
     login_target = env.ref('web.login', raise_if_not_found=False)
     if login_target:
-        bace_login_arch = """<t t-name="web.login">
+        tdb_login_arch = """<t t-name="web.login">
     <t t-call="web.login_layout">
-        <t t-set="title">Đăng nhập | B-ACE SME</t>
+        <t t-set="title">Đăng nhập | TDB Solution</t>
         <form class="oe_login_form" role="form" t-attf-action="/web/login" method="post" onsubmit="this.action = '/web/login' + location.hash">
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
@@ -778,13 +725,13 @@ html, body {
             </div>
 
             <div class="form-group field-login">
-                <label class="form-label" for="login">Email</label>
+                <label class="form-label" for="login">Tài khoản / Email</label>
                 <div class="input-wrap">
                     <svg aria-hidden="true" class="lucide lucide-mail icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
                         <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/>
                         <rect height="16" rx="2" width="20" x="2" y="4"/>
                     </svg>
-                    <input id="login" name="login" t-att-value="login" placeholder="ban@congty.com" required="required" autofocus="autofocus" autocapitalize="off" autocomplete="username" class="form-control" type="text"/>
+                    <input id="login" name="login" t-att-value="login" placeholder="admin hoặc ban@tdbsolution.com.vn" required="required" autofocus="autofocus" autocapitalize="off" autocomplete="username" class="form-control" type="text"/>
                 </div>
             </div>
 
@@ -840,8 +787,8 @@ html, body {
     </t>
 </t>"""
         try:
-            login_target.write({'arch_db': bace_login_arch})
-            print("[OK] Đã cập nhật trực tiếp web.login chuẩn B-ACE SME!")
+            login_target.write({'arch_db': tdb_login_arch})
+            print("[OK] Đã cập nhật trực tiếp web.login chuẩn TDB Solution!")
         except Exception as e:
             print(f"[CẢNH BÁO web.login]: {e}")
 
@@ -883,12 +830,12 @@ def main():
         env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {'no_vat_validation': True})
 
         # Thực thi tuần tự các phân hệ
-        setup_bace_root_redirection(env)
+        setup_tdb_root_redirection(env)
         setup_vietnamese_language(env)
         cleanup_obsolete_views(env)
         remove_all_menus_and_cart(env)
         setup_picture_attachments(env, odoo_dir, current_dir)
-        apply_bace_login_interface(env, current_dir)
+        apply_tdb_login_interface(env, current_dir)
 
         # Xóa cache QWeb và commit thay đổi vào PostgreSQL
         try:
@@ -911,7 +858,7 @@ def main():
 
         cr.commit()
         print("\n" + "="*70)
-        print(">>> HOÀN TẤT THÀNH CÔNG! GIAO DIỆN ĐĂNG NHẬP B-ACE SME TỈ LỆ 8:2 ĐÃ ÁP DỤNG! <<<")
+        print(">>> HOÀN TẤT THÀNH CÔNG! GIAO DIỆN ĐĂNG NHẬP TDB SOLUTION TỈ LỆ 8:2 ĐÃ ÁP DỤNG! <<<")
         print("="*70)
 
 if __name__ == '__main__':
