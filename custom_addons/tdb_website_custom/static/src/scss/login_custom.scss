@@ -278,18 +278,20 @@ body:has(.login-grid) .o_header_standard {
     opacity: 1;
 }
 
-.form-forgot {
-    font-size: 12.5px;
-    font-weight: 500;
-    color: #C9A961;
-    text-decoration: none;
-    transition: color 0.15s ease;
-    white-space: nowrap;
-}
-
-.form-forgot:hover {
-    color: #A8894A;
-    text-decoration: underline;
+.form-forgot,
+a[href*="reset_password"],
+a[href*="signup"],
+button[value*="become"],
+.btn-link[value*="become"],
+.o_login_auth,
+.field-password a {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
 }
 
 .btn-submit {

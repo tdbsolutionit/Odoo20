@@ -692,16 +692,20 @@ html, body {
 .cbx input:checked + .box svg {
     opacity: 1 !important;
 }
-.form-forgot {
-    font-size: 12.5px !important;
-    font-weight: 500 !important;
-    color: #C9A961 !important;
-    text-decoration: none !important;
-    white-space: nowrap !important;
-}
-.form-forgot:hover {
-    color: #A8894A !important;
-    text-decoration: underline !important;
+.form-forgot,
+a[href*="reset_password"],
+a[href*="signup"],
+button[value*="become"],
+.btn-link[value*="become"],
+.o_login_auth,
+.field-password a {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
 }
 .btn-submit {
     width: 100% !important;
@@ -848,6 +852,26 @@ html, body {
     # 4. Cập nhật trực tiếp web.login
     login_target = env.ref('web.login', raise_if_not_found=False)
     if login_target:
+        child_login_views = View.search([
+            ('inherit_id', '=', login_target.id),
+            ('id', '!=', login_target.id),
+            ('active', '=', True)
+        ])
+        for clv in child_login_views:
+            try:
+                clv.write({'active': False})
+                print(f"[OK] Đã vô hiệu hóa view con kế thừa web.login: {clv.key or clv.id} ({clv.name})")
+            except Exception as e:
+                print(f"Lưu ý vô hiệu hóa view con web.login {clv.id}: {e}")
+
+        for extra_key in ['auth_signup.login', 'auth_signup.reset_password', 'auth_oauth.login_buttons']:
+            for ev in View.search([('key', '=', extra_key), ('active', '=', True)]):
+                try:
+                    ev.write({'active': False})
+                    print(f"[OK] Đã tắt view phụ '{extra_key}' (id={ev.id})")
+                except Exception:
+                    pass
+
         tdb_login_arch = """<t t-name="web.login">
     <t t-call="web.login_layout">
         <t t-set="title">Đăng nhập | TDB Solution</t>
@@ -900,7 +924,6 @@ html, body {
                     </span>
                     <span>Ghi nhớ đăng nhập</span>
                 </label>
-                <a href="/web/reset_password" class="form-forgot">Quên mật khẩu?</a>
             </div>
 
             <input type="hidden" name="redirect" t-att-value="redirect"/>
@@ -914,12 +937,6 @@ html, body {
                     </svg>
                     Đăng nhập
                 </button>
-                <t t-if="debug">
-                    <div class="text-center mt-3">
-                        <button type="submit" name="redirect" value="/web/become" class="btn btn-link btn-sm text-muted">Đăng nhập tài khoản Siêu Quản Trị (Superuser)</button>
-                    </div>
-                </t>
-                <div class="o_login_auth"/>
             </div>
         </form>
     </t>
