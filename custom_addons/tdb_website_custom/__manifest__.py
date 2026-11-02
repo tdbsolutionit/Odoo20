@@ -4,7 +4,7 @@
     'name': 'TDB Solution Theme & Customization',
     'version': '2.0',
     'category': 'Theme/Corporate',
-    'summary': 'Tùy biến giao diện Đăng nhập TDB Solution tỉ lệ 8:2 chuẩn thiết kế và điều hướng hệ thống ERP/CRM',
+    'summary': 'Tùy biến giao diện Đăng nhập TDB Solution Giá Trị Cốt Lõi chuẩn thiết kế Hình 1 và Logo Hình 2',
     'description': """
 Module tùy biến giao diện TDB Solution:
 - Trang Đăng nhập (/web/login): Thiết kế chia 2 cột tỉ lệ 8:2 chuẩn xác:

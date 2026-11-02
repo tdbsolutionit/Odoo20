@@ -2,12 +2,13 @@
 # Copyright 2026 TDB Solution Co., Ltd.
 """
 Kịch bản tự động hóa cấu hình giao diện TDB Solution:
-Concept: Together We Grow – Natural Corporate Gold Theme
+Concept: TDB Solution - Giá Trị Cốt Lõi (Corporate Gold Theme theo Hình 1 & Logo Hình 2)
 1. Tự động chuyển hướng trang chủ (/) sang thẳng trang đăng nhập (/web/login).
 2. Bỏ toàn bộ danh mục menu (Trang chủ, Cửa hàng, Sự kiện, Khóa học, Tuyển dụng, Liên hệ) và Giỏ hàng.
-3. Thiết lập giao diện Đăng nhập (/web/login) chia 2 cột tỉ lệ 73:27 chuẩn nhận diện Corporate Gold của TDB Solution:
-   - Cột trái (73%): Ảnh tập thể TDB từ thư mục Picture (BG-TapThe.webp), kèm Card Logo & Slogan 'TOGETHER WE GROW' và thanh 3 Giá trị cốt lõi (Innovation, Collaboration, Development).
-   - Cột phải (27%): Form đăng nhập TDB Solution sang trọng, tối giản, bo góc chuẩn mực với nút màu vàng nhận diện (#D9A441).
+3. Thiết lập giao diện Đăng nhập (/web/login) chuẩn mực 100% theo Hình 1:
+   - Cột trái: Logo TDB Solution (Hình 2), Tiêu đề 'GIÁ TRỊ CỐT LÕI' + gạch chân vàng, lời dẫn và 3 Card: Tận Tâm, Đồng Hành, Bền Vững.
+   - Nền: Bầu trời kem ấm, sóng vàng nghệ thuật và phối cảnh skyline tòa nhà hiện đại.
+   - Cột phải: Card đăng nhập bo tròn nổi (24px), Logo TDB Solution (Hình 2), Tiêu đề, input viền kem focus vàng, nút Đăng nhập bo tròn vàng, vạch 'Hoặc', nút 'Demo: admin'.
 4. Xóa bỏ hoàn toàn các cấu hình cũ không còn phù hợp.
 """
 import base64
@@ -49,7 +50,6 @@ def setup_tdb_root_redirection(env):
     # 1. Cấu hình website.rewrite (HTTP 302 Redirect cấp HTTP Router)
     if 'website.rewrite' in env:
         Rewrite = env['website.rewrite']
-        # Dọn dẹp các quy tắc rewrite cũ cho '/' để không xung đột
         old_rewrites = Rewrite.search([('url_from', '=', '/')])
         for rw in old_rewrites:
             try:
@@ -96,7 +96,7 @@ def setup_tdb_root_redirection(env):
                 window.location.replace('/web/login');
             </script>
         </head>
-        <body style="margin:0;padding:0;background:#FAF8F2;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#263247;">
+        <body style="margin:0;padding:0;background:#FAF6EE;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;color:#1E293B;">
             <script type="text/javascript">
                 window.location.replace('/web/login');
             </script>
@@ -194,7 +194,6 @@ def setup_vietnamese_language(env):
     """Kích hoạt và nạp gói ngôn ngữ Tiếng Việt (vi_VN) làm mặc định."""
     print("\n>>> [2/7] Đảm bảo ngôn ngữ Tiếng Việt (vi_VN) được kích hoạt...")
 
-    # Dọn dẹp số VAT không hợp lệ nếu có để tránh lỗi _run_vat_checks
     try:
         invalid_partners = env['res.partner'].search([('vat', '=', '2336999')])
         for ip in invalid_partners:
@@ -343,20 +342,20 @@ def remove_all_menus_and_cart(env):
 
 def setup_picture_attachments(env, odoo_dir, current_dir):
     """
-    Nạp ảnh tập thể trong thư mục Picture (BG-TapThe.webp / BG-TapThe.jpg) và Logo TDB Vàng vào Odoo Attachment.
+    Nạp ảnh nền (login_bg.webp, login_bg.jpg), Logo TDB Vàng (Hình 2) và ảnh tập thể vào Odoo Attachment.
     """
-    print("\n>>> [5/7] Nạp ảnh tập thể từ thư mục Picture và Logo TDB vào hệ thống...")
+    print("\n>>> [5/7] Nạp tài nguyên hình ảnh (login_bg.webp, tdb_logo.png) vào hệ thống...")
     search_dirs = [
+        os.path.join(odoo_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img'),
+        os.path.join(current_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img'),
         os.path.join(odoo_dir, 'Picture'),
         os.path.join(current_dir, '..', '..', 'Picture'),
         os.path.join(current_dir, 'Picture'),
-        os.path.join(odoo_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img'),
-        os.path.join(current_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img'),
-        r'C:\odoo20\odoo\Picture',
         r'C:\odoo20\odoo\custom_addons\tdb_website_custom\static\src\img',
+        r'C:\odoo20\odoo\Picture',
     ]
 
-    for bg_filename in ['BG-TapThe.webp', 'BG-TapThe.jpg', 'tdb_logo.png']:
+    for bg_filename in ['login_bg.webp', 'login_bg.jpg', 'tdb_logo.png', 'BG-TapThe.webp', 'BG-TapThe.jpg']:
         found_path = None
         for s_dir in search_dirs:
             candidate = os.path.join(s_dir, bg_filename)
@@ -396,13 +395,12 @@ def setup_picture_attachments(env, odoo_dir, current_dir):
 
 def apply_tdb_login_interface(env, current_dir):
     """
-    Thiết lập giao diện Đăng nhập TDB Solution theo concept 'Together We Grow':
-    - Phong cách: Natural Corporate Gold Theme.
-    - Cột trái (73%): Ảnh tập thể nguyên bản (BG-TapThe.webp), Card Logo & Slogan 'TOGETHER WE GROW' và thanh 3 Giá trị cốt lõi.
-    - Cột phải (27%): Form đăng nhập TDB Solution màu vàng nhận diện (#D9A441), sang trọng, tối giản.
-    - Nhúng khối CSS trực tiếp vào template body đảm bảo 100% ăn style ngay, không phụ thuộc cache asset.
+    Thiết lập giao diện Đăng nhập TDB Solution chuẩn 100% theo Hình 1 với Logo Hình 2:
+    - Khu vực trái: Logo TDB Solution (Hình 2), 'GIÁ TRỊ CỐT LÕI' + gạch chân vàng, lời dẫn và 3 Card: Tận Tâm, Đồng Hành, Bền Vững.
+    - Khu vực phải: Login Card nổi bo tròn 24px, Logo TDB Solution (Hình 2), inputs viền kem, nút Đăng nhập vàng bo tròn, vạch 'Hoặc', nút 'Demo: admin'.
+    - Nhúng CSS trực tiếp đảm bảo 100% ăn giao diện ngay lập tức mà không phụ thuộc cache asset bundle.
     """
-    print("\n>>> [6/7] Áp dụng giao diện Đăng nhập TDB Solution (Together We Grow - Corporate Gold)...")
+    print("\n>>> [6/7] Áp dụng giao diện Đăng nhập TDB Solution (Giá Trị Cốt Lõi - Hình 1 & Logo Hình 2)...")
 
     View = env['ir.ui.view']
 
@@ -469,29 +467,29 @@ def apply_tdb_login_interface(env, current_dir):
                     pass
 
         if logo_b64:
-            logo_img_tag = f'<img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_gold" onerror="this.onerror=null;this.src=\'data:image/png;base64,{logo_b64}\';" alt="TDB Solution" class="form-logo"/>'
-            hero_logo_img_tag = f'<img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_gold" onerror="this.onerror=null;this.src=\'data:image/png;base64,{logo_b64}\';" alt="TDB Solution" class="hero-logo"/>'
+            logo_img_tag = f'<img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_logo2" onerror="this.onerror=null;this.src=\'data:image/png;base64,{logo_b64}\';" alt="TDB Solution" class="card-logo"/>'
+            hero_logo_img_tag = f'<img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_logo2" onerror="this.onerror=null;this.src=\'data:image/png;base64,{logo_b64}\';" alt="TDB Solution" class="brand-logo-img"/>'
         else:
-            logo_img_tag = '<img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_gold" alt="TDB Solution" class="form-logo"/>'
-            hero_logo_img_tag = '<img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_gold" alt="TDB Solution" class="hero-logo"/>'
+            logo_img_tag = '<img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_logo2" alt="TDB Solution" class="card-logo"/>'
+            hero_logo_img_tag = '<img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_logo2" alt="TDB Solution" class="brand-logo-img"/>'
 
-        # Cập nhật trực tiếp arch_db của web.login_layout (Together We Grow - Corporate Gold Theme)
+        # Cập nhật trực tiếp arch_db của web.login_layout (Thiết kế chuẩn Hình 1 & Logo Hình 2)
         tdb_layout_arch = """<t t-name="web.login_layout">
     <t t-call="web.layout">
         <t t-set="html_data" t-value="{'style': 'height: 100%;'}"/>
         <t t-set="body_classname" t-value="'tdb-login-body'"/>
         <style>
 <![CDATA[
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 html, body {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
     height: 100% !important;
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-    background: #FAF8F2 !important;
-    color: #263247 !important;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    background: #FAF6EE !important;
+    color: #1E293B !important;
     -webkit-font-smoothing: antialiased !important;
     overflow-x: hidden !important;
 }
@@ -500,285 +498,251 @@ html, body {
     display: none !important;
 }
 
-.login-grid {
-    display: grid !important;
-    grid-template-columns: 73% 27% !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
+.login-wrapper {
+    position: relative !important;
     width: 100vw !important;
+    min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
-    background: #FAF8F2 !important;
-    position: relative !important;
+    display: flex !important;
+    background-color: #FAF6EE !important;
+    background-image: url('/tdb_website_custom/static/src/img/login_bg.webp?v=20261102_1') !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-size: cover !important;
+    box-sizing: border-box !important;
     overflow: hidden !important;
 }
 
-/* ---------------- Cột trái (73%): Ảnh tập thể TDB ---------------- */
-.hero-side {
-    position: relative !important;
-    height: 100vh !important;
-    overflow: hidden !important;
-    background-color: #263247 !important;
+/* ---------------- Cột trái: Trình bày Giá Trị Cốt Lõi ---------------- */
+.presentation-side {
+    flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
-    padding: 36px 44px !important;
+    padding: 36px 48px !important;
+    position: relative !important;
+    z-index: 2 !important;
     box-sizing: border-box !important;
 }
 
-.hero-bg-img {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    object-position: center 30% !important;
-    z-index: 1 !important;
-    transition: transform 6s cubic-bezier(0.25, 1, 0.5, 1) !important;
+.top-brand-logo {
+    display: inline-block !important;
+    text-align: left !important;
 }
 
-.hero-side:hover .hero-bg-img {
-    transform: scale(1.02) !important;
-}
-
-.hero-overlay {
-    position: absolute !important;
-    inset: 0 !important;
-    background: linear-gradient(
-        180deg,
-        rgba(38, 50, 71, 0.18) 0%,
-        rgba(250, 248, 242, 0.04) 40%,
-        rgba(38, 50, 71, 0.45) 100%
-    ) !important;
-    z-index: 2 !important;
-    pointer-events: none !important;
-}
-
-/* Góc trên bên trái: Logo & Slogan Card */
-.hero-top-card {
-    position: relative !important;
-    z-index: 5 !important;
-    background: rgba(255, 255, 255, 0.92) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(233, 227, 214, 0.9) !important;
-    border-radius: 18px !important;
-    padding: 22px 28px !important;
-    max-width: 440px !important;
-    box-shadow: 0 12px 32px rgba(38, 50, 71, 0.08) !important;
-    animation: fadeInDown 0.6s ease-out !important;
-}
-
-.hero-logo-row {
-    margin-bottom: 14px !important;
-}
-
-.hero-logo {
-    height: 34px !important;
+.top-brand-logo img {
+    height: 42px !important;
     width: auto !important;
     display: block !important;
     object-fit: contain !important;
 }
 
-.hero-main-slogan {
-    font-size: 26px !important;
+.core-content-center {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    margin: auto 0 !important;
+    padding: 20px 0 !important;
+    max-width: 720px !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.core-heading-wrap {
+    margin-bottom: 28px !important;
+    text-align: center !important;
+}
+
+.core-title {
+    font-size: 38px !important;
     font-weight: 800 !important;
+    letter-spacing: -0.01em !important;
     line-height: 1.2 !important;
-    letter-spacing: -0.02em !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
 }
 
-.word-together {
-    color: #263247 !important;
-    margin-right: 6px !important;
+.word-navy {
+    color: #1E293B !important;
 }
 
-.word-we-grow {
-    color: #D9A441 !important;
-}
-
-.hero-slogan-sub {
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    color: #687386 !important;
-    margin-top: 6px !important;
-    line-height: 1.4 !important;
-}
-
-.hero-slogan-line {
-    height: 2.5px !important;
-    width: 44px !important;
-    background: linear-gradient(90deg, #D9A441, #B98524) !important;
-    border-radius: 2px !important;
-    margin: 12px 0 !important;
-}
-
-.hero-team-tag {
-    font-size: 13px !important;
-}
-
-.tag-title {
-    display: block !important;
-    font-weight: 700 !important;
-    font-style: italic !important;
-    color: #B98524 !important;
-    letter-spacing: 0.04em !important;
-    margin-bottom: 2px !important;
-}
-
-.tag-desc {
-    display: block !important;
-    color: #687386 !important;
-    font-size: 12.5px !important;
-}
-
-/* Phía dưới ảnh: 3 Giá trị cốt lõi */
-.hero-bottom-bar {
+.word-gold {
+    color: #EAA015 !important;
     position: relative !important;
-    z-index: 5 !important;
-    background: rgba(255, 255, 255, 0.94) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(233, 227, 214, 0.9) !important;
-    border-radius: 16px !important;
-    padding: 12px 24px !important;
-    max-width: 620px !important;
+}
+
+.title-gold-line {
+    width: 78px !important;
+    height: 3.5px !important;
+    background: #EAA015 !important;
+    border-radius: 2px !important;
+    margin: 8px auto 0 !important;
+}
+
+.core-subtitle {
+    font-size: 14.5px !important;
+    color: #475569 !important;
+    line-height: 1.6 !important;
+    margin: 14px 0 0 0 !important;
+    max-width: 580px !important;
+}
+
+.values-row {
     display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
+    justify-content: center !important;
     gap: 16px !important;
-    box-shadow: 0 12px 32px rgba(38, 50, 71, 0.08) !important;
-    animation: fadeInUp 0.6s ease-out !important;
+    width: 100% !important;
+    margin-top: 10px !important;
 }
 
-.core-value-item {
+.value-card {
+    flex: 1 !important;
+    max-width: 216px !important;
+    background: #FFFFFF !important;
+    border: 1px solid rgba(240, 230, 210, 0.9) !important;
+    border-radius: 16px !important;
+    padding: 16px 18px !important;
+    box-shadow: 0 8px 24px rgba(220, 180, 100, 0.08), 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+    text-align: left !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    box-sizing: border-box !important;
+}
+
+.value-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 12px 28px rgba(220, 180, 100, 0.14) !important;
+}
+
+.value-card-header {
     display: flex !important;
     align-items: center !important;
-    gap: 12px !important;
-    flex: 1 !important;
+    gap: 10px !important;
+    margin-bottom: 10px !important;
 }
 
-.core-value-icon {
-    width: 38px !important;
-    height: 38px !important;
+.value-icon-box {
+    width: 36px !important;
+    height: 36px !important;
     border-radius: 10px !important;
-    background: #FBF6EA !important;
-    color: #D9A441 !important;
+    background: #FFFBEB !important;
+    border: 1px solid #FDE68A !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     flex-shrink: 0 !important;
-    transition: transform 0.2s ease, background-color 0.2s ease !important;
+    color: #EAA015 !important;
 }
 
-.core-value-item:hover .core-value-icon {
-    transform: scale(1.08) !important;
-    background: #F5E7C5 !important;
-}
-
-.core-value-icon svg {
-    width: 20px !important;
-    height: 20px !important;
-    stroke: #D9A441 !important;
+.value-icon-box svg {
+    width: 18px !important;
+    height: 18px !important;
+    stroke: #EAA015 !important;
     stroke-width: 2 !important;
 }
 
-.core-value-info {
-    display: flex !important;
-    flex-direction: column !important;
-}
-
-.core-title {
-    font-size: 13.5px !important;
-    font-weight: 700 !important;
-    color: #263247 !important;
-    line-height: 1.2 !important;
-}
-
-.core-sub {
-    font-size: 11.5px !important;
-    color: #687386 !important;
-    margin-top: 2px !important;
-}
-
-.core-divider {
+.value-divider {
     width: 1px !important;
-    height: 28px !important;
-    background: #E9E3D6 !important;
+    height: 20px !important;
+    background: #E5E7EB !important;
 }
 
-/* ---------------- Cột phải (27%): Form đăng nhập ---------------- */
-.form-side {
-    background: #FFFFFF !important;
-    border-left: 1px solid #E9E3D6 !important;
-    height: 100vh !important;
-    box-sizing: border-box !important;
+.value-title {
+    font-size: 15.5px !important;
+    font-weight: 700 !important;
+    color: #1E293B !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
+}
+
+.value-desc {
+    font-size: 12px !important;
+    color: #64748B !important;
+    line-height: 1.5 !important;
+    margin: 0 !important;
+}
+
+.page-footer-left {
+    text-align: left !important;
+    font-size: 12.5px !important;
+    color: #64748B !important;
+    font-weight: 500 !important;
+    margin-top: 20px !important;
+}
+
+/* ---------------- Cột phải: Login Card nổi ---------------- */
+.login-card-side {
     display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
     align-items: center !important;
-    padding: 40px 32px !important;
-    box-shadow: -8px 0 32px rgba(38, 50, 71, 0.04) !important;
-    z-index: 10 !important;
-    position: relative !important;
-    overflow-y: auto !important;
+    justify-content: center !important;
+    padding: 30px 60px 30px 20px !important;
+    z-index: 5 !important;
+    box-sizing: border-box !important;
 }
 
-.form-inner {
-    width: 100% !important;
-    max-width: 350px !important;
-    margin: 0 auto !important;
-}
-
-.form-logo-wrap {
-    margin-bottom: 22px !important;
+.login-card {
+    width: 380px !important;
+    max-width: 100% !important;
+    background: #FFFFFF !important;
+    border-radius: 24px !important;
+    padding: 34px 30px 28px !important;
+    box-shadow: 0 20px 48px rgba(210, 160, 50, 0.14), 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(240, 230, 210, 0.6) !important;
+    box-sizing: border-box !important;
     text-align: left !important;
 }
 
-.form-logo {
-    height: 36px !important;
+.card-logo-wrap {
+    text-align: center !important;
+    margin-bottom: 14px !important;
+}
+
+.card-logo-wrap img {
+    height: 38px !important;
     width: auto !important;
     max-width: 100% !important;
     object-fit: contain !important;
-    display: block !important;
+    display: inline-block !important;
 }
 
-.form-header {
-    margin-bottom: 24px !important;
-    text-align: left !important;
-}
-
-.form-title {
-    font-size: 26px !important;
+.card-title {
+    font-size: 24px !important;
     font-weight: 800 !important;
-    color: #263247 !important;
-    margin: 0 0 8px 0 !important;
-    letter-spacing: -0.02em !important;
-    line-height: 1.15 !important;
+    color: #1E293B !important;
+    text-align: center !important;
+    margin: 0 0 6px 0 !important;
+    letter-spacing: -0.01em !important;
 }
 
-.form-subtitle {
-    font-size: 13.5px !important;
-    color: #687386 !important;
+.card-subtitle {
+    font-size: 13px !important;
+    color: #64748B !important;
+    text-align: center !important;
     line-height: 1.5 !important;
-    margin: 0 !important;
+    margin: 0 0 20px 0 !important;
 }
 
 .form-error {
     display: flex !important;
     align-items: flex-start !important;
-    gap: 10px !important;
+    gap: 8px !important;
     padding: 10px 14px !important;
     background: #FEF2F2 !important;
     border: 1px solid #FECACA !important;
     border-radius: 10px !important;
     color: #991B1B !important;
-    font-size: 13px !important;
+    font-size: 12.5px !important;
     line-height: 1.4 !important;
-    margin-bottom: 16px !important;
+    margin-bottom: 14px !important;
 }
 
 .form-group {
-    margin-bottom: 18px !important;
+    margin-bottom: 15px !important;
     text-align: left !important;
 }
 
@@ -786,9 +750,8 @@ html, body {
     display: block !important;
     font-size: 13px !important;
     font-weight: 600 !important;
-    color: #263247 !important;
-    margin-bottom: 7px !important;
-    letter-spacing: -0.005em !important;
+    color: #1E293B !important;
+    margin-bottom: 6px !important;
 }
 
 .input-wrap {
@@ -796,12 +759,12 @@ html, body {
     width: 100% !important;
 }
 
-.input-wrap .icon {
+.input-icon {
     position: absolute !important;
     left: 14px !important;
     top: 50% !important;
     transform: translateY(-50%) !important;
-    color: #D9A441 !important;
+    color: #EAA015 !important;
     pointer-events: none !important;
     display: flex !important;
     align-items: center !important;
@@ -809,36 +772,40 @@ html, body {
     z-index: 2 !important;
 }
 
-.input-wrap .icon svg {
+.input-icon svg {
     width: 16px !important;
     height: 16px !important;
-    stroke: #D9A441 !important;
+    stroke: #EAA015 !important;
     stroke-width: 2 !important;
 }
 
 .input-wrap input {
     width: 100% !important;
-    height: 48px !important;
+    height: 46px !important;
     padding: 0 16px 0 42px !important;
     font-family: inherit !important;
-    font-size: 14px !important;
-    color: #263247 !important;
+    font-size: 13.5px !important;
+    color: #1E293B !important;
     background: #FFFFFF !important;
-    border: 1.5px solid #E9E3D6 !important;
-    border-radius: 10px !important;
+    border: 1.5px solid #F1E7D5 !important;
+    border-radius: 12px !important;
     outline: none !important;
     transition: all 0.15s ease !important;
     box-sizing: border-box !important;
 }
 
+.input-wrap input:hover {
+    border-color: #E2D4BC !important;
+}
+
 .input-wrap input:focus {
-    border-color: #D9A441 !important;
-    box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.18) !important;
+    border-color: #EAA015 !important;
+    box-shadow: 0 0 0 3px rgba(234, 160, 21, 0.16) !important;
     background: #FFFFFF !important;
 }
 
 .input-wrap input::placeholder {
-    color: #A0AEC0 !important;
+    color: #9CA3AF !important;
 }
 
 .pwd-toggle {
@@ -850,7 +817,7 @@ html, body {
     border: none !important;
     padding: 6px !important;
     cursor: pointer !important;
-    color: #687386 !important;
+    color: #9CA3AF !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -860,7 +827,7 @@ html, body {
 }
 
 .pwd-toggle:hover {
-    color: #D9A441 !important;
+    color: #EAA015 !important;
 }
 
 .pwd-toggle svg {
@@ -870,22 +837,22 @@ html, body {
     stroke-width: 2 !important;
 }
 
-.form-row {
+.form-options {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    margin-bottom: 22px !important;
-    font-size: 13px !important;
+    margin: 12px 0 18px 0 !important;
+    font-size: 12.5px !important;
 }
 
 .cbx {
     display: inline-flex !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 7px !important;
     cursor: pointer !important;
     user-select: none !important;
-    font-size: 13px !important;
-    color: #263247 !important;
+    font-size: 12.5px !important;
+    color: #1E293B !important;
 }
 
 .cbx input {
@@ -895,10 +862,10 @@ html, body {
 }
 
 .cbx .box {
-    width: 18px !important;
-    height: 18px !important;
-    border: 1.5px solid #E9E3D6 !important;
-    border-radius: 5px !important;
+    width: 17px !important;
+    height: 17px !important;
+    border: 1.5px solid #F1E7D5 !important;
+    border-radius: 4px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -909,13 +876,13 @@ html, body {
 }
 
 .cbx input:checked + .box {
-    background: #D9A441 !important;
-    border-color: #D9A441 !important;
+    background: #EAA015 !important;
+    border-color: #EAA015 !important;
 }
 
 .cbx .box svg {
-    width: 12px !important;
-    height: 12px !important;
+    width: 11px !important;
+    height: 11px !important;
     stroke: #FFFFFF !important;
     stroke-width: 3 !important;
     fill: none !important;
@@ -927,21 +894,27 @@ html, body {
     opacity: 1 !important;
 }
 
+.cbx-label {
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    color: #1E293B !important;
+}
+
 .form-forgot {
     font-size: 12.5px !important;
     font-weight: 500 !important;
-    color: #D9A441 !important;
+    color: #EAA015 !important;
     text-decoration: none !important;
     transition: color 0.15s ease !important;
     white-space: nowrap !important;
 }
 
 .form-forgot:hover {
-    color: #B98524 !important;
+    color: #D97706 !important;
     text-decoration: underline !important;
 }
 
-/* Ẩn hoàn toàn các nút thừa như Đặt lại mật khẩu, Siêu quản trị */
+/* Ẩn hoàn toàn các nút thừa */
 .field-password a,
 .field-password .small,
 a[href*="reset_password"],
@@ -958,30 +931,33 @@ button[value*="become"],
     overflow: hidden !important;
 }
 
+.form-submit-wrap {
+    margin-top: 6px !important;
+}
+
 .btn-submit {
     width: 100% !important;
-    height: 50px !important;
-    background: #D9A441 !important;
+    height: 48px !important;
+    background: #EAA015 !important;
     color: #FFFFFF !important;
     border: none !important;
-    border-radius: 10px !important;
+    border-radius: 24px !important;
     font-family: inherit !important;
-    font-size: 15px !important;
+    font-size: 14.5px !important;
     font-weight: 600 !important;
-    letter-spacing: -0.005em !important;
     cursor: pointer !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
     transition: all 0.2s ease !important;
-    box-shadow: 0 4px 14px rgba(217, 164, 65, 0.32) !important;
+    box-shadow: 0 4px 14px rgba(234, 160, 21, 0.32) !important;
     padding: 0 !important;
 }
 
 .btn-submit:hover {
-    background: #B98524 !important;
-    box-shadow: 0 6px 20px rgba(185, 133, 36, 0.42) !important;
+    background: #D97706 !important;
+    box-shadow: 0 6px 18px rgba(217, 119, 6, 0.42) !important;
     transform: translateY(-1px) !important;
 }
 
@@ -997,226 +973,210 @@ button[value*="become"],
     stroke-width: 2 !important;
 }
 
-.demo-box {
+.divider-or {
     display: flex !important;
     align-items: center !important;
-    gap: 10px !important;
-    margin-top: 22px !important;
-    padding: 10px 14px !important;
-    background: #FAF8F2 !important;
-    border: 1px solid #E9E3D6 !important;
-    border-radius: 10px !important;
-    font-size: 12.5px !important;
-    color: #687386 !important;
-    line-height: 1.5 !important;
+    text-align: center !important;
+    margin: 14px 0 12px 0 !important;
+    color: #9CA3AF !important;
+    font-size: 12px !important;
 }
 
-.demo-box-icon {
-    display: flex !important;
+.divider-or::before, .divider-or::after {
+    content: '' !important;
+    flex: 1 !important;
+    border-bottom: 1px solid #E5E7EB !important;
+}
+
+.divider-or span {
+    padding: 0 12px !important;
+}
+
+.demo-btn-wrap {
+    width: 100% !important;
+}
+
+.btn-demo {
+    width: 100% !important;
+    height: 40px !important;
+    border: 1.5px solid #FDE68A !important;
+    background: #FFFDF9 !important;
+    border-radius: 24px !important;
+    font-family: inherit !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: #EAA015 !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 30px !important;
-    height: 30px !important;
-    border-radius: 8px !important;
-    background: #FBF6EA !important;
-    color: #D9A441 !important;
-    flex-shrink: 0 !important;
+    gap: 8px !important;
+    transition: all 0.15s ease !important;
+    padding: 0 !important;
 }
 
-.demo-box-icon svg {
-    width: 16px !important;
-    height: 16px !important;
-    stroke: #D9A441 !important;
+.btn-demo:hover {
+    background: #FFFBEB !important;
+    border-color: #EAA015 !important;
+}
+
+.btn-demo svg {
+    width: 15px !important;
+    height: 15px !important;
+    stroke: #EAA015 !important;
     fill: none !important;
     stroke-width: 2 !important;
 }
 
-.demo-box-text strong {
-    color: #263247 !important;
-    font-weight: 600 !important;
-}
-
-.demo-box code {
-    background: #FFFFFF !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
-    font-family: ui-monospace, SF Mono, monospace !important;
-    font-size: 11.5px !important;
-    color: #B98524 !important;
-    border: 1px solid #E9E3D6 !important;
-    transition: all 0.15s ease !important;
-}
-
-.demo-box code:hover {
-    background: #FBF6EA !important;
-    border-color: #D9A441 !important;
-}
-
-.form-footer {
+.card-footer {
     text-align: center !important;
-    font-size: 12px !important;
-    color: #687386 !important;
-    margin-top: 24px !important;
-    line-height: 1.5 !important;
+    font-size: 11.5px !important;
+    color: #9CA3AF !important;
+    margin-top: 18px !important;
 }
 
-.form-footer .footer-copy {
-    display: block !important;
-    font-weight: 600 !important;
-    color: #263247 !important;
-}
-
-.form-footer .footer-tagline {
-    display: block !important;
-    color: #687386 !important;
-    margin-top: 2px !important;
-}
-
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@media (max-width: 1024px) {
-    .login-grid {
-        grid-template-columns: 1fr !important;
+@media (max-width: 1100px) {
+    .login-wrapper {
+        flex-direction: column !important;
         height: auto !important;
-        min-height: 100vh !important;
         overflow-y: auto !important;
+        padding-bottom: 40px !important;
     }
-    .hero-side {
-        height: 340px !important;
-        min-height: 340px !important;
-        padding: 24px !important;
+    .presentation-side {
+        padding: 30px 24px !important;
+        align-items: center !important;
     }
-    .hero-bottom-bar {
+    .top-brand-logo {
+        align-self: flex-start !important;
+        margin-bottom: 20px !important;
+    }
+    .core-title {
+        font-size: 30px !important;
+    }
+    .values-row {
+        flex-wrap: wrap !important;
+    }
+    .value-card {
+        max-width: 280px !important;
+        flex: 1 1 200px !important;
+    }
+    .login-card-side {
+        padding: 20px 24px !important;
+        width: 100% !important;
+    }
+    .page-footer-left {
         display: none !important;
-    }
-    .hero-top-card {
-        top: auto !important;
-        left: auto !important;
-        position: relative !important;
-        max-width: 100% !important;
-        padding: 16px 20px !important;
-    }
-    .hero-main-slogan {
-        font-size: 20px !important;
-    }
-    .form-side {
-        padding: 36px 24px !important;
-        min-height: auto !important;
-        box-shadow: none !important;
-        border-left: none !important;
     }
 }
 ]]>
         </style>
-        <div class="login-grid">
-            <!-- Cột trái (73%): Ảnh tập thể TDB & Slogan Together We Grow -->
-            <aside class="hero-side">
-                <img src="/tdb_website_custom/static/src/img/BG-TapThe.webp?v=20261102" onerror="this.onerror=null;this.src='/tdb_website_custom/static/src/img/BG-TapThe.jpg?v=20261102';" alt="TDB Solution Team" class="hero-bg-img"/>
-                <div class="hero-overlay"/>
+        <div class="login-wrapper">
+            <!-- Khu vực bên trái: Trình bày Giá Trị Cốt Lõi -->
+            <aside class="presentation-side">
+                <!-- Logo TDB Solution (Hình 2) góc trên bên trái -->
+                <div class="top-brand-logo">
+                    """ + hero_logo_img_tag + """
+                </div>
 
-                <!-- Góc trên bên trái: Logo & Slogan Card -->
-                <div class="hero-top-card">
-                    <div class="hero-logo-row">
-                        """ + hero_logo_img_tag + """
+                <!-- Khối nội dung chính giữa: Tiêu đề & 3 Card Giá trị cốt lõi -->
+                <div class="core-content-center">
+                    <div class="core-heading-wrap">
+                        <h1 class="core-title">
+                            <span class="word-navy">GIÁ TRỊ</span>
+                            <span class="word-gold">CỐT LÕI</span>
+                        </h1>
+                        <div class="title-gold-line"/>
+                        <p class="core-subtitle">
+                            TDB Solution sáng tạo và đổi mới, mang đến khách hàng sự hài lòng<br/>
+                            nhờ đồng hành và cung cấp dịch vụ chất lượng cao.
+                        </p>
                     </div>
-                    <div class="hero-slogan-wrap">
-                        <div class="hero-main-slogan">
-                            <span class="word-together">TOGETHER</span>
-                            <span class="word-we-grow">WE GROW</span>
+
+                    <!-- 3 Card Giá trị cốt lõi -->
+                    <div class="values-row">
+                        <!-- Card 1: Tận Tâm -->
+                        <div class="value-card">
+                            <div class="value-card-header">
+                                <div class="value-icon-box">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake">
+                                        <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                                        <path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08v0c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"/>
+                                        <path d="m18 15-2-2"/>
+                                        <path d="m15 18-2-2"/>
+                                    </svg>
+                                </div>
+                                <div class="value-divider"/>
+                                <h3 class="value-title">Tận Tâm</h3>
+                            </div>
+                            <p class="value-desc">
+                                Tận tâm trong phục vụ,<br/>
+                                tiên phong trong công nghệ.
+                            </p>
                         </div>
-                        <div class="hero-slogan-sub">Phát triển cùng nhau – Vững bước tương lai.</div>
-                        <div class="hero-slogan-line"/>
-                        <div class="hero-team-tag">
-                            <span class="tag-title">ONE TEAM – ONE DREAM</span>
-                            <span class="tag-desc">Cùng sáng tạo, cùng hợp tác, cùng phát triển.</span>
+
+                        <!-- Card 2: Đồng Hành -->
+                        <div class="value-card">
+                            <div class="value-card-header">
+                                <div class="value-icon-box">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                                        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                        <circle cx="9" cy="7" r="4"/>
+                                        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                                        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                    </svg>
+                                </div>
+                                <div class="value-divider"/>
+                                <h3 class="value-title">Đồng Hành</h3>
+                            </div>
+                            <p class="value-desc">
+                                Đồng hành bền vững,<br/>
+                                đổi mới không ngừng.
+                            </p>
+                        </div>
+
+                        <!-- Card 3: Bền Vững -->
+                        <div class="value-card">
+                            <div class="value-card-header">
+                                <div class="value-icon-box">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
+                                        <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+                                        <path d="m9 12 2 2 4-4"/>
+                                    </svg>
+                                </div>
+                                <div class="value-divider"/>
+                                <h3 class="value-title">Bền Vững</h3>
+                            </div>
+                            <p class="value-desc">
+                                Bền vững trong chiến lược,<br/>
+                                bản lĩnh trong hành động.
+                            </p>
                         </div>
                     </div>
                 </div>
 
-                <!-- Phía dưới ảnh: 3 Giá trị cốt lõi -->
-                <div class="hero-bottom-bar">
-                    <div class="core-value-item">
-                        <div class="core-value-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lightbulb"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                        </div>
-                        <div class="core-value-info">
-                            <span class="core-title">Innovation</span>
-                            <span class="core-sub">Sáng tạo</span>
-                        </div>
-                    </div>
-                    <div class="core-divider"/>
-                    <div class="core-value-item">
-                        <div class="core-value-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                        </div>
-                        <div class="core-value-info">
-                            <span class="core-title">Collaboration</span>
-                            <span class="core-sub">Hợp tác</span>
-                        </div>
-                    </div>
-                    <div class="core-divider"/>
-                    <div class="core-value-item">
-                        <div class="core-value-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-                        </div>
-                        <div class="core-value-info">
-                            <span class="core-title">Development</span>
-                            <span class="core-sub">Phát triển</span>
-                        </div>
-                    </div>
+                <!-- Chân trang góc dưới bên trái -->
+                <div class="page-footer-left">
+                    © 2026 TDB-Solution · Phiên bản nội bộ
                 </div>
             </aside>
 
-            <!-- Cột phải (27%): Form đăng nhập TDB Solution -->
-            <main class="form-side">
-                <div class="form-inner">
-                    <div class="form-logo-wrap">
+            <!-- Khu vực bên phải: Login Card nổi -->
+            <main class="login-card-side">
+                <div class="login-card">
+                    <!-- Logo TDB Solution (Hình 2) trong Card -->
+                    <div class="card-logo-wrap">
                         """ + logo_img_tag + """
                     </div>
 
-                    <div class="form-header">
-                        <h1 class="form-title">Đăng nhập</h1>
-                        <p class="form-subtitle">Chào mừng trở lại! Vui lòng đăng nhập vào hệ thống TDB Solution.</p>
-                    </div>
+                    <h2 class="card-title">Đăng nhập</h2>
+                    <p class="card-subtitle">Chào mừng trở lại! Vui lòng đăng nhập vào hệ thống TDB Solution.</p>
 
-                    <!-- Vị trí cắm form đăng nhập -->
+                    <!-- Form Đăng nhập cắm tại đây -->
                     <t t-out="0"/>
 
-                    <div class="demo-box">
-                        <div class="demo-box-icon">
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 1 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" fill="currentColor" r=".5"/></svg>
-                        </div>
-                        <div class="demo-box-text">
-                            <strong>Demo:</strong>
-                            <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin';if(p)p.value='admin';" style="cursor:pointer;" title="Nhấp để điền">admin</code>
-                            <span style="margin:0 4px;color:#cbd5e1">&#183;</span>
-                            <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin';if(p)p.value='admin';" style="cursor:pointer;" title="Nhấp để điền">admin</code>
-                        </div>
-                    </div>
-
-                    <div class="form-footer">
-                        <span class="footer-copy">TDB Solution © 2026.</span>
-                        <span class="footer-tagline">Phát triển bền vững cùng nhau.</span>
+                    <!-- Chân Card -->
+                    <div class="card-footer">
+                        TDB Solution © 2026. Phát triển bền vững cùng nhau.
                     </div>
                 </div>
             </main>
@@ -1225,7 +1185,7 @@ button[value*="become"],
 </t>"""
         try:
             layout_target.write({'arch_db': tdb_layout_arch})
-            print("[OK] Đã cập nhật trực tiếp web.login_layout chuẩn TDB Solution (Together We Grow - Corporate Gold)!")
+            print("[OK] Đã cập nhật trực tiếp web.login_layout chuẩn TDB Solution theo Hình 1 & Logo Hình 2!")
         except Exception as e:
             print(f"[CẢNH BÁO web.login_layout]: {e}")
 
@@ -1259,42 +1219,51 @@ button[value*="become"],
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
             <div class="form-error" t-if="error" role="alert">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
                 <span><t t-out="error"/></span>
             </div>
             <div class="alert alert-success" t-if="message" role="status">
                 <t t-out="message"/>
             </div>
 
+            <!-- Tài khoản / Email -->
             <div class="form-group field-login">
                 <label class="form-label" for="login">Tài khoản / Email</label>
                 <div class="input-wrap">
-                    <svg aria-hidden="true" class="lucide lucide-mail icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
-                        <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/>
-                        <rect height="16" rx="2" width="20" x="2" y="4"/>
-                    </svg>
-                    <input id="login" name="login" t-att-value="login" placeholder="admin hoặc ban@tdbsolution.com.vn" required="required" autofocus="autofocus" autocapitalize="off" autocomplete="username" class="form-control" type="text"/>
+                    <div class="input-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-mail">
+                            <rect width="20" height="16" x="2" y="4" rx="2"/>
+                            <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
+                        </svg>
+                    </div>
+                    <input id="login" name="login" t-att-value="login" placeholder="admin hoặc ban@tdbsolu" required="required" autofocus="autofocus" autocapitalize="off" autocomplete="username" class="form-control" type="text"/>
                 </div>
             </div>
 
+            <!-- Mật khẩu -->
             <div class="form-group field-password">
                 <label class="form-label" for="password">Mật khẩu</label>
                 <div class="input-wrap">
-                    <svg aria-hidden="true" class="lucide lucide-lock icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
-                        <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
-                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
-                    </svg>
-                    <input id="password" name="password" placeholder="••••••••" required="required" autocomplete="current-password" maxlength="4096" style="padding-right:44px" type="password"/>
+                    <div class="input-icon">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lock">
+                            <rect width="18" height="11" x="3" y="11" rx="2" ry="2"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                    </div>
+                    <input id="password" name="password" placeholder="Nhập mật khẩu" required="required" autocomplete="current-password" maxlength="4096" type="password"/>
                     <button aria-label="Hiện mật khẩu" class="pwd-toggle" type="button" onclick="var p=document.getElementById('password');if(p)p.type=p.type==='password'?'text':'password';">
-                        <svg aria-hidden="true" class="lucide lucide-eye" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
-                            <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
-                            <circle cx="12" cy="12" r="3"/>
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-eye-off">
+                            <path d="M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49"/>
+                            <path d="M14.084 14.158a3 3 0 0 1-4.242-4.242"/>
+                            <path d="M17.479 17.499A10.75 10.75 0 0 1 2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.417-5.148"/>
+                            <line x1="2" x2="22" y1="2" y2="22"/>
                         </svg>
                     </button>
                 </div>
             </div>
 
-            <div class="form-row">
+            <!-- Ghi nhớ đăng nhập + Quên mật khẩu? -->
+            <div class="form-options">
                 <label class="cbx">
                     <input checked="checked" type="checkbox" name="remember"/>
                     <span class="box">
@@ -1302,21 +1271,38 @@ button[value*="become"],
                             <polyline points="20 6 9 17 4 12"/>
                         </svg>
                     </span>
-                    <span>Ghi nhớ đăng nhập</span>
+                    <span class="cbx-label">Ghi nhớ đăng nhập</span>
                 </label>
                 <a class="form-forgot" href="/web/reset_password" t-if="debug">Quên mật khẩu?</a>
             </div>
 
             <input type="hidden" name="redirect" t-att-value="redirect"/>
 
-            <div class="oe_login_buttons">
+            <!-- Nút Đăng nhập bo tròn -->
+            <div class="form-submit-wrap">
                 <button class="btn-submit" type="submit">
-                    <svg aria-hidden="true" class="lucide lucide-log-in" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
-                        <path d="m10 17 5-5-5-5"/>
-                        <path d="M15 12H3"/>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-in">
                         <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                        <polyline points="10 17 15 12 10 7"/>
+                        <line x1="15" x2="3" y1="12" y2="12"/>
                     </svg>
-                    Đăng nhập
+                    <span>Đăng nhập</span>
+                </button>
+            </div>
+
+            <!-- Hoặc -->
+            <div class="divider-or">
+                <span>Hoặc</span>
+            </div>
+
+            <!-- Nút Demo: admin -->
+            <div class="demo-btn-wrap">
+                <button type="button" class="btn-demo" onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin';if(p)p.value='admin';" title="Nhấp để tự động điền tài khoản demo">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-round">
+                        <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 1 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/>
+                        <circle cx="16.5" cy="7.5" fill="currentColor" r=".5"/>
+                    </svg>
+                    <span>Demo: admin</span>
                 </button>
             </div>
         </form>
@@ -1324,7 +1310,7 @@ button[value*="become"],
 </t>"""
         try:
             login_target.write({'arch_db': tdb_login_arch})
-            print("[OK] Đã cập nhật trực tiếp web.login chuẩn TDB Solution!")
+            print("[OK] Đã cập nhật trực tiếp web.login chuẩn TDB Solution theo Hình 1!")
         except Exception as e:
             print(f"[CẢNH BÁO web.login]: {e}")
 
@@ -1394,7 +1380,7 @@ def main():
 
         cr.commit()
         print("\n" + "="*70)
-        print(">>> HOÀN TẤT THÀNH CÔNG! GIAO DIỆN TOGETHER WE GROW - CORPORATE GOLD ĐÃ ĐƯỢC ÁP DỤNG! <<<")
+        print(">>> HOÀN TẤT THÀNH CÔNG! GIAO DIỆN HÌNH 1 & LOGO HÌNH 2 ĐÃ ĐƯỢC ÁP DỤNG! <<<")
         print("="*70)
 
 if __name__ == '__main__':

@@ -1,100 +1,118 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Template web.login_layout: Together We Grow - Natural Corporate Gold Theme -->
+    <!-- Template web.login_layout: TDB Solution Giá Trị Cốt Lõi - Corporate Gold Theme -->
     <template id="tdb_login_layout" inherit_id="web.login_layout" priority="99">
         <xpath expr="//t[@t-call='web.layout']" position="replace">
             <t t-call="web.layout">
                 <t t-set="html_data" t-value="{'style': 'height: 100%;'}"/>
                 <t t-set="body_classname" t-value="'tdb-login-body'"/>
-                <div class="login-grid">
-                    <!-- Cột trái (73%): Ảnh tập thể nhân viên TDB và Slogan Together We Grow -->
-                    <aside class="hero-side">
-                        <img src="/tdb_website_custom/static/src/img/BG-TapThe.webp?v=20261102" onerror="this.onerror=null;this.src='/tdb_website_custom/static/src/img/BG-TapThe.jpg?v=20261102';" alt="TDB Solution Team" class="hero-bg-img"/>
-                        <div class="hero-overlay"/>
+                <div class="login-wrapper">
+                    <!-- Khu vực bên trái: Trình bày Giá Trị Cốt Lõi -->
+                    <aside class="presentation-side">
+                        <!-- Logo TDB Solution (Hình 2) góc trên bên trái -->
+                        <div class="top-brand-logo">
+                            <img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_logo2" alt="TDB Solution" class="brand-logo-img"/>
+                        </div>
 
-                        <!-- Góc trên bên trái: Logo & Slogan Card -->
-                        <div class="hero-top-card">
-                            <div class="hero-logo-row">
-                                <img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_gold" alt="TDB Solution" class="hero-logo"/>
+                        <!-- Khối nội dung chính giữa: Tiêu đề & 3 Card Giá trị cốt lõi -->
+                        <div class="core-content-center">
+                            <div class="core-heading-wrap">
+                                <h1 class="core-title">
+                                    <span class="word-navy">GIÁ TRỊ</span>
+                                    <span class="word-gold">CỐT LÕI</span>
+                                </h1>
+                                <div class="title-gold-line"/>
+                                <p class="core-subtitle">
+                                    TDB Solution sáng tạo và đổi mới, mang đến khách hàng sự hài lòng<br/>
+                                    nhờ đồng hành và cung cấp dịch vụ chất lượng cao.
+                                </p>
                             </div>
-                            <div class="hero-slogan-wrap">
-                                <div class="hero-main-slogan">
-                                    <span class="word-together">TOGETHER</span>
-                                    <span class="word-we-grow">WE GROW</span>
+
+                            <!-- 3 Card Giá trị cốt lõi -->
+                            <div class="values-row">
+                                <!-- Card 1: Tận Tâm -->
+                                <div class="value-card">
+                                    <div class="value-card-header">
+                                        <div class="value-icon-box">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake">
+                                                <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
+                                                <path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08v0c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"/>
+                                                <path d="m18 15-2-2"/>
+                                                <path d="m15 18-2-2"/>
+                                            </svg>
+                                        </div>
+                                        <div class="value-divider"/>
+                                        <h3 class="value-title">Tận Tâm</h3>
+                                    </div>
+                                    <p class="value-desc">
+                                        Tận tâm trong phục vụ,<br/>
+                                        tiên phong trong công nghệ.
+                                    </p>
                                 </div>
-                                <div class="hero-slogan-sub">Phát triển cùng nhau – Vững bước tương lai.</div>
-                                <div class="hero-slogan-line"/>
-                                <div class="hero-team-tag">
-                                    <span class="tag-title">ONE TEAM – ONE DREAM</span>
-                                    <span class="tag-desc">Cùng sáng tạo, cùng hợp tác, cùng phát triển.</span>
+
+                                <!-- Card 2: Đồng Hành -->
+                                <div class="value-card">
+                                    <div class="value-card-header">
+                                        <div class="value-icon-box">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                                                <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+                                                <circle cx="9" cy="7" r="4"/>
+                                                <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+                                                <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+                                            </svg>
+                                        </div>
+                                        <div class="value-divider"/>
+                                        <h3 class="value-title">Đồng Hành</h3>
+                                    </div>
+                                    <p class="value-desc">
+                                        Đồng hành bền vững,<br/>
+                                        đổi mới không ngừng.
+                                    </p>
+                                </div>
+
+                                <!-- Card 3: Bền Vững -->
+                                <div class="value-card">
+                                    <div class="value-card-header">
+                                        <div class="value-icon-box">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
+                                                <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
+                                                <path d="m9 12 2 2 4-4"/>
+                                            </svg>
+                                        </div>
+                                        <div class="value-divider"/>
+                                        <h3 class="value-title">Bền Vững</h3>
+                                    </div>
+                                    <p class="value-desc">
+                                        Bền vững trong chiến lược,<br/>
+                                        bản lĩnh trong hành động.
+                                    </p>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Phía dưới ảnh: 3 Giá trị cốt lõi -->
-                        <div class="hero-bottom-bar">
-                            <div class="core-value-item">
-                                <div class="core-value-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-lightbulb"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
-                                </div>
-                                <div class="core-value-info">
-                                    <span class="core-title">Innovation</span>
-                                    <span class="core-sub">Sáng tạo</span>
-                                </div>
-                            </div>
-                            <div class="core-divider"/>
-                            <div class="core-value-item">
-                                <div class="core-value-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                                </div>
-                                <div class="core-value-info">
-                                    <span class="core-title">Collaboration</span>
-                                    <span class="core-sub">Hợp tác</span>
-                                </div>
-                            </div>
-                            <div class="core-divider"/>
-                            <div class="core-value-item">
-                                <div class="core-value-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-trending-up"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
-                                </div>
-                                <div class="core-value-info">
-                                    <span class="core-title">Development</span>
-                                    <span class="core-sub">Phát triển</span>
-                                </div>
-                            </div>
+                        <!-- Chân trang góc dưới bên trái -->
+                        <div class="page-footer-left">
+                            © 2026 TDB-Solution · Phiên bản nội bộ
                         </div>
                     </aside>
 
-                    <!-- Cột phải (27%): Form đăng nhập TDB Solution -->
-                    <main class="form-side">
-                        <div class="form-inner">
-                            <div class="form-logo-wrap">
-                                <img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_gold" alt="TDB Solution" class="form-logo"/>
+                    <!-- Khu vực bên phải: Login Card nổi -->
+                    <main class="login-card-side">
+                        <div class="login-card">
+                            <!-- Logo TDB Solution (Hình 2) trong Card -->
+                            <div class="card-logo-wrap">
+                                <img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_logo2" alt="TDB Solution" class="card-logo"/>
                             </div>
 
-                            <div class="form-header">
-                                <h1 class="form-title">Đăng nhập</h1>
-                                <p class="form-subtitle">Chào mừng trở lại! Vui lòng đăng nhập vào hệ thống TDB Solution.</p>
-                            </div>
+                            <h2 class="card-title">Đăng nhập</h2>
+                            <p class="card-subtitle">Chào mừng trở lại! Vui lòng đăng nhập vào hệ thống TDB Solution.</p>
 
-                            <!-- Vị trí cắm form đăng nhập -->
+                            <!-- Form Đăng nhập -->
                             <t t-out="0"/>
 
-                            <div class="demo-box">
-                                <div class="demo-box-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-round"><path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 1 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/><circle cx="16.5" cy="7.5" fill="currentColor" r=".5"/></svg>
-                                </div>
-                                <div class="demo-box-text">
-                                    <strong>Demo:</strong>
-                                    <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin';if(p)p.value='admin';" style="cursor:pointer;" title="Nhấp để điền">admin</code>
-                                    <span style="margin:0 4px;color:#cbd5e1">&#183;</span>
-                                    <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin';if(p)p.value='admin';" style="cursor:pointer;" title="Nhấp để điền">admin</code>
-                                </div>
-                            </div>
-
-                            <div class="form-footer">
-                                <span class="footer-copy">TDB Solution © 2026.</span>
-                                <span class="footer-tagline">Phát triển bền vững cùng nhau.</span>
+                            <!-- Chân Card -->
+                            <div class="card-footer">
+                                TDB Solution © 2026. Phát triển bền vững cùng nhau.
                             </div>
                         </div>
                     </main>

@@ -1,319 +1,298 @@
 // =============================================================================
-// TDB SOLUTION – TOGETHER WE GROW
-// Natural Corporate Gold Theme for Login Page
+// TDB SOLUTION – GIÁ TRỊ CỐT LÕI
+// Modern Corporate Gold Theme (Design Image 1 with Image 2 Logo)
 // =============================================================================
 
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,500;1,700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 // 1. Color Palette System
-$primary-gold: #D9A441;
-$deep-gold: #B98524;
-$soft-gold: #F5E7C5;
-$light-gold: #FBF6EA;
-$warm-white: #FFFFFF;
-$cream-bg: #FAF8F2;
-$dark-navy: #263247;
-$text-gray: #687386;
-$border-color: #E9E3D6;
+$primary-gold: #EAA015;
+$accent-gold: #F59E0B;
+$dark-gold: #D97706;
+$light-gold: #FFFBEB;
+$soft-gold: #FEF3C7;
+$border-gold: #FDE68A;
+$card-border: #F1E7D5;
+$dark-navy: #1E293B;
+$text-slate: #475569;
+$text-gray: #64748B;
+$text-light: #9CA3AF;
+$bg-cream: #FAF6EE;
+$pure-white: #FFFFFF;
 
 // 2. Global Reset
 html, body {
     margin: 0 !important;
     padding: 0 !important;
+    width: 100% !important;
     height: 100% !important;
-    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-    background: $cream-bg !important;
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    background: $bg-cream !important;
     color: $dark-navy !important;
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden !important;
 }
 
-// Ẩn các thanh header/footer mặc định của Odoo
-header, footer, #oe_main_menu_navbar, .o_header_standard, .o_footer {
+// Ẩn toàn bộ header/footer mặc định của Odoo
+header, footer, #top, #bottom, #oe_main_menu_navbar, .o_header_standard, .o_footer, .o_footer_copyright, .oe_website_login_container > .container {
     display: none !important;
 }
 
-.login-grid {
-    display: grid !important;
-    grid-template-columns: 73% 27% !important;
-    height: 100vh !important;
-    max-height: 100vh !important;
-    width: 100vw !important;
-    overflow: hidden !important;
-    background: $cream-bg !important;
+// Layout chính bao phủ toàn màn hình
+.login-wrapper {
     position: relative !important;
+    width: 100vw !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    display: flex !important;
+    background-color: $bg-cream !important;
+    background-image: url('/tdb_website_custom/static/src/img/login_bg.webp?v=20261102_1') !important;
+    background-repeat: no-repeat !important;
+    background-position: center center !important;
+    background-size: cover !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
 }
 
 // =============================================================================
-// 3. KHU VỰC BÊN TRÁI – ẢNH TẬP THỂ (73%)
+// 3. KHU VỰC BÊN TRÁI – TRÌNH BÀY GIÁ TRỊ CỐT LÕI
 // =============================================================================
-.hero-side {
-    position: relative !important;
-    height: 100vh !important;
-    overflow: hidden !important;
-    background-color: $dark-navy !important;
+.presentation-side {
+    flex: 1 !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
-    padding: 36px 44px !important;
+    padding: 36px 48px !important;
+    position: relative !important;
+    z-index: 2 !important;
     box-sizing: border-box !important;
 }
 
-.hero-bg-img {
-    position: absolute !important;
-    inset: 0 !important;
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important;
-    object-position: center 30% !important;
-    z-index: 1 !important;
-    transition: transform 6s cubic-bezier(0.25, 1, 0.5, 1) !important;
+// Logo công ty ở góc trên bên trái (Logo Image 2)
+.top-brand-logo {
+    display: inline-block !important;
+    text-align: left !important;
 }
 
-.hero-side:hover .hero-bg-img {
-    transform: scale(1.02) !important;
-}
-
-.hero-overlay {
-    position: absolute !important;
-    inset: 0 !important;
-    background: linear-gradient(
-        180deg,
-        rgba(38, 50, 71, 0.18) 0%,
-        rgba(250, 248, 242, 0.04) 40%,
-        rgba(38, 50, 71, 0.45) 100%
-    ) !important;
-    z-index: 2 !important;
-    pointer-events: none !important;
-}
-
-// Góc trên bên trái: Logo & Slogan Card
-.hero-top-card {
-    position: relative !important;
-    z-index: 5 !important;
-    background: rgba(255, 255, 255, 0.92) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(233, 227, 214, 0.9) !important;
-    border-radius: 18px !important;
-    padding: 22px 28px !important;
-    max-width: 440px !important;
-    box-shadow: 0 12px 32px rgba(38, 50, 71, 0.08) !important;
-    animation: fadeInDown 0.6s ease-out !important;
-}
-
-.hero-logo-row {
-    margin-bottom: 14px !important;
-}
-
-.hero-logo {
-    height: 34px !important;
+.top-brand-logo img {
+    height: 42px !important;
     width: auto !important;
     display: block !important;
     object-fit: contain !important;
 }
 
-.hero-main-slogan {
-    font-size: 26px !important;
+// Khu vực nội dung chính giữa (Tiêu đề + 3 Card)
+.core-content-center {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
+    margin: auto 0 !important;
+    padding: 20px 0 !important;
+    max-width: 720px !important;
+    width: 100% !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.core-heading-wrap {
+    margin-bottom: 28px !important;
+    text-align: center !important;
+}
+
+.core-title {
+    font-size: 38px !important;
     font-weight: 800 !important;
+    letter-spacing: -0.01em !important;
     line-height: 1.2 !important;
-    letter-spacing: -0.02em !important;
+    margin: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 10px !important;
 }
 
-.word-together {
+.word-navy {
     color: $dark-navy !important;
-    margin-right: 6px !important;
 }
 
-.word-we-grow {
+.word-gold {
     color: $primary-gold !important;
-}
-
-.hero-slogan-sub {
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    color: $text-gray !important;
-    margin-top: 6px !important;
-    line-height: 1.4 !important;
-}
-
-.hero-slogan-line {
-    height: 2.5px !important;
-    width: 44px !important;
-    background: linear-gradient(90deg, $primary-gold, $deep-gold) !important;
-    border-radius: 2px !important;
-    margin: 12px 0 !important;
-}
-
-.hero-team-tag {
-    font-size: 13px !important;
-}
-
-.tag-title {
-    display: block !important;
-    font-weight: 700 !important;
-    font-style: italic !important;
-    color: $deep-gold !important;
-    letter-spacing: 0.04em !important;
-    margin-bottom: 2px !important;
-}
-
-.tag-desc {
-    display: block !important;
-    color: $text-gray !important;
-    font-size: 12.5px !important;
-}
-
-// Phía dưới ảnh: 3 Giá trị cốt lõi
-.hero-bottom-bar {
     position: relative !important;
-    z-index: 5 !important;
-    background: rgba(255, 255, 255, 0.94) !important;
-    backdrop-filter: blur(12px) !important;
-    -webkit-backdrop-filter: blur(12px) !important;
-    border: 1px solid rgba(233, 227, 214, 0.9) !important;
-    border-radius: 16px !important;
-    padding: 12px 24px !important;
-    max-width: 640px !important;
+}
+
+.title-gold-line {
+    width: 78px !important;
+    height: 3.5px !important;
+    background: $primary-gold !important;
+    border-radius: 2px !important;
+    margin: 8px auto 0 !important;
+}
+
+.core-subtitle {
+    font-size: 14.5px !important;
+    color: $text-slate !important;
+    line-height: 1.6 !important;
+    margin: 14px 0 0 0 !important;
+    max-width: 580px !important;
+}
+
+// Grid 3 thẻ Giá trị cốt lõi
+.values-row {
     display: flex !important;
-    align-items: center !important;
-    justify-content: space-between !important;
+    justify-content: center !important;
     gap: 16px !important;
-    box-shadow: 0 12px 32px rgba(38, 50, 71, 0.08) !important;
-    animation: fadeInUp 0.6s ease-out !important;
+    width: 100% !important;
+    margin-top: 10px !important;
 }
 
-.core-value-item {
+.value-card {
+    flex: 1 !important;
+    max-width: 216px !important;
+    background: $pure-white !important;
+    border: 1px solid rgba(240, 230, 210, 0.9) !important;
+    border-radius: 16px !important;
+    padding: 16px 18px !important;
+    box-shadow: 0 8px 24px rgba(220, 180, 100, 0.08), 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+    text-align: left !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    box-sizing: border-box !important;
+}
+
+.value-card:hover {
+    transform: translateY(-3px) !important;
+    box-shadow: 0 12px 28px rgba(220, 180, 100, 0.14) !important;
+}
+
+.value-card-header {
     display: flex !important;
     align-items: center !important;
-    gap: 12px !important;
-    flex: 1 !important;
+    gap: 10px !important;
+    margin-bottom: 10px !important;
 }
 
-.core-value-icon {
-    width: 38px !important;
-    height: 38px !important;
+.value-icon-box {
+    width: 36px !important;
+    height: 36px !important;
     border-radius: 10px !important;
     background: $light-gold !important;
-    color: $primary-gold !important;
+    border: 1px solid $border-gold !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     flex-shrink: 0 !important;
-    transition: transform 0.2s ease, background-color 0.2s ease !important;
+    color: $primary-gold !important;
 }
 
-.core-value-item:hover .core-value-icon {
-    transform: scale(1.08) !important;
-    background: $soft-gold !important;
-}
-
-.core-value-icon svg {
-    width: 20px !important;
-    height: 20px !important;
+.value-icon-box svg {
+    width: 18px !important;
+    height: 18px !important;
     stroke: $primary-gold !important;
     stroke-width: 2 !important;
 }
 
-.core-value-info {
-    display: flex !important;
-    flex-direction: column !important;
+.value-divider {
+    width: 1px !important;
+    height: 20px !important;
+    background: #E5E7EB !important;
 }
 
-.core-title {
-    font-size: 13.5px !important;
+.value-title {
+    font-size: 15.5px !important;
     font-weight: 700 !important;
     color: $dark-navy !important;
-    line-height: 1.2 !important;
+    margin: 0 !important;
+    white-space: nowrap !important;
 }
 
-.core-sub {
-    font-size: 11.5px !important;
-    color: $text-gray !important;
-    margin-top: 2px !important;
-}
-
-.core-divider {
-    width: 1px !important;
-    height: 28px !important;
-    background: $border-color !important;
-}
-
-// =============================================================================
-// 4. KHU VỰC BÊN PHẢI – FORM ĐĂNG NHẬP (27%)
-// =============================================================================
-.form-side {
-    background: $warm-white !important;
-    border-left: 1px solid $border-color !important;
-    height: 100vh !important;
-    box-sizing: border-box !important;
-    display: flex !important;
-    flex-direction: column !important;
-    justify-content: center !important;
-    align-items: center !important;
-    padding: 40px 32px !important;
-    box-shadow: -8px 0 32px rgba(38, 50, 71, 0.04) !important;
-    z-index: 10 !important;
-    position: relative !important;
-    overflow-y: auto !important;
-}
-
-.form-inner {
-    width: 100% !important;
-    max-width: 350px !important;
-    margin: 0 auto !important;
-}
-
-.form-logo-wrap {
-    margin-bottom: 22px !important;
-    text-align: left !important;
-}
-
-.form-logo {
-    height: 36px !important;
-    width: auto !important;
-    max-width: 100% !important;
-    object-fit: contain !important;
-    display: block !important;
-}
-
-.form-header {
-    margin-bottom: 24px !important;
-    text-align: left !important;
-}
-
-.form-title {
-    font-size: 26px !important;
-    font-weight: 800 !important;
-    color: $dark-navy !important;
-    margin: 0 0 8px 0 !important;
-    letter-spacing: -0.02em !important;
-    line-height: 1.15 !important;
-}
-
-.form-subtitle {
-    font-size: 13.5px !important;
+.value-desc {
+    font-size: 12px !important;
     color: $text-gray !important;
     line-height: 1.5 !important;
     margin: 0 !important;
 }
 
-// Thông báo lỗi/thành công
+// Chân trang góc dưới bên trái
+.page-footer-left {
+    text-align: left !important;
+    font-size: 12.5px !important;
+    color: $text-gray !important;
+    font-weight: 500 !important;
+    margin-top: 20px !important;
+}
+
+// =============================================================================
+// 4. KHU VỰC BÊN PHẢI – LOGIN CARD NỔI
+// =============================================================================
+.login-card-side {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 30px 60px 30px 20px !important;
+    z-index: 5 !important;
+    box-sizing: border-box !important;
+}
+
+.login-card {
+    width: 380px !important;
+    max-width: 100% !important;
+    background: $pure-white !important;
+    border-radius: 24px !important;
+    padding: 34px 30px 28px !important;
+    box-shadow: 0 20px 48px rgba(210, 160, 50, 0.14), 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+    border: 1px solid rgba(240, 230, 210, 0.6) !important;
+    box-sizing: border-box !important;
+    text-align: left !important;
+}
+
+.card-logo-wrap {
+    text-align: center !important;
+    margin-bottom: 14px !important;
+}
+
+.card-logo-wrap img {
+    height: 38px !important;
+    width: auto !important;
+    max-width: 100% !important;
+    object-fit: contain !important;
+    display: inline-block !important;
+}
+
+.card-title {
+    font-size: 24px !important;
+    font-weight: 800 !important;
+    color: $dark-navy !important;
+    text-align: center !important;
+    margin: 0 0 6px 0 !important;
+    letter-spacing: -0.01em !important;
+}
+
+.card-subtitle {
+    font-size: 13px !important;
+    color: $text-gray !important;
+    text-align: center !important;
+    line-height: 1.5 !important;
+    margin: 0 0 20px 0 !important;
+}
+
+// Thông báo lỗi
 .form-error {
     display: flex !important;
     align-items: flex-start !important;
-    gap: 10px !important;
+    gap: 8px !important;
     padding: 10px 14px !important;
     background: #FEF2F2 !important;
     border: 1px solid #FECACA !important;
     border-radius: 10px !important;
     color: #991B1B !important;
-    font-size: 13px !important;
+    font-size: 12.5px !important;
     line-height: 1.4 !important;
-    margin-bottom: 16px !important;
+    margin-bottom: 14px !important;
 }
 
 .form-group {
-    margin-bottom: 18px !important;
+    margin-bottom: 15px !important;
     text-align: left !important;
 }
 
@@ -322,8 +301,7 @@ header, footer, #oe_main_menu_navbar, .o_header_standard, .o_footer {
     font-size: 13px !important;
     font-weight: 600 !important;
     color: $dark-navy !important;
-    margin-bottom: 7px !important;
-    letter-spacing: -0.005em !important;
+    margin-bottom: 6px !important;
 }
 
 .input-wrap {
@@ -331,7 +309,7 @@ header, footer, #oe_main_menu_navbar, .o_header_standard, .o_footer {
     width: 100% !important;
 }
 
-.input-wrap .icon {
+.input-icon {
     position: absolute !important;
     left: 14px !important;
     top: 50% !important;
@@ -344,7 +322,7 @@ header, footer, #oe_main_menu_navbar, .o_header_standard, .o_footer {
     z-index: 2 !important;
 }
 
-.input-wrap .icon svg {
+.input-icon svg {
     width: 16px !important;
     height: 16px !important;
     stroke: $primary-gold !important;
@@ -353,27 +331,31 @@ header, footer, #oe_main_menu_navbar, .o_header_standard, .o_footer {
 
 .input-wrap input {
     width: 100% !important;
-    height: 48px !important;
+    height: 46px !important;
     padding: 0 16px 0 42px !important;
     font-family: inherit !important;
-    font-size: 14px !important;
+    font-size: 13.5px !important;
     color: $dark-navy !important;
-    background: $warm-white !important;
-    border: 1.5px solid $border-color !important;
-    border-radius: 10px !important;
+    background: $pure-white !important;
+    border: 1.5px solid $card-border !important;
+    border-radius: 12px !important;
     outline: none !important;
     transition: all 0.15s ease !important;
     box-sizing: border-box !important;
 }
 
+.input-wrap input:hover {
+    border-color: #E2D4BC !important;
+}
+
 .input-wrap input:focus {
     border-color: $primary-gold !important;
-    box-shadow: 0 0 0 3px rgba(217, 164, 65, 0.18) !important;
-    background: $warm-white !important;
+    box-shadow: 0 0 0 3px rgba(234, 160, 21, 0.16) !important;
+    background: $pure-white !important;
 }
 
 .input-wrap input::placeholder {
-    color: #A0AEC0 !important;
+    color: $text-light !important;
 }
 
 .pwd-toggle {
@@ -385,7 +367,7 @@ header, footer, #oe_main_menu_navbar, .o_header_standard, .o_footer {
     border: none !important;
     padding: 6px !important;
     cursor: pointer !important;
-    color: $text-gray !important;
+    color: $text-light !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -405,22 +387,22 @@ header, footer, #oe_main_menu_navbar, .o_header_standard, .o_footer {
     stroke-width: 2 !important;
 }
 
-// Row Options: Ghi nhớ đăng nhập + Quên mật khẩu
-.form-row {
+// Row Checkbox & Quên mật khẩu
+.form-options {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    margin-bottom: 22px !important;
-    font-size: 13px !important;
+    margin: 12px 0 18px 0 !important;
+    font-size: 12.5px !important;
 }
 
 .cbx {
     display: inline-flex !important;
     align-items: center !important;
-    gap: 8px !important;
+    gap: 7px !important;
     cursor: pointer !important;
     user-select: none !important;
-    font-size: 13px !important;
+    font-size: 12.5px !important;
     color: $dark-navy !important;
 }
 
@@ -431,15 +413,15 @@ header, footer, #oe_main_menu_navbar, .o_header_standard, .o_footer {
 }
 
 .cbx .box {
-    width: 18px !important;
-    height: 18px !important;
-    border: 1.5px solid $border-color !important;
-    border-radius: 5px !important;
+    width: 17px !important;
+    height: 17px !important;
+    border: 1.5px solid $card-border !important;
+    border-radius: 4px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     flex-shrink: 0 !important;
-    background: $warm-white !important;
+    background: $pure-white !important;
     box-sizing: border-box !important;
     transition: all 0.15s ease !important;
 }
@@ -450,9 +432,9 @@ header, footer, #oe_main_menu_navbar, .o_header_standard, .o_footer {
 }
 
 .cbx .box svg {
-    width: 12px !important;
-    height: 12px !important;
-    stroke: $warm-white !important;
+    width: 11px !important;
+    height: 11px !important;
+    stroke: $pure-white !important;
     stroke-width: 3 !important;
     fill: none !important;
     opacity: 0 !important;
@@ -461,6 +443,12 @@ header, footer, #oe_main_menu_navbar, .o_header_standard, .o_footer {
 
 .cbx input:checked + .box svg {
     opacity: 1 !important;
+}
+
+.cbx-label {
+    font-size: 12.5px !important;
+    font-weight: 500 !important;
+    color: $dark-navy !important;
 }
 
 .form-forgot {
@@ -473,35 +461,55 @@ header, footer, #oe_main_menu_navbar, .o_header_standard, .o_footer {
 }
 
 .form-forgot:hover {
-    color: $deep-gold !important;
+    color: $dark-gold !important;
     text-decoration: underline !important;
 }
 
+// Ẩn triệt để liên kết và nút thừa
+.field-password a,
+.field-password .small,
+a[href*="reset_password"],
+a[href*="signup"],
+button[value*="become"],
+.btn-link[value*="become"],
+.o_login_auth {
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+}
+
 // Nút Đăng nhập
+.form-submit-wrap {
+    margin-top: 6px !important;
+}
+
 .btn-submit {
     width: 100% !important;
-    height: 50px !important;
+    height: 48px !important;
     background: $primary-gold !important;
-    color: $warm-white !important;
+    color: $pure-white !important;
     border: none !important;
-    border-radius: 10px !important;
+    border-radius: 24px !important; // Bo tròn theo Hình 1
     font-family: inherit !important;
-    font-size: 15px !important;
+    font-size: 14.5px !important;
     font-weight: 600 !important;
-    letter-spacing: -0.005em !important;
     cursor: pointer !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
     gap: 8px !important;
     transition: all 0.2s ease !important;
-    box-shadow: 0 4px 14px rgba(217, 164, 65, 0.32) !important;
+    box-shadow: 0 4px 14px rgba(234, 160, 21, 0.32) !important;
     padding: 0 !important;
 }
 
 .btn-submit:hover {
-    background: $deep-gold !important;
-    box-shadow: 0 6px 20px rgba(185, 133, 36, 0.42) !important;
+    background: $dark-gold !important;
+    box-shadow: 0 6px 18px rgba(217, 119, 6, 0.42) !important;
     transform: translateY(-1px) !important;
 }
 
@@ -512,142 +520,109 @@ header, footer, #oe_main_menu_navbar, .o_header_standard, .o_footer {
 .btn-submit svg {
     width: 16px !important;
     height: 16px !important;
-    stroke: $warm-white !important;
+    stroke: $pure-white !important;
     fill: none !important;
     stroke-width: 2 !important;
 }
 
-// Khung Demo Tài khoản
-.demo-box {
+// Đường kẻ "Hoặc"
+.divider-or {
     display: flex !important;
     align-items: center !important;
-    gap: 10px !important;
-    margin-top: 22px !important;
-    padding: 10px 14px !important;
-    background: $cream-bg !important;
-    border: 1px solid $border-color !important;
-    border-radius: 10px !important;
-    font-size: 12.5px !important;
-    color: $text-gray !important;
-    line-height: 1.5 !important;
+    text-align: center !important;
+    margin: 14px 0 12px 0 !important;
+    color: $text-light !important;
+    font-size: 12px !important;
 }
 
-.demo-box-icon {
-    display: flex !important;
+.divider-or::before, .divider-or::after {
+    content: '' !important;
+    flex: 1 !important;
+    border-bottom: 1px solid #E5E7EB !important;
+}
+
+.divider-or span {
+    padding: 0 12px !important;
+}
+
+// Nút Demo
+.demo-btn-wrap {
+    width: 100% !important;
+}
+
+.btn-demo {
+    width: 100% !important;
+    height: 40px !important;
+    border: 1.5px solid $border-gold !important;
+    background: #FFFDF9 !important;
+    border-radius: 24px !important;
+    font-family: inherit !important;
+    font-size: 13px !important;
+    font-weight: 600 !important;
+    color: $primary-gold !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
-    width: 30px !important;
-    height: 30px !important;
-    border-radius: 8px !important;
-    background: $light-gold !important;
-    color: $primary-gold !important;
-    flex-shrink: 0 !important;
+    gap: 8px !important;
+    transition: all 0.15s ease !important;
+    padding: 0 !important;
 }
 
-.demo-box-icon svg {
-    width: 16px !important;
-    height: 16px !important;
+.btn-demo:hover {
+    background: $light-gold !important;
+    border-color: $primary-gold !important;
+}
+
+.btn-demo svg {
+    width: 15px !important;
+    height: 15px !important;
     stroke: $primary-gold !important;
     fill: none !important;
     stroke-width: 2 !important;
 }
 
-.demo-box-text strong {
-    color: $dark-navy !important;
-    font-weight: 600 !important;
-}
-
-.demo-box code {
-    background: $warm-white !important;
-    padding: 2px 6px !important;
-    border-radius: 4px !important;
-    font-family: ui-monospace, SF Mono, monospace !important;
-    font-size: 11.5px !important;
-    color: $deep-gold !important;
-    border: 1px solid $border-color !important;
-    transition: all 0.15s ease !important;
-}
-
-.demo-box code:hover {
-    background: $light-gold !important;
-    border-color: $primary-gold !important;
-}
-
-.form-footer {
+// Chân card đăng nhập
+.card-footer {
     text-align: center !important;
-    font-size: 12px !important;
-    color: $text-gray !important;
-    margin-top: 24px !important;
-    line-height: 1.5 !important;
-}
-
-.form-footer .footer-copy {
-    display: block !important;
-    font-weight: 600 !important;
-    color: $dark-navy !important;
-}
-
-.form-footer .footer-tagline {
-    display: block !important;
-    color: $text-gray !important;
-    margin-top: 2px !important;
-}
-
-// Keyframes
-@keyframes fadeInDown {
-    from {
-        opacity: 0;
-        transform: translateY(-16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-@keyframes fadeInUp {
-    from {
-        opacity: 0;
-        transform: translateY(16px);
-    }
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
+    font-size: 11.5px !important;
+    color: $text-light !important;
+    margin-top: 18px !important;
 }
 
 // =============================================================================
-// 5. RESPONSIVE DESIGN (TABLET & MOBILE)
+// 5. RESPONSIVE DESIGN
 // =============================================================================
-@media (max-width: 1024px) {
-    .login-grid {
-        grid-template-columns: 1fr !important;
+@media (max-width: 1100px) {
+    .login-wrapper {
+        flex-direction: column !important;
         height: auto !important;
-        min-height: 100vh !important;
         overflow-y: auto !important;
+        padding-bottom: 40px !important;
     }
-    .hero-side {
-        height: 340px !important;
-        min-height: 340px !important;
-        padding: 24px !important;
+    .presentation-side {
+        padding: 30px 24px !important;
+        align-items: center !important;
     }
-    .hero-bottom-bar {
+    .top-brand-logo {
+        align-self: flex-start !important;
+        margin-bottom: 20px !important;
+    }
+    .core-title {
+        font-size: 30px !important;
+    }
+    .values-row {
+        flex-wrap: wrap !important;
+    }
+    .value-card {
+        max-width: 280px !important;
+        flex: 1 1 200px !important;
+    }
+    .login-card-side {
+        padding: 20px 24px !important;
+        width: 100% !important;
+    }
+    .page-footer-left {
         display: none !important;
-    }
-    .hero-top-card {
-        top: auto !important;
-        left: auto !important;
-        position: relative !important;
-        max-width: 100% !important;
-        padding: 16px 20px !important;
-    }
-    .hero-main-slogan {
-        font-size: 20px !important;
-    }
-    .form-side {
-        padding: 36px 24px !important;
-        min-height: auto !important;
-        box-shadow: none !important;
-        border-left: none !important;
     }
 }
