@@ -6,9 +6,9 @@ Concept: TDB Solution - Giá Trị Cốt Lõi (Corporate Gold Theme theo Hình 1
 1. Tự động chuyển hướng trang chủ (/) sang thẳng trang đăng nhập (/web/login).
 2. Bỏ toàn bộ danh mục menu (Trang chủ, Cửa hàng, Sự kiện, Khóa học, Tuyển dụng, Liên hệ) và Giỏ hàng.
 3. Thiết lập giao diện Đăng nhập (/web/login) chuẩn mực 100% theo Hình 1:
-   - Cột trái: Logo TDB Solution (Hình 2), Tiêu đề 'GIÁ TRỊ CỐT LÕI' + gạch chân vàng, lời dẫn và 3 Card: Tận Tâm, Đồng Hành, Bền Vững.
-   - Nền: Bầu trời kem ấm, sóng vàng nghệ thuật và phối cảnh skyline tòa nhà hiện đại.
-   - Cột phải: Card đăng nhập bo tròn nổi (24px), Logo TDB Solution (Hình 2), Tiêu đề, input viền kem focus vàng, nút Đăng nhập bo tròn vàng, vạch 'Hoặc', nút 'Demo: admin'.
+   - Cột trái: Logo TDB Solution (Hình 2), Tiêu đề 'GIÁ TRỊ CỐT LÕI' + gạch chân vàng, lời dẫn và 3 Card: Tận Tâm, Đồng Hành, Bền Vững (có vạch vàng chia cách).
+   - Nền: Bầu trời kem ấm, sóng vàng nghệ thuật và phối cảnh skyline tòa nhà hiện đại (đã làm sạch 100% không còn chữ mờ).
+   - Cột phải: Card đăng nhập bo tròn nổi (26px), Logo TDB Solution (Hình 2), Tiêu đề, input viền kem focus vàng, nút Đăng nhập bo tròn vàng, vạch 'Hoặc', nút 'Demo: admin'.
 4. Xóa bỏ hoàn toàn các cấu hình cũ không còn phù hợp.
 """
 import base64
@@ -121,7 +121,7 @@ def setup_tdb_root_redirection(env):
         except Exception as e:
             print(f"[Lưu ý ghi đè view {v.id}]: {e}")
 
-    # 4. Cấu hình website.page (Ẩn header/footer và nạp mã redirect)
+    # 4. Cấu hình website.page (Ẩn header/footer và nạp mã redirect an toàn)
     if 'website.page' in env:
         try:
             Page = env['website.page']
@@ -406,8 +406,8 @@ def setup_picture_attachments(env, odoo_dir, current_dir):
 def apply_tdb_login_interface(env, current_dir):
     """
     Thiết lập giao diện Đăng nhập TDB Solution chuẩn 100% theo Hình 1 với Logo Hình 2:
-    - Khu vực trái: Logo TDB Solution (Hình 2), 'GIÁ TRỊ CỐT LÕI' + gạch chân vàng, lời dẫn và 3 Card: Tận Tâm, Đồng Hành, Bền Vững.
-    - Khu vực phải: Login Card nổi bo tròn 24px, Logo TDB Solution (Hình 2), inputs viền kem, nút Đăng nhập vàng bo tròn, vạch 'Hoặc', nút 'Demo: admin'.
+    - Khu vực trái: Logo TDB Solution (Hình 2), 'GIÁ TRỊ CỐT LÕI' + gạch chân vàng, lời dẫn và 3 Card: Tận Tâm, Đồng Hành, Bền Vững (có vạch vàng chia cách).
+    - Khu vực phải: Login Card nổi bo tròn 26px, Logo TDB Solution (Hình 2), inputs viền kem, nút Đăng nhập vàng bo tròn, vạch 'Hoặc', nút 'Demo: admin'.
     - Nhúng CSS trực tiếp đảm bảo 100% ăn giao diện ngay lập tức mà không phụ thuộc cache asset bundle.
     """
     print("\n>>> [6/7] Áp dụng giao diện Đăng nhập TDB Solution (Giá Trị Cốt Lõi - Hình 1 & Logo Hình 2)...")
@@ -483,7 +483,7 @@ def apply_tdb_login_interface(env, current_dir):
             logo_img_tag = '<img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_logo2" alt="TDB Solution" class="card-logo"/>'
             hero_logo_img_tag = '<img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_logo2" alt="TDB Solution" class="brand-logo-img"/>'
 
-        # Cập nhật trực tiếp arch_db của web.login_layout (Thiết kế chuẩn Hình 1 & Logo Hình 2)
+        # Cập nhật trực tiếp arch_db của web.login_layout (Thiết kế chuẩn Hình 1 & Logo Hình 2 - Phiên bản nâng cấp kích thước)
         tdb_layout_arch = """<t t-name="web.login_layout">
     <t t-call="web.layout">
         <t t-set="html_data" t-value="{'style': 'height: 100%;'}"/>
@@ -516,7 +516,7 @@ html, body {
     padding: 0 !important;
     display: flex !important;
     background-color: #FAF6EE !important;
-    background-image: url('/tdb_website_custom/static/src/img/login_bg.webp?v=20261102_1') !important;
+    background-image: url('/tdb_website_custom/static/src/img/login_bg.webp?v=20261102_clean_v3') !important;
     background-repeat: no-repeat !important;
     background-position: center center !important;
     background-size: cover !important;
@@ -530,7 +530,7 @@ html, body {
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
-    padding: 36px 48px !important;
+    padding: 40px 52px 36px !important;
     position: relative !important;
     z-index: 2 !important;
     box-sizing: border-box !important;
@@ -542,7 +542,7 @@ html, body {
 }
 
 .top-brand-logo img {
-    height: 42px !important;
+    height: 48px !important;
     width: auto !important;
     display: block !important;
     object-fit: contain !important;
@@ -554,20 +554,20 @@ html, body {
     align-items: center !important;
     text-align: center !important;
     margin: auto 0 !important;
-    padding: 20px 0 !important;
-    max-width: 720px !important;
+    padding: 24px 0 !important;
+    max-width: 820px !important;
     width: 100% !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
 
 .core-heading-wrap {
-    margin-bottom: 28px !important;
+    margin-bottom: 32px !important;
     text-align: center !important;
 }
 
 .core-title {
-    font-size: 38px !important;
+    font-size: 46px !important;
     font-weight: 800 !important;
     letter-spacing: -0.01em !important;
     line-height: 1.2 !important;
@@ -575,7 +575,7 @@ html, body {
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 10px !important;
+    gap: 12px !important;
 }
 
 .word-navy {
@@ -588,98 +588,104 @@ html, body {
 }
 
 .title-gold-line {
-    width: 78px !important;
-    height: 3.5px !important;
+    width: 90px !important;
+    height: 4px !important;
     background: #EAA015 !important;
     border-radius: 2px !important;
-    margin: 8px auto 0 !important;
+    margin: 10px auto 0 !important;
 }
 
 .core-subtitle {
-    font-size: 14.5px !important;
+    font-size: 16.5px !important;
+    font-weight: 500 !important;
     color: #475569 !important;
-    line-height: 1.6 !important;
-    margin: 14px 0 0 0 !important;
-    max-width: 580px !important;
+    line-height: 1.65 !important;
+    margin: 18px 0 0 0 !important;
+    max-width: 660px !important;
 }
 
 .values-row {
     display: flex !important;
     justify-content: center !important;
-    gap: 16px !important;
+    gap: 20px !important;
     width: 100% !important;
-    margin-top: 10px !important;
+    margin-top: 16px !important;
 }
 
 .value-card {
     flex: 1 !important;
-    max-width: 216px !important;
+    max-width: 250px !important;
     background: #FFFFFF !important;
-    border: 1px solid rgba(240, 230, 210, 0.9) !important;
-    border-radius: 16px !important;
-    padding: 16px 18px !important;
-    box-shadow: 0 8px 24px rgba(220, 180, 100, 0.08), 0 2px 6px rgba(0, 0, 0, 0.02) !important;
+    border: 1.5px solid rgba(240, 230, 210, 0.95) !important;
+    border-radius: 18px !important;
+    padding: 22px 22px 20px !important;
+    box-shadow: 0 10px 28px rgba(220, 180, 100, 0.1), 0 2px 8px rgba(0, 0, 0, 0.02) !important;
     text-align: left !important;
-    transition: transform 0.2s ease, box-shadow 0.2s ease !important;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
     box-sizing: border-box !important;
 }
 
 .value-card:hover {
-    transform: translateY(-3px) !important;
-    box-shadow: 0 12px 28px rgba(220, 180, 100, 0.14) !important;
+    transform: translateY(-4px) !important;
+    box-shadow: 0 16px 36px rgba(220, 180, 100, 0.18) !important;
+    border-color: #EAA015 !important;
 }
 
 .value-card-header {
     display: flex !important;
     align-items: center !important;
-    gap: 10px !important;
-    margin-bottom: 10px !important;
+    gap: 12px !important;
+    margin-bottom: 12px !important;
 }
 
 .value-icon-box {
-    width: 36px !important;
-    height: 36px !important;
-    border-radius: 10px !important;
+    width: 44px !important;
+    height: 44px !important;
+    border-radius: 12px !important;
     background: #FFFBEB !important;
-    border: 1px solid #FDE68A !important;
+    border: 1.5px solid #FDE68A !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
     flex-shrink: 0 !important;
     color: #EAA015 !important;
+    box-shadow: 0 2px 6px rgba(234, 160, 21, 0.1) !important;
 }
 
 .value-icon-box svg {
-    width: 18px !important;
-    height: 18px !important;
+    width: 22px !important;
+    height: 22px !important;
     stroke: #EAA015 !important;
-    stroke-width: 2 !important;
+    stroke-width: 2.2 !important;
 }
 
+/* Vạch màu vàng ở giữa icon và chữ theo đúng yêu cầu */
 .value-divider {
-    width: 1px !important;
-    height: 20px !important;
-    background: #E5E7EB !important;
+    width: 2.5px !important;
+    height: 26px !important;
+    background: #EAA015 !important;
+    border-radius: 2px !important;
+    flex-shrink: 0 !important;
 }
 
 .value-title {
-    font-size: 15.5px !important;
-    font-weight: 700 !important;
+    font-size: 18px !important;
+    font-weight: 800 !important;
     color: #1E293B !important;
     margin: 0 !important;
     white-space: nowrap !important;
 }
 
 .value-desc {
-    font-size: 12px !important;
+    font-size: 13px !important;
     color: #64748B !important;
-    line-height: 1.5 !important;
+    line-height: 1.55 !important;
     margin: 0 !important;
 }
 
 .page-footer-left {
     text-align: left !important;
-    font-size: 12.5px !important;
+    font-size: 13px !important;
     color: #64748B !important;
     font-weight: 500 !important;
     margin-top: 20px !important;
@@ -696,24 +702,24 @@ html, body {
 }
 
 .login-card {
-    width: 380px !important;
+    width: 410px !important;
     max-width: 100% !important;
     background: #FFFFFF !important;
-    border-radius: 24px !important;
-    padding: 34px 30px 28px !important;
-    box-shadow: 0 20px 48px rgba(210, 160, 50, 0.14), 0 4px 16px rgba(0, 0, 0, 0.04) !important;
-    border: 1px solid rgba(240, 230, 210, 0.6) !important;
+    border-radius: 26px !important;
+    padding: 38px 34px 30px !important;
+    box-shadow: 0 20px 50px rgba(210, 160, 50, 0.15), 0 4px 16px rgba(0, 0, 0, 0.04) !important;
+    border: 1.5px solid rgba(240, 230, 210, 0.7) !important;
     box-sizing: border-box !important;
     text-align: left !important;
 }
 
 .card-logo-wrap {
     text-align: center !important;
-    margin-bottom: 14px !important;
+    margin-bottom: 16px !important;
 }
 
 .card-logo-wrap img {
-    height: 38px !important;
+    height: 42px !important;
     width: auto !important;
     max-width: 100% !important;
     object-fit: contain !important;
@@ -721,7 +727,7 @@ html, body {
 }
 
 .card-title {
-    font-size: 24px !important;
+    font-size: 26px !important;
     font-weight: 800 !important;
     color: #1E293B !important;
     text-align: center !important;
@@ -730,11 +736,11 @@ html, body {
 }
 
 .card-subtitle {
-    font-size: 13px !important;
+    font-size: 13.5px !important;
     color: #64748B !important;
     text-align: center !important;
     line-height: 1.5 !important;
-    margin: 0 0 20px 0 !important;
+    margin: 0 0 22px 0 !important;
 }
 
 .form-error {
@@ -752,13 +758,13 @@ html, body {
 }
 
 .form-group {
-    margin-bottom: 15px !important;
+    margin-bottom: 16px !important;
     text-align: left !important;
 }
 
 .form-label {
     display: block !important;
-    font-size: 13px !important;
+    font-size: 13.5px !important;
     font-weight: 600 !important;
     color: #1E293B !important;
     margin-bottom: 6px !important;
@@ -783,18 +789,18 @@ html, body {
 }
 
 .input-icon svg {
-    width: 16px !important;
-    height: 16px !important;
+    width: 17px !important;
+    height: 17px !important;
     stroke: #EAA015 !important;
     stroke-width: 2 !important;
 }
 
 .input-wrap input {
     width: 100% !important;
-    height: 46px !important;
-    padding: 0 16px 0 42px !important;
+    height: 48px !important;
+    padding: 0 16px 0 44px !important;
     font-family: inherit !important;
-    font-size: 13.5px !important;
+    font-size: 14px !important;
     color: #1E293B !important;
     background: #FFFFFF !important;
     border: 1.5px solid #F1E7D5 !important;
@@ -841,8 +847,8 @@ html, body {
 }
 
 .pwd-toggle svg {
-    width: 16px !important;
-    height: 16px !important;
+    width: 17px !important;
+    height: 17px !important;
     stroke: currentColor !important;
     stroke-width: 2 !important;
 }
@@ -851,17 +857,17 @@ html, body {
     display: flex !important;
     align-items: center !important;
     justify-content: space-between !important;
-    margin: 12px 0 18px 0 !important;
-    font-size: 12.5px !important;
+    margin: 14px 0 20px 0 !important;
+    font-size: 13px !important;
 }
 
 .cbx {
     display: inline-flex !important;
     align-items: center !important;
-    gap: 7px !important;
+    gap: 8px !important;
     cursor: pointer !important;
     user-select: none !important;
-    font-size: 12.5px !important;
+    font-size: 13px !important;
     color: #1E293B !important;
 }
 
@@ -872,10 +878,10 @@ html, body {
 }
 
 .cbx .box {
-    width: 17px !important;
-    height: 17px !important;
+    width: 18px !important;
+    height: 18px !important;
     border: 1.5px solid #F1E7D5 !important;
-    border-radius: 4px !important;
+    border-radius: 5px !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -891,8 +897,8 @@ html, body {
 }
 
 .cbx .box svg {
-    width: 11px !important;
-    height: 11px !important;
+    width: 12px !important;
+    height: 12px !important;
     stroke: #FFFFFF !important;
     stroke-width: 3 !important;
     fill: none !important;
@@ -905,13 +911,13 @@ html, body {
 }
 
 .cbx-label {
-    font-size: 12.5px !important;
+    font-size: 13px !important;
     font-weight: 500 !important;
     color: #1E293B !important;
 }
 
 .form-forgot {
-    font-size: 12.5px !important;
+    font-size: 13px !important;
     font-weight: 500 !important;
     color: #EAA015 !important;
     text-decoration: none !important;
@@ -947,14 +953,14 @@ button[value*="become"],
 
 .btn-submit {
     width: 100% !important;
-    height: 48px !important;
+    height: 50px !important;
     background: #EAA015 !important;
     color: #FFFFFF !important;
     border: none !important;
-    border-radius: 24px !important;
+    border-radius: 25px !important;
     font-family: inherit !important;
-    font-size: 14.5px !important;
-    font-weight: 600 !important;
+    font-size: 15px !important;
+    font-weight: 700 !important;
     cursor: pointer !important;
     display: inline-flex !important;
     align-items: center !important;
@@ -976,8 +982,8 @@ button[value*="become"],
 }
 
 .btn-submit svg {
-    width: 16px !important;
-    height: 16px !important;
+    width: 17px !important;
+    height: 17px !important;
     stroke: #FFFFFF !important;
     fill: none !important;
     stroke-width: 2 !important;
@@ -987,9 +993,9 @@ button[value*="become"],
     display: flex !important;
     align-items: center !important;
     text-align: center !important;
-    margin: 14px 0 12px 0 !important;
+    margin: 16px 0 14px 0 !important;
     color: #9CA3AF !important;
-    font-size: 12px !important;
+    font-size: 12.5px !important;
 }
 
 .divider-or::before, .divider-or::after {
@@ -1008,12 +1014,12 @@ button[value*="become"],
 
 .btn-demo {
     width: 100% !important;
-    height: 40px !important;
+    height: 42px !important;
     border: 1.5px solid #FDE68A !important;
     background: #FFFDF9 !important;
     border-radius: 24px !important;
     font-family: inherit !important;
-    font-size: 13px !important;
+    font-size: 13.5px !important;
     font-weight: 600 !important;
     color: #EAA015 !important;
     cursor: pointer !important;
@@ -1031,8 +1037,8 @@ button[value*="become"],
 }
 
 .btn-demo svg {
-    width: 15px !important;
-    height: 15px !important;
+    width: 16px !important;
+    height: 16px !important;
     stroke: #EAA015 !important;
     fill: none !important;
     stroke-width: 2 !important;
@@ -1040,9 +1046,9 @@ button[value*="become"],
 
 .card-footer {
     text-align: center !important;
-    font-size: 11.5px !important;
+    font-size: 12px !important;
     color: #9CA3AF !important;
-    margin-top: 18px !important;
+    margin-top: 20px !important;
 }
 
 @media (max-width: 1100px) {
@@ -1061,14 +1067,14 @@ button[value*="become"],
         margin-bottom: 20px !important;
     }
     .core-title {
-        font-size: 30px !important;
+        font-size: 34px !important;
     }
     .values-row {
         flex-wrap: wrap !important;
     }
     .value-card {
         max-width: 280px !important;
-        flex: 1 1 200px !important;
+        flex: 1 1 220px !important;
     }
     .login-card-side {
         padding: 20px 24px !important;
@@ -1108,7 +1114,7 @@ button[value*="become"],
                         <div class="value-card">
                             <div class="value-card-header">
                                 <div class="value-icon-box">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake">
                                         <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
                                         <path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08v0c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"/>
                                         <path d="m18 15-2-2"/>
@@ -1128,7 +1134,7 @@ button[value*="become"],
                         <div class="value-card">
                             <div class="value-card-header">
                                 <div class="value-icon-box">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
                                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                                         <circle cx="9" cy="7" r="4"/>
                                         <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
@@ -1148,7 +1154,7 @@ button[value*="become"],
                         <div class="value-card">
                             <div class="value-card-header">
                                 <div class="value-icon-box">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
                                         <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
                                         <path d="m9 12 2 2 4-4"/>
                                     </svg>
@@ -1195,7 +1201,7 @@ button[value*="become"],
 </t>"""
         try:
             layout_target.write({'arch_db': tdb_layout_arch})
-            print("[OK] Đã cập nhật trực tiếp web.login_layout chuẩn TDB Solution theo Hình 1 & Logo Hình 2!")
+            print("[OK] Đã cập nhật trực tiếp web.login_layout chuẩn TDB Solution theo Hình 1 & Logo Hình 2 (Nâng cấp kích thước & vạch vàng)!")
         except Exception as e:
             print(f"[CẢNH BÁO web.login_layout]: {e}")
 
