@@ -123,25 +123,35 @@ def setup_tdb_root_redirection(env):
 
     # 4. Cấu hình website.page (Ẩn header/footer và nạp mã redirect)
     if 'website.page' in env:
-        Page = env['website.page']
-        pages = Page.search(['|', ('url', 'in', ['/', '', '/home']), ('is_homepage', '=', True)])
-        for p in pages:
+        try:
+            Page = env['website.page']
+            pages = Page.search([('url', 'in', ['/', '', '/home'])])
             try:
-                p.write({
-                    'header_visible': False,
-                    'footer_visible': False,
-                    'header_overlay': False,
-                })
-                print(f"[OK] Đã tắt header/footer trên website.page (id={p.id}, url='{p.url}')")
-            except Exception as e:
-                print(f"[Lưu ý website.page {p.id}]: {e}")
+                for ap in Page.search([]):
+                    if getattr(ap, 'is_homepage', False) and ap not in pages:
+                        pages |= ap
+            except Exception:
+                pass
 
-            if p.view_id:
+            for p in pages:
                 try:
-                    p.view_id.write({'arch_db': hp_arch})
-                    print(f"[OK] Đã nạp mã chuyển hướng vào page.view_id (id={p.view_id.id})")
+                    p.write({
+                        'header_visible': False,
+                        'footer_visible': False,
+                        'header_overlay': False,
+                    })
+                    print(f"[OK] Đã tắt header/footer trên website.page (id={p.id}, url='{p.url}')")
                 except Exception as e:
-                    print(f"[Lưu ý page.view_id {p.view_id.id}]: {e}")
+                    print(f"[Lưu ý website.page {p.id}]: {e}")
+
+                if p.view_id:
+                    try:
+                        p.view_id.write({'arch_db': hp_arch})
+                        print(f"[OK] Đã nạp mã chuyển hướng vào page.view_id (id={p.view_id.id})")
+                    except Exception as e:
+                        print(f"[Lưu ý page.view_id {p.view_id.id}]: {e}")
+        except Exception as e:
+            print(f"[Lưu ý cấu hình website.page]: {e}")
 
     # 5. Cấu hình website model (homepage_url)
     for ws in env['website'].search([]):
