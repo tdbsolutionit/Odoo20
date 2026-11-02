@@ -2,6 +2,7 @@
 # Copyright 2026 TDB Solution Co., Ltd.
 import base64
 import os
+import re
 import sys
 
 def make_binary_value(raw_bytes, filename="tdb_logo.png"):
@@ -116,7 +117,7 @@ def main():
             except Exception as e:
                 print(f"[Lưu ý cài đặt vi_VN]: {e}")
 
-        # Nạp bản dịch Tiếng Việt từ các module nếu cần
+        # Đồng bộ bản dịch Tiếng Việt từ các module
         try:
             LangInstall = env['base.language.install']
             if 'lang_ids' in LangInstall._fields and vi_lang:
@@ -130,7 +131,7 @@ def main():
         except Exception as e:
             print(f"[Lưu ý lang_install]: {e}")
 
-        # Thiết lập Tiếng Việt làm ngôn ngữ mặc định của Website
+        # Đặt Tiếng Việt làm ngôn ngữ MẶC ĐỊNH cho toàn bộ Website
         for ws in env['website'].search([]):
             vals = {}
             if vi_lang:
@@ -141,7 +142,7 @@ def main():
                 ws.write(vals)
             print(f"[OK] Đã thiết lập Tiếng Việt làm ngôn ngữ MẶC ĐỊNH cho Website '{ws.name}'")
 
-        # Đặt Tiếng Việt cho tài khoản Admin & Partner
+        # Đặt Tiếng Việt cho tài khoản Admin, Partner và Public User
         admin_user = env.ref('base.user_admin', raise_if_not_found=False)
         if admin_user:
             admin_user.write({'lang': 'vi_VN'})
@@ -149,83 +150,65 @@ def main():
         partner_admin = env.ref('base.partner_admin', raise_if_not_found=False)
         if partner_admin:
             partner_admin.write({'lang': 'vi_VN'})
+        public_user = env.ref('base.public_user', raise_if_not_found=False)
+        if public_user:
+            public_user.write({'lang': 'vi_VN'})
+        public_partner = env.ref('base.public_partner', raise_if_not_found=False)
+        if public_partner:
+            public_partner.write({'lang': 'vi_VN'})
 
         # =========================================================================
-        # 2. LÀM SẠCH VÀ KHÔI PHỤC WEBSITE.LAYOUT (XÓA CHUỖI TEXT BỊ LỘ TRÊN ĐẦU TRANG)
+        # 2. KHÔI PHỤC WEBSITE.LAYOUT VÀ XỬ LÝ DỨT ĐIỂM CÁC VIEW LỖI GÂY 500 ERROR
         # =========================================================================
-        print("\n>>> 2. Đang kiểm tra và làm sạch các view bị lỗi hiển thị text đầu trang...")
-        corrupted_views = env['ir.ui.view'].search([
-            '|',
-            ('arch_db', 'ilike', '%extra_items_toggle_aria_label%'),
-            ('arch_db', 'ilike', '%not editable and not translatable%'),
-        ])
-        for cv in corrupted_views:
-            print(f"[PHÁT HIỆN LỖI] View ID {cv.id} (key='{cv.key}', name='{cv.name}') bị dính chuỗi text lỗi!")
-            reset_done = False
-            if hasattr(cv, 'reset_arch'):
-                try:
-                    cv.reset_arch(mode='hard')
-                    reset_done = True
-                    print(f"[OK] Đã dùng reset_arch(mode='hard') khôi phục view {cv.key or cv.id}!")
-                except Exception as e:
-                    print(f"Lưu ý reset_arch: {e}")
-            if not reset_done:
-                restore_view_from_fs(env, cv, odoo_dir)
-
+        print("\n>>> 2. Đang khôi phục website.layout và dọn dẹp các view bị lỗi...")
         layout_views = env['ir.ui.view'].search([('key', '=', 'website.layout')])
         for lv in layout_views:
-            arch = lv.arch_db or ''
-            if ('extra_items_toggle_aria_label' in arch) or ('<xpath' in arch) or ('header_visible' in arch and not '<t t-set=' in arch):
-                print(f"[CẢNH BÁO] website.layout (id={lv.id}) chưa sạch, đang khôi phục về bản chuẩn...")
-                fixed = False
-                if hasattr(lv, 'reset_arch'):
+            if hasattr(lv, 'reset_arch'):
+                try:
+                    lv.reset_arch(mode='hard')
+                    print(f"[OK] Đã khôi phục view {lv.key} (id={lv.id}) về nguyên bản sạch sẽ bằng reset_arch!")
+                except Exception as e:
+                    print(f"Lưu ý reset_arch: {e}")
+            else:
+                restore_view_from_fs(env, lv, odoo_dir)
+
+        # Quét và xử lý các view bị dính chuỗi text lỗi trên đầu trang
+        corrupted_text_views = env['ir.ui.view'].search([
+            ('arch_db', 'ilike', '%extra_items_toggle_aria_label Footer Copyright not editable%'),
+        ])
+        for ctv in corrupted_text_views:
+            print(f"[XỬ LÝ] View ID {ctv.id} (key='{ctv.key}') bị dính text thừa trên đầu trang, đang reset...")
+            if hasattr(ctv, 'reset_arch'):
+                try:
+                    ctv.reset_arch(mode='hard')
+                except Exception:
+                    pass
+
+        # Quét và xử lý triệt để tất cả view kế thừa bị lỗi cú pháp thiếu thẻ <xpath>
+        # (Nguyên nhân gây ra lỗi ValueError: Element '<div id="footer"...' cannot be located in parent)
+        broken_inherited_views = env['ir.ui.view'].search([
+            ('inherit_id', '!=', False),
+            ('arch_db', 'ilike', '%#0b1320%'),
+        ])
+        for bv in broken_inherited_views:
+            arch = bv.arch_db or ''
+            if '<xpath' not in arch:
+                print(f"[CẢNH BÁO] Phát hiện view ID {bv.id} (key='{bv.key}', name='{bv.name}') kế thừa nhưng thiếu thẻ <xpath>!")
+                if hasattr(bv, 'reset_arch'):
                     try:
-                        lv.reset_arch(mode='hard')
-                        fixed = True
-                        print("[OK] Đã khôi phục website.layout về nguyên bản bằng reset_arch!")
-                    except Exception:
-                        pass
-                if not fixed:
-                    restore_view_from_fs(env, lv, odoo_dir)
+                        bv.reset_arch(mode='hard')
+                        print(f"[OK] Đã reset_arch view ID {bv.id} về nguyên bản")
+                    except Exception as e:
+                        print(f"Lưu ý reset view {bv.id}: {e}")
                 
-                lv_check = env['ir.ui.view'].browse(lv.id)
-                if 'extra_items_toggle_aria_label' in (lv_check.arch_db or ''):
-                    clean_layout_arch = """<t t-name="website.layout">
-    <t t-call="web.frontend_layout">
-        <t t-set="html_data" t-value="{'data-website-id': website.id}"/>
-        <div id="wrapwrap" t-att-class="pageName">
-            <header id="top" data-anchor="true" data-name="Header" class="o_header_standard">
-                <t t-call="website.template_header_default"/>
-            </header>
-            <main>
-                <t t-out="0"/>
-            </main>
-            <footer id="bottom" data-anchor="true" data-name="Footer" class="o_footer o_colored_level o_cc">
-                <div id="footer" class="oe_structure oe_structure_solo"/>
-                <div class="o_footer_copyright o_colored_level o_cc" data-name="Copyright">
-                    <div class="container py-3">
-                        <div class="row">
-                            <div class="col-sm text-center text-sm-start text-muted">
-                                <span class="o_footer_copyright_name me-2">Bản quyền thuộc © TDB Solution., Co. Ltd</span>
-                            </div>
-                            <div class="col-sm text-center text-sm-end o_not_editable">
-                                <div class="o_brand_promotion">
-                                    Cung cấp bởi 
-                                    <a target="_blank" class="badge text-bg-light text-decoration-none px-2 py-1 mx-1" href="https://www.odoo.com">
-                                        <img alt="Odoo" src="/web/static/img/odoo_logo_tiny.png" width="62" height="20" style="width: auto; height: 1em; vertical-align: baseline;" loading="lazy"/>
-                                    </a>
-                                    - Một <a target="_blank" class="text-muted text-decoration-underline" href="https://www.odoo.com/app/ecommerce">nền tảng thương mại điện tử mã nguồn mở hàng đầu</a>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </footer>
-        </div>
-    </t>
-</t>"""
-                    lv.write({'arch_db': clean_layout_arch})
-                    print("[OK] Đã ghi đè cấu trúc layout sạch chuẩn cho website.layout!")
+                # Kiểm tra lại, nếu vẫn còn chứa chuỗi lỗi và không có xpath thì unlink
+                bv_check = env['ir.ui.view'].browse(bv.id)
+                if bv_check.exists() and '<xpath' not in (bv_check.arch_db or '') and '#0b1320' in (bv_check.arch_db or ''):
+                    try:
+                        bv_check.unlink()
+                        print(f"[OK] Đã xóa view tùy biến rác ID {bv.id} để chấm dứt hoàn toàn lỗi 500!")
+                    except Exception as e:
+                        print(f"Lưu ý unlink view {bv.id}: {e}")
 
         # =========================================================================
         # 3. CẬP NHẬT THÔNG TIN CÔNG TY & TRANG LIÊN HỆ (/contactus)
@@ -392,14 +375,20 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
 
         homepage_views = env['ir.ui.view'].search([('key', '=', 'website.homepage')])
         for hp_view in homepage_views:
-            hp_view.write({'arch_db': homepage_arch})
-            print(f"[OK] Đã cập nhật view {hp_view.id} (key=website.homepage)")
+            try:
+                hp_view.write({'arch_db': homepage_arch})
+                print(f"[OK] Đã cập nhật view {hp_view.id} (key=website.homepage)")
+            except Exception as e:
+                print(f"[Lưu ý hp_view {hp_view.id}]: {e}")
 
         homepage_pages = env['website.page'].search([('url', 'in', ['/', '/home'])])
         for page in homepage_pages:
             if page.view_id:
-                page.view_id.write({'arch_db': homepage_arch})
-                print(f"[OK] Đã cập nhật website.page url='{page.url}' (view_id={page.view_id.id})")
+                try:
+                    page.view_id.write({'arch_db': homepage_arch})
+                    print(f"[OK] Đã cập nhật website.page url='{page.url}' (view_id={page.view_id.id})")
+                except Exception as e:
+                    print(f"[Lỗi page {page.id}]: {e}")
 
         # =========================================================================
         # 6. CẬP NHẬT FOOTER 3 CỘT VÀ 4 ICON TRÒN (FA-HOME CHUẨN MẪU)
@@ -451,10 +440,6 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
     </xpath>
 </data>"""
 
-        footer_standalone_arch = f"""<t t-name="website.template_footer_default">
-    {footer_inner_content}
-</t>"""
-
         footer_views = env['ir.ui.view'].search([('key', 'in', ['website.footer_custom', 'website.template_footer_default', 'website.footer_default'])])
         for f_view in footer_views:
             try:
@@ -462,10 +447,29 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
                     f_view.write({'arch_db': footer_xpath_arch})
                     print(f"[OK] Đã cập nhật view kế thừa footer: {f_view.key}")
                 else:
-                    f_view.write({'arch_db': footer_standalone_arch})
+                    f_view.write({'arch_db': f'<t t-name="{f_view.key}">{footer_inner_content}</t>'})
                     print(f"[OK] Đã cập nhật view gốc footer: {f_view.key}")
             except Exception as e:
                 print(f"[Lưu ý footer {f_view.key}]: {e}")
+
+        # Cập nhật dòng bản quyền chuẩn TDB Solution
+        copyright_views = env['ir.ui.view'].search([
+            ('arch_db', 'ilike', '%o_footer_copyright_name%'),
+        ])
+        for cp_view in copyright_views:
+            try:
+                c_arch = cp_view.arch_db or ''
+                if 'o_footer_copyright_name' in c_arch:
+                    c_arch = re.sub(
+                        r'<span class="o_footer_copyright_name[^"]*">.*?</span>',
+                        '<span class="o_footer_copyright_name me-2">Bản quyền thuộc © TDB Solution., Co. Ltd</span>',
+                        c_arch,
+                        flags=re.DOTALL
+                    )
+                    cp_view.write({'arch_db': c_arch})
+                    print(f"[OK] Đã cập nhật dòng bản quyền trong view {cp_view.key or cp_view.id}")
+            except Exception as e:
+                print(f"[Lưu ý bản quyền {cp_view.key}]: {e}")
 
         # =========================================================================
         # 7. CẬP NHẬT MENU ĐIỀU HƯỚNG WEBSITE CHUẨN TIẾNG VIỆT
@@ -496,6 +500,12 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
                         'website_id': ws.id,
                         'sequence': seq,
                     })
+
+            # Dọn dẹp menu tiếng Anh cũ
+            for old_menu in menu_model.search([('parent_id', '=', root_menu.id)]):
+                if old_menu.name in ['Home', 'Shop', 'Events', 'Courses', 'Jobs', 'Contact Us']:
+                    old_menu.unlink()
+
             print(f"[OK] Đã đồng bộ Menu điều hướng cho website '{ws.name}'")
 
         # =========================================================================
