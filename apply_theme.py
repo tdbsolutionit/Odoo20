@@ -18,6 +18,52 @@ def make_binary_value(raw_bytes, filename="tdb_logo.png"):
         pass
     return base64.b64encode(raw_bytes)
 
+def restore_view_from_fs(env, view, odoo_dir):
+    """Khôi phục view bị lỗi về nguyên bản từ file XML gốc trên đĩa (arch_fs)"""
+    rel_path = view.arch_fs or 'addons/website/views/website_templates.xml'
+    search_dirs = [
+        odoo_dir,
+        os.path.join(odoo_dir, 'odoo'),
+        os.path.join(odoo_dir, 'odoo', 'addons'),
+        os.path.join(odoo_dir, 'addons'),
+        r'C:\odoo20\odoo',
+        r'C:\odoo20\odoo\addons',
+        r'C:\odoo20\odoo\odoo\addons',
+    ]
+    target_file = None
+    for s_dir in search_dirs:
+        p1 = os.path.join(s_dir, rel_path)
+        if os.path.exists(p1):
+            target_file = p1
+            break
+        p2 = os.path.join(s_dir, 'addons', rel_path)
+        if os.path.exists(p2):
+            target_file = p2
+            break
+        if '/' in rel_path:
+            p3 = os.path.join(s_dir, rel_path.split('/', 1)[-1])
+            if os.path.exists(p3):
+                target_file = p3
+                break
+
+    if not target_file:
+        return False
+
+    import xml.etree.ElementTree as ET
+    try:
+        tree = ET.parse(target_file)
+        root = tree.getroot()
+        tpl_id = view.key.split('.')[-1] if '.' in (view.key or '') else view.name
+        elem = root.find(f".//*[@id='{tpl_id}']")
+        if elem is not None:
+            raw_xml = ET.tostring(elem, encoding='utf-8').decode('utf-8')
+            view.write({'arch_db': raw_xml})
+            print(f"[OK] Đã khôi phục view '{view.key}' từ file gốc: {target_file}")
+            return True
+    except Exception as e:
+        print(f"[Lỗi đọc XML {target_file}]: {e}")
+    return False
+
 def main():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     if os.path.basename(current_dir) == 'tdb_website_custom':
@@ -53,6 +99,85 @@ def main():
     with registry.cursor() as cr:
         env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {})
 
+        # =========================================================================
+        # 0. LÀM SẠCH VÀ KHÔI PHỤC WEBSITE.LAYOUT (XÓA CHUỖI TEXT BỊ LỘ TRÊN ĐẦU TRANG)
+        # =========================================================================
+        print(">>> 0. Đang kiểm tra và làm sạch các view bị lỗi hiển thị text đầu trang...")
+        # Tìm tất cả các view bị dính chuỗi text thuộc tính bị vỡ tag
+        corrupted_views = env['ir.ui.view'].search([
+            '|',
+            ('arch_db', 'ilike', '%extra_items_toggle_aria_label%'),
+            ('arch_db', 'ilike', '%not editable and not translatable%'),
+        ])
+        for cv in corrupted_views:
+            print(f"[PHÁT HIỆN LỖI] View ID {cv.id} (key='{cv.key}', name='{cv.name}') bị dính chuỗi text lỗi!")
+            reset_done = False
+            if hasattr(cv, 'reset_arch'):
+                try:
+                    cv.reset_arch(mode='hard')
+                    reset_done = True
+                    print(f"[OK] Đã dùng reset_arch(mode='hard') khôi phục view {cv.key or cv.id}!")
+                except Exception as e:
+                    print(f"Lưu ý reset_arch: {e}")
+            if not reset_done:
+                restore_view_from_fs(env, cv, odoo_dir)
+
+        # Đảm bảo website.layout luôn chuẩn sạch
+        layout_views = env['ir.ui.view'].search([('key', '=', 'website.layout')])
+        for lv in layout_views:
+            arch = lv.arch_db or ''
+            if ('extra_items_toggle_aria_label' in arch) or ('<xpath' in arch) or ('header_visible' in arch and not '<t t-set=' in arch):
+                print(f"[CẢNH BÁO] website.layout (id={lv.id}) chưa sạch, đang khôi phục về bản chuẩn...")
+                fixed = False
+                if hasattr(lv, 'reset_arch'):
+                    try:
+                        lv.reset_arch(mode='hard')
+                        fixed = True
+                        print("[OK] Đã khôi phục website.layout về nguyên bản bằng reset_arch!")
+                    except Exception:
+                        pass
+                if not fixed:
+                    restore_view_from_fs(env, lv, odoo_dir)
+                # Nếu vẫn còn vướng, nạp trực tiếp cấu trúc layout chuẩn sạch không bao giờ vỡ tag
+                lv_check = env['ir.ui.view'].browse(lv.id)
+                if 'extra_items_toggle_aria_label' in (lv_check.arch_db or ''):
+                    clean_layout_arch = """<t t-name="website.layout">
+    <t t-call="web.frontend_layout">
+        <t t-set="html_data" t-value="{'data-website-id': website.id}"/>
+        <div id="wrapwrap" t-att-class="pageName">
+            <header id="top" data-anchor="true" data-name="Header" class="o_header_standard">
+                <t t-call="website.template_header_default"/>
+            </header>
+            <main>
+                <t t-out="0"/>
+            </main>
+            <footer id="bottom" data-anchor="true" data-name="Footer" class="o_footer o_colored_level o_cc">
+                <div id="footer" class="oe_structure oe_structure_solo"/>
+                <div class="o_footer_copyright o_colored_level o_cc" data-name="Copyright">
+                    <div class="container py-3">
+                        <div class="row">
+                            <div class="col-sm text-center text-sm-start text-muted">
+                                <span class="o_footer_copyright_name me-2">Bản quyền thuộc © TDB Solution., Co. Ltd</span>
+                            </div>
+                            <div class="col-sm text-center text-sm-end o_not_editable">
+                                <div class="o_brand_promotion">
+                                    Cung cấp bởi 
+                                    <a target="_blank" class="badge text-bg-light text-decoration-none px-2 py-1 mx-1" href="https://www.odoo.com">
+                                        <img alt="Odoo" src="/web/static/img/odoo_logo_tiny.png" width="62" height="20" style="width: auto; height: 1em; vertical-align: baseline;" loading="lazy"/>
+                                    </a>
+                                    - Một <a target="_blank" class="text-muted text-decoration-underline" href="https://www.odoo.com/app/ecommerce">nền tảng thương mại điện tử mã nguồn mở hàng đầu</a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </t>
+</t>"""
+                    lv.write({'arch_db': clean_layout_arch})
+                    print("[OK] Đã ghi đè cấu trúc layout sạch chuẩn cho website.layout!")
+
         # 1. Cập nhật thông tin Công ty & Website
         company = env.ref('base.main_company', raise_if_not_found=False) or env['res.company'].search([], limit=1)
         if company:
@@ -82,7 +207,6 @@ def main():
             except Exception as e:
                 print(f"[Bỏ qua lỗi logo]: {e}")
                 
-            # Đăng ký logo vào ir.attachment
             try:
                 att_model = env['ir.attachment']
                 logo_att = att_model.search([('url', '=', '/tdb_website_custom/static/src/img/tdb_logo.png')], limit=1)
@@ -100,8 +224,6 @@ def main():
                     })
             except Exception as e:
                 print(f"[Lưu ý logo attachment]: {e}")
-        else:
-            print(f"[CẢNH BÁO] Không tìm thấy file logo tại: {logo_path}")
 
         # 2b. Nạp ảnh Banner Hero BG-TapThe từ folder Picture vào Odoo Attachment
         for bg_filename in ['BG-TapThe.webp', 'BG-TapThe.jpg']:
@@ -138,7 +260,7 @@ def main():
                         att.write(vals)
                     else:
                         att_model.create(vals)
-                    print(f"[OK] Đã nạp thành công ảnh '{bg_filename}' từ '{found_bg}' vào Odoo Attachment!")
+                    print(f"[OK] Đã nạp thành công ảnh '{bg_filename}' vào Odoo Attachment!")
                 except Exception as e:
                     print(f"[Lưu ý nạp ảnh {bg_filename}]: {e}")
 
@@ -165,12 +287,12 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
     </t>
 </t>"""
 
-        # Phục hồi view 1953 (Template Trang chủ bị ghi đè nhầm trước đó)
+        # Phục hồi view 1953
         v1953 = env['ir.ui.view'].browse(1953)
         if v1953.exists():
             try:
                 v1953.write({'arch_db': homepage_arch})
-                print(f"[OK] Đã khôi phục view 1953 (key={v1953.key}, name={v1953.name}) về giao diện Homepage đầy đủ!")
+                print(f"[OK] Đã cập nhật view 1953 (key={v1953.key}) về Homepage Hero Banner!")
             except Exception as e:
                 print(f"[Lỗi v1953]: {e}")
 
@@ -228,38 +350,27 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
         </section>
     </div>"""
 
-        # Footer dạng XPath cho các view kế thừa (có inherit_id)
         footer_xpath_arch = f"""<data>
     <xpath expr="//div[@id='footer']" position="replace">
         {footer_inner_content}
     </xpath>
 </data>"""
 
-        # Footer dạng Standalone cho các view gốc (không có inherit_id)
         footer_standalone_arch = f"""<t t-name="website.template_footer_default">
     {footer_inner_content}
 </t>"""
 
-        # Phục hồi / cập nhật các view footer phù hợp với từng loại (inherit vs primary)
         footer_views = env['ir.ui.view'].search([('key', 'in', ['website.footer_custom', 'website.template_footer_default', 'website.footer_default'])])
         for f_view in footer_views:
             try:
                 if f_view.inherit_id:
                     f_view.write({'arch_db': footer_xpath_arch})
-                    print(f"[OK] Đã cập nhật view kế thừa footer: {f_view.key} (id={f_view.id})")
+                    print(f"[OK] Đã cập nhật view kế thừa footer: {f_view.key}")
                 else:
                     f_view.write({'arch_db': footer_standalone_arch})
-                    print(f"[OK] Đã cập nhật view gốc footer: {f_view.key} (id={f_view.id})")
+                    print(f"[OK] Đã cập nhật view gốc footer: {f_view.key}")
             except Exception as e:
                 print(f"[Lưu ý footer {f_view.key}]: {e}")
-
-        # Kiểm tra website.layout để đảm bảo không bị dính thẻ xpath lỗi
-        layout_view = env['ir.ui.view'].search([('key', '=', 'website.layout')], limit=1)
-        if layout_view and '<xpath' in (layout_view.arch_db or ''):
-            print("[CẢNH BÁO] website.layout bị dính thẻ xpath lỗi! Đang làm sạch...")
-            # Xóa các xpath không hợp lệ khỏi layout chính
-            clean_arch = layout_view.arch_db.replace('<xpath expr="//div[@id=\'footer\']" position="replace">', '').replace('</xpath>', '')
-            layout_view.write({'arch_db': clean_arch})
 
         # 5. Cập nhật Menu điều hướng Website chuẩn
         menu_model = env['website.menu']
@@ -311,7 +422,7 @@ TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng 
         # 8. Commit thay đổi vào database PostgreSQL
         cr.commit()
         print("\n" + "="*65)
-        print(">>> HOÀN TẤT THÀNH CÔNG! GIAO DIỆN TDB SOLUTION ĐÃ ĐƯỢC PHỤC HỒI & ÁP DỤNG! <<<")
+        print(">>> HOÀN TẤT THÀNH CÔNG! ĐÃ LÀM SẠCH VÀ ÁP DỤNG GIAO DIỆN TDB SOLUTION! <<<")
         print("="*65)
 
 if __name__ == '__main__':
