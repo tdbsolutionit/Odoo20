@@ -98,7 +98,7 @@ def main():
     
     registry = Registry('odoo20')
     with registry.cursor() as cr:
-        env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {})
+        env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {'no_vat_validation': True})
 
         # =========================================================================
         # 1. THIẾT LẬP TOÀN BỘ NGÔN NGỮ TIẾNG VIỆT (VI_VN) CHO HỆ THỐNG & WEBSITE
@@ -218,17 +218,24 @@ def main():
         if company:
             vietnam = env.ref('base.vn', raise_if_not_found=False) or env['res.country'].search([('code', '=', 'VN')], limit=1)
             hcm = env['res.country.state'].search([('country_id', '=', vietnam.id if vietnam else False), ('name', 'ilike', 'Hồ Chí Minh')], limit=1)
-            company.write({
-                'name': 'TDB Solution',
-                'street': 'KDC Van Phuc',
-                'city': 'TP Thu Duc',
-                'state_id': hcm.id if hcm else False,
-                'country_id': vietnam.id if vietnam else False,
-                'phone': '+84 37 3704895',
-                'email': 'info@tdbsolution.com.vn',
-                'website': 'https://tdbsolution.com.vn',
-            })
-            print("[OK] Đã cập nhật đầy đủ thông tin: TDB Solution, KDC Van Phuc, TP Thu Duc, TP Ho Chi Minh, Hotline +84 37 3704895, info@tdbsolution.com.vn")
+            try:
+                # Xóa mã số thuế demo cũ (2336999) để tránh lỗi VAT check khi đổi quốc gia sang Việt Nam
+                if company.partner_id:
+                    company.partner_id.with_context(no_vat_validation=True).write({'vat': False})
+                company.with_context(no_vat_validation=True).write({
+                    'name': 'TDB Solution',
+                    'street': 'KDC Van Phuc',
+                    'city': 'TP Thu Duc',
+                    'state_id': hcm.id if hcm else False,
+                    'country_id': vietnam.id if vietnam else False,
+                    'phone': '+84 37 3704895',
+                    'email': 'info@tdbsolution.com.vn',
+                    'website': 'https://tdbsolution.com.vn',
+                    'vat': False,
+                })
+                print("[OK] Đã cập nhật đầy đủ thông tin: TDB Solution, KDC Van Phuc, TP Thu Duc, TP Ho Chi Minh, Hotline +84 37 3704895, info@tdbsolution.com.vn")
+            except Exception as e:
+                print(f"[Lưu ý cập nhật company]: {e}")
 
         # Nạp Logo TDB Solution vào Website và Company
         logo_path = os.path.join(odoo_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img', 'tdb_logo.png')
