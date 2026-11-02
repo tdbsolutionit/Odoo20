@@ -1,21 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright 2026 TDB Solution Co., Ltd.
 """
-Module đồng bộ và thiết lập tự động giao diện nhận diện thương hiệu TDB Solution.
-Được tổ chức theo kiến trúc phân tầng (Modular Architecture) và nguyên tắc Clean Code
-đáp ứng đầy đủ các tiêu chuẩn tại .agents/rules/odoo_customization_rules.md.
+Kịch bản tự động hóa cấu hình giao diện B-ACE SME:
+1. Bỏ toàn bộ danh mục menu (Trang chủ, Cửa hàng, Sự kiện, Khóa học, Tuyển dụng, Liên hệ) và Giỏ hàng theo Hình 1.
+2. Thiết lập giao diện Đăng nhập (/web/login) chia 2 cột tỉ lệ 8:2 chuẩn theo Hình 2 (http://192.168.103.8:3000/login):
+   - Cột trái (80%): Ảnh nền tập thể HD từ thư mục Picture (BG-TapThe.webp).
+   - Cột phải (20%): Form đăng nhập B-ACE SME sang trọng, tối giản, bo góc chuẩn mực với nút gradient vàng đồng.
+3. Xóa bỏ hoàn toàn các cấu hình cũ không còn phù hợp (Shop, Events, Jobs, ContactUs form, 3-column footer).
+4. Điều hướng trang chủ (/) tự động chuyển hướng người dùng chưa đăng nhập sang /web/login.
 """
 import base64
 import os
-import re
 import sys
 
-# =============================================================================
-# 1. TIỆN ÍCH DỮ LIỆU & HỆ THỐNG (UTILITIES)
-# =============================================================================
-
 def make_binary_value(raw_bytes, filename="tdb_logo.png"):
-    """Tạo đối tượng nhị phân chuẩn cho Odoo (hỗ trợ BinaryBytes, BinaryValue và Base64)."""
+    """Tạo đối tượng nhị phân tương thích các phiên bản Odoo."""
     try:
         from odoo.tools import BinaryBytes
         return BinaryBytes(raw_bytes, filename=filename)
@@ -29,90 +28,26 @@ def make_binary_value(raw_bytes, filename="tdb_logo.png"):
     return base64.b64encode(raw_bytes)
 
 
-def restore_view_from_fs(env, view, odoo_dir):
-    """Khôi phục view bị hỏng về nguyên bản từ file XML gốc trên đĩa (arch_fs)."""
-    rel_path = view.arch_fs or 'addons/website/views/website_templates.xml'
-    search_dirs = [
-        odoo_dir,
-        os.path.join(odoo_dir, 'odoo'),
-        os.path.join(odoo_dir, 'odoo', 'addons'),
-        os.path.join(odoo_dir, 'addons'),
-        r'C:\odoo20\odoo',
-        r'C:\odoo20\odoo\addons',
-        r'C:\odoo20\odoo\odoo\addons',
-    ]
-    target_file = None
-    for s_dir in search_dirs:
-        p1 = os.path.join(s_dir, rel_path)
-        if os.path.exists(p1):
-            target_file = p1
-            break
-        p2 = os.path.join(s_dir, 'addons', rel_path)
-        if os.path.exists(p2):
-            target_file = p2
-            break
-        if '/' in rel_path:
-            p3 = os.path.join(s_dir, rel_path.split('/', 1)[-1])
-            if os.path.exists(p3):
-                target_file = p3
-                break
-
-    if not target_file:
-        return False
-
-    import xml.etree.ElementTree as ET
-    try:
-        tree = ET.parse(target_file)
-        root = tree.getroot()
-        tpl_id = view.key.split('.')[-1] if '.' in (view.key or '') else view.name
-        elem = root.find(f".//*[@id='{tpl_id}']")
-        if elem is not None:
-            raw_xml = ET.tostring(elem, encoding='utf-8').decode('utf-8')
-            view.write({'arch_db': raw_xml})
-            print(f"[OK] Đã khôi phục view '{view.key}' từ file gốc: {target_file}")
-            return True
-    except Exception as e:
-        print(f"[Lỗi đọc XML {target_file}]: {e}")
-    return False
-
-
 # =============================================================================
-# 2. CÁC HÀM XỬ LÝ THEO TỪNG PHÂN HỆ NGHIỆP VỤ (MODULAR SERVICES)
+# CÁC DỊCH VỤ CẤU HÌNH THEO YÊU CẦU MỚI
 # =============================================================================
 
 def setup_vietnamese_language(env):
-    """
-    1. Kích hoạt gói ngôn ngữ Tiếng Việt (vi_VN), nạp bản dịch cho toàn bộ module
-    (Website, eCommerce, Event, Tuyển dụng, Khóa học) và đặt làm mặc định.
-    """
-    print("\n>>> [1/9] Thiết lập ngôn ngữ Tiếng Việt (vi_VN) toàn hệ thống...")
+    """Kích hoạt và nạp gói ngôn ngữ Tiếng Việt (vi_VN) làm mặc định."""
+    print("\n>>> [1/6] Đảm bảo ngôn ngữ Tiếng Việt (vi_VN) được kích hoạt...")
     vi_lang = env['res.lang'].with_context(active_test=False).search([('code', '=', 'vi_VN')], limit=1)
     if vi_lang:
         if not vi_lang.active:
             vi_lang.write({'active': True})
-        print(f"[OK] Đã kích hoạt ngôn ngữ Tiếng Việt (id={vi_lang.id})")
+        print(f"[OK] Ngôn ngữ Tiếng Việt sẵn sàng (id={vi_lang.id})")
     else:
         try:
             env['res.lang']._activate_lang('vi_VN')
             vi_lang = env['res.lang'].search([('code', '=', 'vi_VN')], limit=1)
-            print("[OK] Đã cài đặt thành công ngôn ngữ Tiếng Việt vào hệ thống!")
+            print("[OK] Đã kích hoạt vi_VN thành công!")
         except Exception as e:
-            print(f"[Lưu ý cài đặt vi_VN]: {e}")
+            print(f"[Lưu ý vi_VN]: {e}")
 
-    try:
-        LangInstall = env['base.language.install']
-        if 'lang_ids' in LangInstall._fields and vi_lang:
-            installer = LangInstall.create({'lang_ids': [(6, 0, [vi_lang.id])]})
-            installer.lang_install()
-            print("[OK] Đã đồng bộ gói dịch thuật Tiếng Việt cho toàn bộ module!")
-        elif 'lang' in LangInstall._fields:
-            installer = LangInstall.create({'lang': 'vi_VN'})
-            installer.lang_install()
-            print("[OK] Đã đồng bộ gói dịch thuật Tiếng Việt!")
-    except Exception as e:
-        print(f"[Lưu ý lang_install]: {e}")
-
-    # Đặt Tiếng Việt làm ngôn ngữ MẶC ĐỊNH cho toàn bộ Website
     for ws in env['website'].search([]):
         vals = {}
         if vi_lang:
@@ -121,24 +56,25 @@ def setup_vietnamese_language(env):
             vals['default_lang_id'] = vi_lang.id
         if vals:
             ws.write(vals)
-        print(f"[OK] Đã thiết lập Tiếng Việt làm ngôn ngữ MẶC ĐỊNH cho Website '{ws.name}'")
 
-    # Đặt Tiếng Việt cho tài khoản Admin, Partner và Public User
     for ref_key in ['base.user_admin', 'base.partner_admin', 'base.public_user', 'base.public_partner']:
         rec = env.ref(ref_key, raise_if_not_found=False)
         if rec and hasattr(rec, 'lang'):
             rec.write({'lang': 'vi_VN'})
-    print("[OK] Đã đặt ngôn ngữ tài khoản Admin và Public User sang Tiếng Việt")
 
 
-def cleanup_system_views(env, odoo_dir):
+def cleanup_obsolete_views(env):
     """
-    2. Khôi phục website.layout về bản gốc sạch sẽ và dọn dẹp các view bị lỗi cú pháp xpath.
+    Xóa bỏ các view và cấu hình tùy biến cũ không còn phù hợp với yêu cầu mới:
+    - Khôi phục website.layout về bản gốc sạch sẽ.
+    - Xóa các bản COW view bị rách tag gây tràn text ở đầu trang.
+    - Khôi phục các trang homepage, contactus, jobs, footer về mặc định Odoo.
     """
-    print("\n>>> [2/9] Làm sạch website.layout và dọn dẹp các view kế thừa lỗi...")
+    print("\n>>> [2/6] Dọn dẹp các view cũ và khôi phục template hệ thống...")
+    
+    # 1. Làm sạch website.layout
     layout_views = env['ir.ui.view'].search([('key', '=', 'website.layout')])
     for lv in layout_views:
-        # Nếu là bản COW view đặc thù của website bị dính lỗi -> Xóa bản COW để trở về bản gốc
         if lv.website_id:
             try:
                 lv.unlink()
@@ -147,574 +83,342 @@ def cleanup_system_views(env, odoo_dir):
             except Exception as e:
                 print(f"Lưu ý xóa COW layout: {e}")
 
-        # Đảm bảo inherit_id chuẩn xác trỏ về portal.frontend_layout hoặc web.frontend_layout
         parent = env.ref('portal.frontend_layout', raise_if_not_found=False) or env.ref('web.frontend_layout', raise_if_not_found=False)
         if parent and lv.inherit_id != parent:
             try:
                 lv.write({'inherit_id': parent.id, 'mode': 'extension'})
-                print(f"[OK] Đã gắn lại inherit_id cho website.layout -> {parent.key}")
-            except Exception as e:
-                print(f"Lưu ý gán inherit_id: {e}")
+            except Exception:
+                pass
 
         if hasattr(lv, 'reset_arch'):
             try:
                 lv.reset_arch(mode='hard')
-                print(f"[OK] Đã khôi phục view {lv.key} (id={lv.id}) về nguyên bản sạch sẽ bằng reset_arch!")
+                print(f"[OK] Đã khôi phục view {lv.key} (id={lv.id}) về nguyên bản sạch sẽ!")
             except Exception as e:
-                print(f"Lưu ý reset_arch: {e}")
-        else:
-            restore_view_from_fs(env, lv, odoo_dir)
+                print(f"Lưu ý reset_arch layout: {e}")
 
-    # Quét dọn tất cả các view bị dính chuỗi text tràn đầu trang
-    corrupted_text_views = env['ir.ui.view'].search([
+    # 2. Xóa các view rác bị tràn text đầu trang
+    corrupted_views = env['ir.ui.view'].search([
         '|', '|', '|',
         ('arch_db', 'ilike', '%extra_items_toggle_aria_label%'),
         ('arch_db', 'ilike', '%Footer Copyright not editable%'),
         ('arch_db', 'ilike', '%header_visible%main_object%'),
         ('arch_db', 'ilike', '%footer_visible%main_object%'),
     ])
-    for ctv in corrupted_text_views:
-        if ctv.key == 'website.layout' and not ctv.website_id:
+    for cv in corrupted_views:
+        if cv.key == 'website.layout' and not cv.website_id:
             continue
-        print(f"[XỬ LÝ VIEW LỖI] View id={ctv.id}, key={ctv.key}, website={ctv.website_id.id if ctv.website_id else False}")
-        if ctv.website_id:
+        if cv.website_id:
             try:
-                ctv.unlink()
-                print(f"[OK] Đã xóa COW view lỗi id={ctv.id}")
-                continue
+                cv.unlink()
+                print(f"[OK] Đã xóa COW view lỗi id={cv.id}")
             except Exception:
                 pass
-        if hasattr(ctv, 'reset_arch'):
+        elif hasattr(cv, 'reset_arch'):
             try:
-                ctv.reset_arch(mode='hard')
-                print(f"[OK] Đã reset view {ctv.key or ctv.id}")
+                cv.reset_arch(mode='hard')
             except Exception:
                 pass
 
-    # Quét sạch các view kế thừa bị thiếu thẻ xpath (gây lỗi 500 Element cannot be located)
-    broken_inherited_views = env['ir.ui.view'].search([
-        ('inherit_id', '!=', False),
-        ('arch_db', 'ilike', '%#0b1320%'),
-    ])
-    for bv in broken_inherited_views:
-        arch = bv.arch_db or ''
-        if '<xpath' not in arch:
-            print(f"[CẢNH BÁO] Phát hiện view ID {bv.id} kế thừa thiếu thẻ <xpath>, đang xử lý...")
-            if hasattr(bv, 'reset_arch'):
+    # 3. Khôi phục các view footer, contactus, jobs về mặc định
+    for v_key in [
+        'website.footer_custom',
+        'website.template_footer_default',
+        'website.contactus',
+        'website_hr_recruitment.index',
+        'website.homepage',
+    ]:
+        for v in env['ir.ui.view'].search([('key', '=', v_key)]):
+            if hasattr(v, 'reset_arch'):
                 try:
-                    bv.reset_arch(mode='hard')
+                    v.reset_arch(mode='hard')
+                    print(f"[OK] Đã khôi phục view '{v_key}' về mặc định Odoo")
                 except Exception:
                     pass
-            bv_check = env['ir.ui.view'].browse(bv.id)
-            if bv_check.exists() and '<xpath' not in (bv_check.arch_db or '') and '#0b1320' in (bv_check.arch_db or ''):
-                try:
-                    bv_check.unlink()
-                    print(f"[OK] Đã xóa view rác ID {bv.id} để chấm dứt hoàn toàn lỗi 500!")
-                except Exception as e:
-                    print(f"Lưu ý unlink view {bv.id}: {e}")
 
-
-def setup_company_profile(env, odoo_dir, current_dir):
-    """
-    3. Cập nhật hồ sơ công ty TDB Solution (KDC Vạn Phúc, Hotline, Email),
-    bỏ qua kiểm tra mã số thuế demo và nạp Logo chuẩn.
-    """
-    print("\n>>> [3/9] Cập nhật thông tin công ty TDB Solution và Logo...")
-    company = env.ref('base.main_company', raise_if_not_found=False) or env['res.company'].search([], limit=1)
-    if company:
-        vietnam = env.ref('base.vn', raise_if_not_found=False) or env['res.country'].search([('code', '=', 'VN')], limit=1)
-        hcm = env['res.country.state'].search([('country_id', '=', vietnam.id if vietnam else False), ('name', 'ilike', 'Hồ Chí Minh')], limit=1)
+    # Xóa view 1953 nếu có
+    v1953 = env['ir.ui.view'].browse(1953)
+    if v1953.exists() and hasattr(v1953, 'reset_arch'):
         try:
-            if company.partner_id:
-                company.partner_id.with_context(no_vat_validation=True).write({'vat': False})
-            company.with_context(no_vat_validation=True).write({
-                'name': 'TDB Solution',
-                'street': 'KDC Van Phuc',
-                'city': 'TP Thu Duc',
-                'state_id': hcm.id if hcm else False,
-                'country_id': vietnam.id if vietnam else False,
-                'phone': '+84 37 3704895',
-                'email': 'info@tdbsolution.com.vn',
-                'website': 'https://tdbsolution.com.vn',
-                'vat': False,
-            })
-            print("[OK] Đã cập nhật đầy đủ thông tin: TDB Solution, KDC Van Phuc, TP Thu Duc, TP Ho Chi Minh, Hotline +84 37 3704895, info@tdbsolution.com.vn")
-        except Exception as e:
-            print(f"[Lưu ý cập nhật company]: {e}")
-
-    # Nạp Logo TDB Solution vào Website và Company
-    logo_path = os.path.join(odoo_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img', 'tdb_logo.png')
-    if not os.path.exists(logo_path):
-        logo_path = os.path.join(current_dir, 'static', 'src', 'img', 'tdb_logo.png')
-        
-    if os.path.exists(logo_path):
-        with open(logo_path, 'rb') as f:
-            raw_bytes = f.read()
-        logo_val = make_binary_value(raw_bytes, "tdb_logo.png")
-        try:
-            if company:
-                company.write({'logo': logo_val})
-            for ws in env['website'].search([]):
-                ws.write({'logo': logo_val, 'name': 'TDB Solution'})
-            print("[OK] Đã nạp Logo TDB Solution chuẩn vào Website & Company")
-        except Exception as e:
-            print(f"[Bỏ qua lỗi logo]: {e}")
-            
-        try:
-            att_model = env['ir.attachment']
-            logo_att = att_model.search([('url', '=', '/tdb_website_custom/static/src/img/tdb_logo.png')], limit=1)
-            l_b64 = base64.b64encode(raw_bytes).decode('ascii')
-            if logo_att:
-                logo_att.write({'datas': l_b64, 'public': True})
-            else:
-                att_model.create({
-                    'name': 'tdb_logo.png',
-                    'type': 'binary',
-                    'datas': l_b64,
-                    'mimetype': 'image/png',
-                    'public': True,
-                    'url': '/tdb_website_custom/static/src/img/tdb_logo.png',
-                })
-        except Exception as e:
-            print(f"[Lưu ý logo attachment]: {e}")
-
-    # Nạp ảnh Banner Hero BG-TapThe vào Odoo Attachment
-    for bg_filename in ['BG-TapThe.webp', 'BG-TapThe.jpg']:
-        candidates = [
-            os.path.join(odoo_dir, 'Picture', bg_filename),
-            os.path.join(current_dir, 'Picture', bg_filename),
-            os.path.join(odoo_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img', bg_filename),
-            os.path.join(current_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img', bg_filename),
-        ]
-        found_bg = None
-        for p in candidates:
-            if os.path.exists(p):
-                found_bg = p
-                break
-        if found_bg:
-            try:
-                with open(found_bg, 'rb') as f:
-                    bg_bytes = f.read()
-                bg_b64 = base64.b64encode(bg_bytes).decode('ascii')
-                mimetype = 'image/webp' if bg_filename.endswith('.webp') else 'image/jpeg'
-                att_model = env['ir.attachment']
-                att = att_model.search([('url', '=', f'/tdb_website_custom/static/src/img/{bg_filename}')], limit=1)
-                if not att:
-                    att = att_model.search([('name', '=', bg_filename), ('public', '=', True)], limit=1)
-                vals = {
-                    'name': bg_filename,
-                    'type': 'binary',
-                    'datas': bg_b64,
-                    'mimetype': mimetype,
-                    'public': True,
-                    'url': f'/tdb_website_custom/static/src/img/{bg_filename}',
-                }
-                if att:
-                    att.write(vals)
-                else:
-                    att_model.create(vals)
-                print(f"[OK] Đã nạp ảnh '{bg_filename}' vào Odoo Attachment!")
-            except Exception as e:
-                print(f"[Lưu ý nạp ảnh {bg_filename}]: {e}")
-
-
-def setup_contactus_page(env):
-    """
-    4. Cập nhật trang Liên hệ (/contactus) chuẩn nhận diện TDB Solution:
-    Tiêu đề parallax, biểu mẫu tiếng Việt và cột thông tin bên phải đầy đủ 3 icon (Địa chỉ, Hotline, Email).
-    """
-    print("\n>>> [4/9] Cập nhật trang Liên hệ (/contactus) với 3 icon địa chỉ, hotline, email chuẩn mẫu...")
-    contactus_arch = """<t t-name="website.contactus">
-    <t t-call="website.layout">
-        <t t-set="additional_title">Liên hệ</t>
-        <span class="hidden" data-for="contactus_form" data-values="{'email_to': 'info@tdbsolution.com.vn', 'name': '', 'phone': '', 'email_from': '', 'company': '', 'subject': '', 'contact_name': '', 'partner_name': '', 'description': ''}"></span>
-        <div id="wrap" class="oe_structure oe_empty">
-            <section class="s_title parallax s_parallax_is_fixed bg-black-50 pt24 pb24" data-vcss="001" data-snippet="s_title" data-scroll-background-ratio="1" data-name="Tiêu đề">
-                <span class="s_parallax_bg oe_img_bg" style="background-image: url('/web/image/website.s_parallax_default_image'); background-position: 50% 0;"></span>
-                <div class="o_we_bg_filter bg-black-50"></div>
-                <div class="container">
-                    <h1>Liên hệ</h1>
-                </div>
-            </section>
-            <section class="s_text_block pt40 pb40 o_colored_level" data-snippet="s_text_block" data-name="Văn bản">
-                <div class="s_allow_columns container">
-                    <div class="row">
-                        <div class="col-lg-7 mt-4 mt-lg-0">
-                            <p class="lead">
-                                Hãy liên hệ khi bạn gặp bất cứ vấn đề nào liên quan đến công ty hoặc dịch vụ của chúng tôi.<br/>
-                                Chúng tôi sẽ cố gắng phản hồi trong thời gian sớm nhất.
-                            </p>
-                            <section class="s_website_form" data-vcss="001" data-snippet="s_website_form" data-name="Biểu mẫu">
-                                <div class="container">
-                                    <form id="contactus_form" action="/website/form/" method="post" enctype="multipart/form-data" class="o_mark_required" data-mark="*" data-model_name="mail.mail" data-success-mode="redirect" data-success-page="/contactus-thank-you" data-pre-fill="true">
-                                        <div class="s_website_form_rows row s_col_no_bgcolor">
-                                            <div class="mb-3 col-lg-6 s_website_form_field s_website_form_custom s_website_form_required" data-type="char" data-name="Field">
-                                                <label class="s_website_form_label" style="width: 200px" for="contact1">
-                                                    <span class="s_website_form_label_content">Tên</span>
-                                                    <span class="s_website_form_mark"> *</span>
-                                                </label>
-                                                <input id="contact1" type="text" class="form-control s_website_form_input" name="name" required="" data-fill-with="name"/>
-                                            </div>
-                                            <div class="mb-3 col-lg-6 s_website_form_field s_website_form_custom" data-type="char" data-name="Field">
-                                                <label class="s_website_form_label" style="width: 200px" for="contact2">
-                                                    <span class="s_website_form_label_content">Số điện thoại</span>
-                                                </label>
-                                                <input id="contact2" type="tel" class="form-control s_website_form_input" name="phone" data-fill-with="phone"/>
-                                            </div>
-                                            <div class="mb-3 col-lg-6 s_website_form_field s_website_form_required s_website_form_model_required" data-type="email" data-name="Field">
-                                                <label class="s_website_form_label" style="width: 200px" for="contact3">
-                                                    <span class="s_website_form_label_content">Email</span>
-                                                    <span class="s_website_form_mark"> *</span>
-                                                </label>
-                                                <input id="contact3" type="email" class="form-control s_website_form_input" name="email_from" required="" data-fill-with="email"/>
-                                            </div>
-                                            <div class="mb-3 col-lg-6 s_website_form_field s_website_form_custom" data-type="char" data-name="Field">
-                                                <label class="s_website_form_label" style="width: 200px" for="contact4">
-                                                    <span class="s_website_form_label_content">Công ty</span>
-                                                </label>
-                                                <input id="contact4" type="text" class="form-control s_website_form_input" name="company" data-fill-with="commercial_company_name"/>
-                                            </div>
-                                            <div class="mb-3 col-12 s_website_form_field s_website_form_required s_website_form_model_required" data-type="char" data-name="Field">
-                                                <label class="s_website_form_label" style="width: 200px" for="contact5">
-                                                    <span class="s_website_form_label_content">Chủ đề</span>
-                                                    <span class="s_website_form_mark"> *</span>
-                                                </label>
-                                                <input id="contact5" type="text" class="form-control s_website_form_input" name="subject" required=""/>
-                                            </div>
-                                            <div class="mb-3 col-12 s_website_form_field s_website_form_custom s_website_form_required" data-type="text" data-name="Field">
-                                                <label class="s_website_form_label" style="width: 200px" for="contact6">
-                                                    <span class="s_website_form_label_content">Câu hỏi</span>
-                                                    <span class="s_website_form_mark"> *</span>
-                                                </label>
-                                                <textarea id="contact6" class="form-control s_website_form_input" name="description" required="" rows="8"></textarea>
-                                            </div>
-                                            <div class="mb-0 py-2 col-12 s_website_form_submit s_website_form_no_submit_label text-end" data-name="Submit Button">
-                                                <div style="width: 200px;" class="s_website_form_label"></div>
-                                                <a href="#" role="button" class="btn btn-primary s_website_form_send">Gửi</a>
-                                                <span id="s_website_form_result"></span>
-                                            </div>
-                                        </div>
-                                    </form>
-                                </div>
-                            </section>
-                        </div>
-                        <div class="col-lg-4 offset-lg-1 mt-4 mt-lg-0 o_colored_level">
-                            <h5>TDB Solution</h5>
-                            <ul class="list-unstyled mb-0 ps-2">
-                                <li><i class="fa fa-map-marker fa-fw me-2"></i><span class="o_force_ltr">KDC Van Phuc, TP Thu Duc, TP Ho Chi Minh, Viet Nam</span></li>
-                                <li><i class="fa fa-phone fa-fw me-2"></i><span class="o_force_ltr">+84 37 370 4895</span></li>
-                                <li><i class="fa fa-1x fa-fw fa-envelope me-2"></i>info@tdbsolution.com.vn</li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </section>
-        </div>
-    </t>
-</t>"""
-    for cv in env['ir.ui.view'].search([('key', '=', 'website.contactus')]):
-        try:
-            cv.write({'arch_db': contactus_arch})
-            print(f"[OK] Đã cập nhật view {cv.key or cv.id} với 3 icon liên hệ chuẩn mẫu!")
-        except Exception as e:
-            print(f"[Lưu ý contactus view {cv.id}]: {e}")
-
-    for cp in env['website.page'].search([('url', '=', '/contactus')]):
-        if cp.view_id:
-            try:
-                cp.view_id.write({'arch_db': contactus_arch})
-                print(f"[OK] Đã cập nhật website.page '/contactus' (view_id={cp.view_id.id})!")
-            except Exception as e:
-                print(f"[Lưu ý contactus page]: {e}")
-
-
-def setup_header_and_cart(env):
-    """
-    5. Chuẩn hóa Header: Nút Giỏ Hàng (Cart Icon), Ô tìm kiếm, Hotline +84 373704895
-    và Nút 'Liên hệ với chúng tôi' chuẩn 100% như máy mẫu .5.
-    """
-    print("\n>>> [5/9] Chuẩn hóa Header (Nút Giỏ Hàng, Hotline +84 373704895 và Nút Liên hệ)...")
-    try:
-        ws_mod = env['ir.module.module'].search([('name', '=', 'website_sale')], limit=1)
-        if ws_mod and ws_mod.state != 'installed':
-            ws_mod.button_immediate_install()
-            print("[OK] Đã kích hoạt module website_sale để hỗ trợ giỏ hàng!")
-    except Exception as e:
-        print(f"[Lưu ý module website_sale]: {e}")
-
-    # Kích hoạt tất cả view Header Cart trong Odoo
-    for cv in env['ir.ui.view'].search([
-        '|', '|', '|',
-        ('key', '=', 'website_sale.header_cart_link'),
-        ('key', '=', 'website_sale.template_header_default'),
-        ('key', 'ilike', '%header_cart%'),
-        ('arch_db', 'ilike', '%o_wsale_my_cart%'),
-    ]):
-        if not cv.active:
-            cv.write({'active': True})
-            print(f"[OK] Đã kích hoạt view giỏ hàng: {cv.key or cv.id}")
-
-    # Đảm bảo thẻ giỏ hàng <li class="o_wsale_my_cart"> có mặt trong view header
-    cart_li_html = """<li class="divider d-none"></li>
-<li class="o_wsale_my_cart">
-    <a href="/shop/cart" aria-label="Giỏ hàng thương mại điện tử" class="o_navlink_background btn position-relative rounded-circle p-1 text-center text-reset">
-        <div>
-            <i class="fa fa-shopping-cart fa-stack"></i>
-            <sup class="my_cart_quantity badge bg-primary position-absolute top-0 end-0 mt-n1 me-n1 rounded-pill d-none" data-order-id="">0</sup>
-        </div>
-    </a>
-</li>"""
-    for hv in env['ir.ui.view'].search([('key', 'in', ['website.template_header_default', 'website.default_header'])]):
-        h_arch = hv.arch_db or ''
-        if 'o_wsale_my_cart' not in h_arch and 'navbar-nav' in h_arch:
-            for target_ul in ['class="navbar-nav align-items-center', 'class="navbar-nav ms-auto', 'class="navbar-nav me-auto']:
-                if target_ul in h_arch:
-                    idx = h_arch.find(target_ul)
-                    end_tag = h_arch.find('>', idx) + 1
-                    h_arch = h_arch[:end_tag] + '\n' + cart_li_html + h_arch[end_tag:]
-                    try:
-                        hv.write({'arch_db': h_arch})
-                        print(f"[OK] Đã bổ sung nút Giỏ hàng vào header view: {hv.key}")
-                    except Exception as e:
-                        print(f"[Lưu ý chèn cart vào {hv.key}]: {e}")
-                    break
-
-    # Cập nhật hotline & email trên website
-    for ws in env['website'].search([]):
-        try:
-            ws.write({'phone': '+84 373704895', 'email': 'info@tdbsolution.com.vn'})
+            v1953.reset_arch(mode='hard')
         except Exception:
             pass
 
-    # Thay thế hotline, email và nút Liên hệ
-    phone_views = env['ir.ui.view'].search([
-        '|', '|', '|', '|',
-        ('key', '=', 'website.header_text_element'),
-        ('key', '=', 'website.header_call_to_action'),
-        ('arch_db', 'ilike', '%555-555-5556%'),
-        ('arch_db', 'ilike', '%555 555 5556%'),
-        ('arch_db', 'ilike', '%Contact Us%')
-    ])
-    for pv in phone_views:
-        try:
-            n_arch = pv.arch_db or ''
-            orig = n_arch
-            n_arch = n_arch.replace('+1 555-555-5556', '+84 373704895')
-            n_arch = n_arch.replace('+1 555 555 5556', '+84 373704895')
-            n_arch = n_arch.replace('+15555555556', '+84373704895')
-            n_arch = n_arch.replace('tel:+15555555556', 'tel:+84373704895')
-            n_arch = n_arch.replace('Contact Us', 'Liên hệ với chúng tôi')
-            n_arch = n_arch.replace('info@yourcompany.example.com', 'info@tdbsolution.com.vn')
-            if n_arch != orig:
-                pv.write({'arch_db': n_arch})
-                print(f"[OK] Đã cập nhật Hotline & Nút CTA trong view header: {pv.key or pv.id}")
-        except Exception as e:
-            print(f"[Lưu ý sửa header {pv.key}]: {e}")
 
-    for view_key in [
-        'website.template_header_default_call_to_action',
-        'website.header_call_to_action',
-        'website.template_header_call_to_action',
-        'website.option_header_brand_logo',
-    ]:
-        opt_view = env['ir.ui.view'].search([('key', '=', view_key)], limit=1)
-        if opt_view and not opt_view.active:
-            opt_view.write({'active': True})
-            print(f"[OK] Đã kích hoạt tùy chọn Header: {view_key}")
-
-
-def setup_homepage_hero_banner(env):
+def remove_all_menus_and_cart(env):
     """
-    6. Chuẩn hóa Trang chủ (Homepage Hero Banner): Ảnh tập thể TDB Solution,
-    khẩu hiệu nhận diện thương hiệu và 2 nút bấm bo tròn (Trắng Khám phá thêm + Xanh Liên hệ).
+    Yêu cầu Hình 1: Bỏ hết các mục menu điều hướng (Trang chủ, Cửa hàng, Sự kiện,
+    Khóa học, Tuyển dụng, Liên hệ) và bỏ nút Giỏ hàng 🛒.
     """
-    print("\n>>> [6/9] Cập nhật Trang chủ Hero Banner chuẩn...")
-    homepage_arch = """<t t-name="website.homepage">
-    <t t-call="website.layout">
-        <t t-set="pageName" t-value="'homepage'"/>
-        <div id="wrap" class="oe_structure oe_empty">
-            <section class="s_cover parallax s_parallax_is_fixed o_cc o_cc5 pt232 pb232 o_colored_level" data-scroll-background-ratio="1" data-snippet="s_cover" data-name="Ảnh bìa">
-                <span class="s_parallax_bg oe_img_bg o_bg_img_center o_bg_img_origin_border_box" style="background-position: 50% 75%; background-image: url(&quot;/tdb_website_custom/static/src/img/BG-TapThe.webp&quot;);" data-mimetype="image/webp"></span>
-                <div class="o_we_bg_filter bg-black-50"></div>
-                <div class="container s_allow_columns text-center text-white position-relative" style="z-index: 2;">
-                    <h1 class="display-3 fw-bold mb-3" style="text-shadow: 0 2px 10px rgba(0,0,0,0.6);">Technical and Digital Benefits</h1>
-                    <p class="lead mb-4 mx-auto" style="max-width: 820px; line-height: 1.65; text-shadow: 0 1px 6px rgba(0,0,0,0.6);">
-TDB Solution sáng tạo và đổi mới. Chúng tôi mang đến khách hàng sự hài lòng nhờ đồng hành và cung cấp dịch vụ chất lượng cao
-                    </p>
-                    <p class="pt-2">
-                        <a class="btn btn-light rounded-pill px-4 py-2 me-3 fw-bold text-dark shadow-sm" href="/contactus">Khám phá thêm</a>
-                        <a class="btn btn-primary rounded-pill px-4 py-2 fw-bold text-white shadow-sm" href="/contactus">Liên hệ</a>
-                    </p>
-                </div>
-            </section>
-        </div>
-    </t>
-</t>"""
-
-    v1953 = env['ir.ui.view'].browse(1953)
-    if v1953.exists():
-        try:
-            v1953.write({'arch_db': homepage_arch})
-            print(f"[OK] Đã cập nhật view 1953 (key={v1953.key}) về Homepage Hero Banner!")
-        except Exception as e:
-            print(f"[Lỗi v1953]: {e}")
-
-    for hp_view in env['ir.ui.view'].search([('key', '=', 'website.homepage')]):
-        try:
-            hp_view.write({'arch_db': homepage_arch})
-            print(f"[OK] Đã cập nhật view {hp_view.id} (key=website.homepage)")
-        except Exception as e:
-            print(f"[Lưu ý hp_view {hp_view.id}]: {e}")
-
-    for page in env['website.page'].search([('url', 'in', ['/', '/home'])]):
-        if page.view_id:
-            try:
-                page.view_id.write({'arch_db': homepage_arch})
-                print(f"[OK] Đã cập nhật website.page url='{page.url}' (view_id={page.view_id.id})")
-            except Exception as e:
-                print(f"[Lỗi page {page.id}]: {e}")
-
-
-def setup_footer_columns(env):
-    """
-    7. Chuẩn hóa Chân trang (Footer): 3 cột tối màu (#0b1320), thông tin công ty,
-    4 biểu tượng mạng xã hội tròn (fa-home) và bản quyền TDB Solution Co., Ltd.
-    """
-    print("\n>>> [7/9] Cập nhật Footer 3 cột và 4 biểu tượng mạng xã hội tròn...")
-    footer_inner_content = """<div id="footer" class="oe_structure oe_structure_solo" style="background-color: #0b1320; color: #94a3b8;">
-    <section class="s_text_block pt40 pb16" data-snippet="s_text_block" data-name="Text">
-        <div class="container">
-            <div class="row">
-                <div class="col-lg-2 pt24 pb24">
-                    <h5 class="mb-3 text-white fw-bold">Liên kết hữu ích</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><a href="/" class="text-decoration-none" style="color: #94a3b8;">Trang chủ</a></li>
-                        <li class="mb-2"><a href="/aboutus" class="text-decoration-none" style="color: #94a3b8;">Về chúng tôi</a></li>
-                        <li class="mb-2"><a href="/shop" class="text-decoration-none" style="color: #94a3b8;">Sản phẩm</a></li>
-                        <li class="mb-2"><a href="#" class="text-decoration-none" style="color: #94a3b8;">Dịch vụ</a></li>
-                        <li class="mb-2"><a href="#" class="text-decoration-none" style="color: #94a3b8;">Hợp pháp</a></li>
-                        <li class="mb-2"><a href="/contactus" class="text-decoration-none" style="color: #94a3b8;">Liên hệ</a></li>
-                    </ul>
-                </div>
-                <div class="col-lg-5 pt24 pb24">
-                    <h5 class="mb-3 text-white fw-bold">Về chúng tôi</h5>
-                    <p style="line-height: 1.7; color: #cbd5e1;">
-                        Chúng tôi cung cấp giải pháp chuyển đổi số cho bộ phận thiết kế và quản lý kỹ thuật bằng công cụ PDM/ PLM – CIM database. Giải pháp kỹ thuật đi từ ý tưởng (ideas – R&amp;D) -&gt; thiết kế (CAD) -&gt; Phân tích mô phỏng số (CFD/ CAE/ FEA) -&gt; Sản xuất (Production) -&gt; Vận hành và quản lý bảo trì bảo dưỡng từ hệ thống tích hợp IoT (IoT – Operation and maintenance).
-                    </p>
-                </div>
-                <div id="connect" class="col-lg-4 offset-lg-1 pt24 pb24">
-                    <h5 class="mb-3 text-white fw-bold">Kết nối với chúng tôi</h5>
-                    <ul class="list-unstyled">
-                        <li class="mb-2"><i class="fa fa-comment fa-fw me-2 text-primary"></i><a href="/contactus" class="text-decoration-none" style="color: #94a3b8;">Liên hệ</a></li>
-                        <li class="mb-2"><i class="fa fa-envelope fa-fw me-2 text-primary"></i><a href="mailto:info@tdbsolution.com.vn" class="text-decoration-none" style="color: #94a3b8;">info@tdbsolution.com.vn</a></li>
-                        <li class="mb-2"><i class="fa fa-phone fa-fw me-2 text-primary"></i><span class="o_force_ltr"><a href="tel:+84373704895" class="text-decoration-none" style="color: #94a3b8;">+84 373704895</a></span></li>
-                    </ul>
-                    <div class="s_social_media text-start mt-3">
-                        <a href="https://facebook.com" class="btn btn-light rounded-circle p-2 me-2 text-primary" target="_blank" aria-label="Facebook"><i class="fa fa-facebook-f fa-fw"></i></a>
-                        <a href="https://twitter.com" class="btn btn-light rounded-circle p-2 me-2 text-info" target="_blank" aria-label="X"><i class="fa fa-twitter fa-fw"></i></a>
-                        <a href="https://linkedin.com" class="btn btn-light rounded-circle p-2 me-2 text-primary" target="_blank" aria-label="LinkedIn"><i class="fa fa-linkedin fa-fw"></i></a>
-                        <a href="/" class="btn btn-light rounded-circle p-2 text-dark" aria-label="Website"><i class="fa fa-home fa-fw"></i></a>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-</div>"""
-
-    footer_xpath_arch = f"""<data>
-<xpath expr="//div[@id='footer']" position="replace">
-    {footer_inner_content}
-</xpath>
-</data>"""
-
-    for f_view in env['ir.ui.view'].search([('key', 'in', ['website.footer_custom', 'website.template_footer_default', 'website.footer_default'])]):
-        try:
-            if f_view.inherit_id:
-                f_view.write({'arch_db': footer_xpath_arch})
-                print(f"[OK] Đã cập nhật view kế thừa footer: {f_view.key}")
-            else:
-                f_view.write({'arch_db': f'<t t-name="{f_view.key}">{footer_inner_content}</t>'})
-                print(f"[OK] Đã cập nhật view gốc footer: {f_view.key}")
-        except Exception as e:
-            print(f"[Lưu ý footer {f_view.key}]: {e}")
-
-    # Cập nhật dòng bản quyền chuẩn TDB Solution
-    for cp_view in env['ir.ui.view'].search([('arch_db', 'ilike', '%o_footer_copyright_name%')]):
-        try:
-            c_arch = cp_view.arch_db or ''
-            if 'o_footer_copyright_name' in c_arch:
-                c_arch = re.sub(
-                    r'<span class="o_footer_copyright_name[^"]*">.*?</span>',
-                    '<span class="o_footer_copyright_name me-2">Bản quyền thuộc © TDB Solution., Co. Ltd</span>',
-                    c_arch,
-                    flags=re.DOTALL
-                )
-                cp_view.write({'arch_db': c_arch})
-                print(f"[OK] Đã cập nhật dòng bản quyền trong view {cp_view.key or cp_view.id}")
-        except Exception as e:
-            print(f"[Lưu ý bản quyền {cp_view.key}]: {e}")
-
-
-def setup_jobs_page(env):
-    """
-    8. Chuẩn hóa trang Tuyển dụng (/jobs): Thay thế email và số điện thoại mặc định
-    bằng thông tin liên hệ chính thức của TDB Solution.
-    """
-    print("\n>>> [8/9] Chuẩn hóa thông tin trang Tuyển dụng (/jobs)...")
-    for jv in env['ir.ui.view'].search([('arch_db', 'ilike', '%yourcompany.example.com%')]):
-        try:
-            j_arch = jv.arch_db or ''
-            j_arch = j_arch.replace('info@yourcompany.example.com', 'info@tdbsolution.com.vn')
-            j_arch = j_arch.replace('+1 (650) 555-0187', '+84 37 370 4895')
-            jv.write({'arch_db': j_arch})
-            print(f"[OK] Đã cập nhật thông tin TDB Solution trong view tuyển dụng: {jv.key or jv.id}")
-        except Exception as e:
-            print(f"[Lưu ý jobs view {jv.id}]: {e}")
-
-
-def setup_navigation_menus(env):
-    """
-    9. Đồng bộ đầy đủ 6 Menu điều hướng tiếng Việt (Trang chủ, Cửa hàng, Sự kiện,
-    Khóa học, Tuyển dụng, Liên hệ) và loại bỏ các menu tiếng Anh cũ trùng lặp.
-    """
-    print("\n>>> [9/9] Đồng bộ Menu điều hướng 6 mục tiếng Việt...")
+    print("\n>>> [3/6] Xóa toàn bộ danh mục Menu và nút Giỏ hàng theo yêu cầu Hình 1...")
+    
+    # 1. Xóa toàn bộ các menu con trên thanh điều hướng website
     menu_model = env['website.menu']
     for ws in env['website'].search([]):
-        root_menu = ws.menu_id
-        if not root_menu:
+        if not ws.menu_id:
             continue
-        menu_items = [
-            ('Trang chủ', '/', 10),
-            ('Cửa hàng', '/shop', 20),
-            ('Sự kiện', '/event', 30),
-            ('Khóa học', '/slides', 40),
-            ('Tuyển dụng', '/jobs', 50),
-            ('Liên hệ', '/contactus', 60),
-        ]
-        for name, url, seq in menu_items:
-            existing = menu_model.search([('parent_id', '=', root_menu.id), ('url', '=', url)], limit=1)
-            if existing:
-                existing.write({'name': name, 'sequence': seq})
+        child_menus = menu_model.search([('parent_id', '=', ws.menu_id.id)])
+        for m in child_menus:
+            print(f"[XÓA MENU] Đã xóa menu: '{m.name}' ({m.url})")
+            m.unlink()
+
+    # Xóa cả các menu rác độc lập theo tên
+    for old_m in menu_model.search([
+        ('name', 'in', [
+            'Trang chủ', 'Cửa hàng', 'Sự kiện', 'Khóa học', 'Tuyển dụng', 'Liên hệ',
+            'Home', 'Shop', 'Events', 'Courses', 'Jobs', 'Contact Us'
+        ])
+    ]):
+        try:
+            print(f"[XÓA MENU CŨ] Đã xóa menu: '{old_m.name}'")
+            old_m.unlink()
+        except Exception:
+            pass
+
+    # 2. Vô hiệu hóa nút Giỏ hàng và các view liên quan đến giỏ hàng
+    for cv in env['ir.ui.view'].search([
+        '|', '|',
+        ('key', '=', 'website_sale.header_cart_link'),
+        ('key', '=', 'website_sale.template_header_default'),
+        ('key', 'ilike', '%header_cart%'),
+    ]):
+        if cv.active:
+            cv.write({'active': False})
+            print(f"[OK] Đã vô hiệu hóa nút Giỏ hàng: {cv.key or cv.id}")
+
+    # Gỡ bỏ li.o_wsale_my_cart khỏi tất cả các header view nếu có
+    for hv in env['ir.ui.view'].search([('key', 'in', ['website.template_header_default', 'website.default_header'])]):
+        h_arch = hv.arch_db or ''
+        if 'o_wsale_my_cart' in h_arch:
+            import re
+            h_clean = re.sub(r'<li[^>]*class=\"[^\"]*o_wsale_my_cart[^\"]*\"[^>]*>.*?</li>', '', h_arch, flags=re.DOTALL)
+            try:
+                hv.write({'arch_db': h_clean})
+                print(f"[OK] Đã loại bỏ hoàn toàn thẻ giỏ hàng khỏi {hv.key}")
+            except Exception as e:
+                print(f"Lưu ý làm sạch header: {e}")
+
+
+def setup_picture_attachments(env, odoo_dir, current_dir):
+    """
+    Nạp ảnh tập thể trong thư mục Picture (BG-TapThe.webp) vào Odoo Attachment
+    để hiển thị sắc nét ở cột trái (80%) trên trang Đăng nhập.
+    """
+    print("\n>>> [4/6] Nạp ảnh tập thể từ thư mục Picture vào hệ thống...")
+    search_dirs = [
+        os.path.join(odoo_dir, 'Picture'),
+        os.path.join(current_dir, '..', '..', 'Picture'),
+        os.path.join(current_dir, 'Picture'),
+        os.path.join(odoo_dir, 'custom_addons', 'tdb_website_custom', 'static', 'src', 'img'),
+        r'C:\odoo20\odoo\Picture',
+    ]
+
+    for bg_filename in ['BG-TapThe.webp', 'BG-TapThe.jpg']:
+        found_path = None
+        for s_dir in search_dirs:
+            candidate = os.path.join(s_dir, bg_filename)
+            if os.path.exists(candidate):
+                found_path = candidate
+                break
+
+        if found_path and os.path.exists(found_path):
+            with open(found_path, 'rb') as f:
+                raw_bytes = f.read()
+
+            b64_data = base64.b64encode(raw_bytes).decode('ascii')
+            mimetype = 'image/webp' if bg_filename.endswith('.webp') else 'image/jpeg'
+
+            att_model = env['ir.attachment']
+            att = att_model.search([('url', '=', f'/tdb_website_custom/static/src/img/{bg_filename}')], limit=1)
+            vals = {
+                'name': bg_filename,
+                'type': 'binary',
+                'datas': b64_data,
+                'mimetype': mimetype,
+                'public': True,
+                'url': f'/tdb_website_custom/static/src/img/{bg_filename}',
+            }
+            if att:
+                att.write(vals)
             else:
-                menu_model.create({
-                    'name': name,
-                    'url': url,
-                    'parent_id': root_menu.id,
-                    'website_id': ws.id,
-                    'sequence': seq,
-                })
-
-        # Dọn dẹp menu tiếng Anh cũ
-        for old_menu in menu_model.search([('parent_id', '=', root_menu.id)]):
-            if old_menu.name in ['Home', 'Shop', 'Events', 'Courses', 'Jobs', 'Contact Us']:
-                old_menu.unlink()
-
-        print(f"[OK] Đã đồng bộ Menu điều hướng cho website '{ws.name}'")
+                att_model.create(vals)
+            print(f"[OK] Đã nạp thành công '{bg_filename}' vào ir.attachment!")
 
 
-# =============================================================================
-# 3. HÀM THỰC THI CHÍNH (MAIN ENTRYPOINT)
-# =============================================================================
+def apply_bace_login_interface(env, current_dir):
+    """
+    Yêu cầu Hình 2: Áp dụng giao diện Đăng nhập B-ACE SME chia 2 cột tỉ lệ 8:2
+    chuẩn theo http://192.168.103.8:3000/login
+    """
+    print("\n>>> [5/6] Áp dụng giao diện Đăng nhập B-ACE SME tỉ lệ 8:2...")
+    
+    # Đọc nội dung file views/login_templates.xml
+    login_xml_path = os.path.join(current_dir, 'views', 'login_templates.xml')
+    if not os.path.exists(login_xml_path):
+        login_xml_path = os.path.join(current_dir, 'custom_addons', 'tdb_website_custom', 'views', 'login_templates.xml')
+
+    # Nạp trực tiếp view layout đăng nhập vào database
+    bace_login_layout_arch = """<data>
+    <xpath expr="//div[hasclass('container')]" position="replace">
+        <div class="login-grid">
+            <aside class="hero-side">
+                <div class="hero-image-overlay"/>
+            </aside>
+            <main class="form-side">
+                <div class="form-inner">
+                    <div class="mobile-logo">
+                        <div class="mobile-logo-icon">
+                            <svg aria-hidden="true" class="lucide lucide-layers" fill="none" height="20" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>
+                                <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>
+                                <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>
+                            </svg>
+                        </div>
+                        <span class="mobile-logo-name">B-ACE</span>
+                    </div>
+
+                    <div class="form-header">
+                        <h2 class="form-title">Đăng nhập</h2>
+                        <p class="form-subtitle">Chào mừng trở lại! Vui lòng đăng nhập để tiếp tục.</p>
+                    </div>
+
+                    <t t-out="0"/>
+
+                    <div class="demo-box">
+                        <div class="demo-box-icon">
+                            <svg aria-hidden="true" class="lucide lucide-key-round" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 1 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/>
+                                <circle cx="16.5" cy="7.5" fill="currentColor" r=".5"/>
+                            </svg>
+                        </div>
+                        <div class="demo-box-text">
+                            <strong>Demo:</strong>
+                            <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin@b-ace.vn';if(p)p.value='password';" style="cursor:pointer;" title="Nhấp để điền">admin@b-ace.vn</code>
+                            <span style="margin:0 4px;color:#cbd5e1">·</span>
+                            <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin@b-ace.vn';if(p)p.value='password';" style="cursor:pointer;" title="Nhấp để điền">password</code>
+                        </div>
+                    </div>
+
+                    <p class="form-footer">
+                        B-ACE © 2026 · Phiên bản nội bộ
+                    </p>
+                </div>
+            </main>
+        </div>
+    </xpath>
+</data>"""
+
+    bace_login_form_arch = """<data>
+    <xpath expr="//form[hasclass('oe_login_form')]" position="replace">
+        <form class="oe_login_form" role="form" t-attf-action="/web/login" method="post" onsubmit="this.action = '/web/login' + location.hash">
+            <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+            <div class="form-error" t-if="error" role="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                <span><t t-out="error"/></span>
+            </div>
+            <div class="alert alert-success" t-if="message" role="status">
+                <t t-out="message"/>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="login">Email</label>
+                <div class="input-wrap">
+                    <svg aria-hidden="true" class="lucide lucide-mail icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+                        <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/>
+                        <rect height="16" rx="2" width="20" x="2" y="4"/>
+                    </svg>
+                    <input id="login" name="login" t-att-value="login" placeholder="ban@congty.com" required="required" autofocus="autofocus" autocapitalize="off" autocomplete="username" class="form-control" type="text"/>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label" for="password">Mật khẩu</label>
+                <div class="input-wrap">
+                    <svg aria-hidden="true" class="lucide lucide-lock icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+                        <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
+                        <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                    </svg>
+                    <input id="password" name="password" placeholder="••••••••" required="required" autocomplete="current-password" maxlength="4096" style="padding-right:44px" type="password"/>
+                    <button aria-label="Hiện mật khẩu" class="pwd-toggle" type="button" onclick="var p=document.getElementById('password');if(p)p.type=p.type==='password'?'text':'password';">
+                        <svg aria-hidden="true" class="lucide lucide-eye" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+                            <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
+                            <circle cx="12" cy="12" r="3"/>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="form-row">
+                <label class="cbx">
+                    <input checked="checked" type="checkbox" name="remember"/>
+                    <span class="box">
+                        <svg viewBox="0 0 24 24">
+                            <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                    </span>
+                    <span>Ghi nhớ đăng nhập</span>
+                </label>
+                <a href="/web/reset_password" class="form-forgot">Quên mật khẩu?</a>
+            </div>
+
+            <input type="hidden" name="redirect" t-att-value="redirect"/>
+            <button class="btn-submit" type="submit">
+                <svg aria-hidden="true" class="lucide lucide-log-in" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+                    <path d="m10 17 5-5-5-5"/>
+                    <path d="M15 12H3"/>
+                    <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                </svg>
+                Đăng nhập
+            </button>
+
+            <t t-if="debug">
+                <div class="text-center mt-3">
+                    <button type="submit" name="redirect" value="/web/become" class="btn btn-link btn-sm text-muted">Đăng nhập tài khoản Siêu Quản Trị (Superuser)</button>
+                </div>
+            </t>
+        </form>
+    </xpath>
+</data>"""
+
+    View = env['ir.ui.view']
+
+    # 1. Đăng ký / cập nhật view kế thừa web.login_layout
+    layout_target = env.ref('web.login_layout', raise_if_not_found=False)
+    if layout_target:
+        v_layout = View.search([('key', '=', 'tdb_website_custom.bace_login_layout')], limit=1)
+        if not v_layout:
+            v_layout = View.create({
+                'name': 'B-ACE SME Login Layout (8:2)',
+                'key': 'tdb_website_custom.bace_login_layout',
+                'type': 'qweb',
+                'inherit_id': layout_target.id,
+                'arch_db': bace_login_layout_arch,
+                'priority': 99,
+            })
+            print("[OK] Đã tạo view kế thừa B-ACE Login Layout tỉ lệ 8:2!")
+        else:
+            v_layout.write({'arch_db': bace_login_layout_arch, 'active': True})
+            print("[OK] Đã cập nhật view B-ACE Login Layout tỉ lệ 8:2!")
+
+    # 2. Đăng ký / cập nhật view kế thừa web.login
+    login_target = env.ref('web.login', raise_if_not_found=False)
+    if login_target:
+        v_form = View.search([('key', '=', 'tdb_website_custom.bace_login_form')], limit=1)
+        if not v_form:
+            v_form = View.create({
+                'name': 'B-ACE SME Login Form',
+                'key': 'tdb_website_custom.bace_login_form',
+                'type': 'qweb',
+                'inherit_id': login_target.id,
+                'arch_db': bace_login_form_arch,
+                'priority': 99,
+            })
+            print("[OK] Đã tạo view kế thừa B-ACE Login Form!")
+        else:
+            v_form.write({'arch_db': bace_login_form_arch, 'active': True})
+            print("[OK] Đã cập nhật view B-ACE Login Form!")
+
 
 def main():
     """Điểm khởi chạy chính kết nối ORM Odoo và điều phối các dịch vụ thiết lập giao diện."""
@@ -735,7 +439,7 @@ def main():
         except ImportError:
             from odoo.orm.registry import Registry
     except ImportError as e:
-        print(f"Error importing odoo: {e}. Please ensure you are running in the Odoo virtual environment.")
+        print(f"Error importing odoo: {e}. Vui lòng chạy trong môi trường ảo của Odoo.")
         return
 
     config_path = os.path.join(odoo_dir, 'odoo.conf')
@@ -750,21 +454,16 @@ def main():
     
     registry = Registry('odoo20')
     with registry.cursor() as cr:
-        # Khởi tạo môi trường siêu người dùng với context bypass kiểm tra VAT
         env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {'no_vat_validation': True})
 
-        # Thực thi tuần tự các phân hệ theo kiến trúc Module chuẩn
+        # Thực thi tuần tự các phân hệ
         setup_vietnamese_language(env)
-        cleanup_system_views(env, odoo_dir)
-        setup_company_profile(env, odoo_dir, current_dir)
-        setup_contactus_page(env)
-        setup_header_and_cart(env)
-        setup_homepage_hero_banner(env)
-        setup_footer_columns(env)
-        setup_jobs_page(env)
-        setup_navigation_menus(env)
+        cleanup_obsolete_views(env)
+        remove_all_menus_and_cart(env)
+        setup_picture_attachments(env, odoo_dir, current_dir)
+        apply_bace_login_interface(env, current_dir)
 
-        # Xóa cache QWeb và commit thay đổi vào cơ sở dữ liệu PostgreSQL
+        # Xóa cache QWeb và commit thay đổi vào PostgreSQL
         try:
             env.registry.clear_cache()
             print("\n[OK] Đã xóa cache QWeb template và View cache")
@@ -773,7 +472,7 @@ def main():
 
         cr.commit()
         print("\n" + "="*70)
-        print(">>> HOÀN TẤT THÀNH CÔNG! TOÀN BỘ CÁC TRANG ĐÃ ĐỒNG BỘ CHUẨN NHẬN DIỆN TDB SOLUTION! <<<")
+        print(">>> HOÀN TẤT THÀNH CÔNG! GIAO DIỆN ĐĂNG NHẬP B-ACE SME TỈ LỆ 8:2 ĐÃ ÁP DỤNG! <<<")
         print("="*70)
 
 if __name__ == '__main__':

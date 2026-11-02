@@ -1,0 +1,392 @@
+/* ==========================================================================
+   B-ACE SME LOGIN PAGE - 8:2 SPLIT RATIO
+   Tham chiếu giao diện http://192.168.103.8:3000/login
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap');
+
+body.login-page, 
+body:has(.login-grid) {
+    font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+    overflow-x: hidden !important;
+}
+
+/* Ẩn header và footer mặc định trên trang đăng nhập */
+body:has(.login-grid) #top,
+body:has(.login-grid) #bottom,
+body:has(.login-grid) header,
+body:has(.login-grid) footer,
+body:has(.login-grid) .o_footer_copyright,
+body:has(.login-grid) .o_header_standard {
+    display: none !important;
+}
+
+/* KHUNG CHÍNH CHIA TỈ LỆ 8:2 */
+.login-grid {
+    display: grid !important;
+    grid-template-columns: 8fr 2fr !important; /* Tỉ lệ 8:2 chuẩn xác */
+    min-height: 100vh !important;
+    width: 100vw !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #ffffff !important;
+}
+
+/* CỘT TRÁI (80%): ẢNH TẬP THỂ TỪ THƯ MỤC PICTURE */
+.login-grid .hero-side {
+    background-color: #0F1117;
+    background-image: url('/tdb_website_custom/static/src/img/BG-TapThe.webp');
+    background-size: cover;
+    background-position: center center;
+    background-repeat: no-repeat;
+    position: relative;
+    overflow: hidden;
+    min-height: 100vh;
+}
+
+.login-grid .hero-side::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(15, 17, 23, 0.05) 0%, rgba(15, 17, 23, 0.25) 100%);
+    pointer-events: none;
+}
+
+/* CỘT PHẢI (20%): FORM ĐĂNG NHẬP CHUẨN NEXT.JS B-ACE SME */
+.login-grid .form-side {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 28px;
+    background: #ffffff;
+    position: relative;
+    box-sizing: border-box;
+    box-shadow: -10px 0 30px rgba(0, 0, 0, 0.04);
+}
+
+.form-inner {
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+}
+
+.mobile-logo {
+    display: none;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 24px;
+}
+
+.mobile-logo-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, #C9A961, #A8894A);
+    box-shadow: 0 8px 20px rgba(201, 169, 97, 0.3);
+}
+
+.mobile-logo-name {
+    font-size: 18px;
+    font-weight: 700;
+    color: #0f172a;
+    letter-spacing: -0.02em;
+}
+
+.form-header {
+    margin-bottom: 28px;
+    text-align: left;
+}
+
+.form-title {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    color: #0a0e1a;
+    margin: 0 0 8px;
+    line-height: 1.15;
+}
+
+.form-subtitle {
+    font-size: 13.5px;
+    color: #64748b;
+    line-height: 1.5;
+    margin: 0;
+}
+
+.form-error {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 14px;
+    background: #fef2f2;
+    border: 1px solid #fecaca;
+    border-radius: 10px;
+    color: #991b1b;
+    font-size: 13px;
+    line-height: 1.5;
+    margin-bottom: 18px;
+}
+
+.form-group {
+    margin-bottom: 18px;
+    text-align: left;
+}
+
+.form-label {
+    display: block;
+    font-size: 13px;
+    font-weight: 600;
+    color: #0f172a;
+    margin-bottom: 7px;
+    letter-spacing: -0.005em;
+}
+
+.input-wrap {
+    position: relative;
+    width: 100%;
+}
+
+.input-wrap .icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #94a3b8;
+    pointer-events: none;
+    transition: color 0.15s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+}
+
+.input-wrap input {
+    width: 100% !important;
+    height: 48px !important;
+    padding: 0 16px 0 44px !important;
+    font-family: inherit !important;
+    font-size: 14px !important;
+    color: #0f172a !important;
+    background: #ffffff !important;
+    border: 1.5px solid #e2e8f0 !important;
+    border-radius: 10px !important;
+    outline: none !important;
+    transition: all 0.15s ease !important;
+    box-sizing: border-box !important;
+}
+
+.input-wrap input:hover {
+    border-color: #cbd5e1 !important;
+}
+
+.input-wrap input:focus {
+    border-color: #C9A961 !important;
+    box-shadow: 0 0 0 4px rgba(201, 169, 97, 0.15) !important;
+}
+
+.input-wrap input:focus ~ .icon {
+    color: #C9A961 !important;
+}
+
+.pwd-toggle {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 7px;
+    color: #94a3b8;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    padding: 0;
+    z-index: 2;
+}
+
+.pwd-toggle:hover {
+    color: #0f172a;
+    background: #f1f5f9;
+}
+
+.form-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 22px;
+}
+
+.cbx {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 13px;
+    color: #0f172a;
+}
+
+.cbx input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+
+.cbx .box {
+    width: 18px;
+    height: 18px;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 5px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    flex-shrink: 0;
+    background: #ffffff;
+    box-sizing: border-box;
+}
+
+.cbx input:checked + .box {
+    background: #C9A961;
+    border-color: #C9A961;
+}
+
+.cbx .box svg {
+    width: 12px;
+    height: 12px;
+    stroke: #ffffff;
+    stroke-width: 3;
+    fill: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.cbx input:checked + .box svg {
+    opacity: 1;
+}
+
+.form-forgot {
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #C9A961;
+    text-decoration: none;
+    transition: color 0.15s ease;
+    white-space: nowrap;
+}
+
+.form-forgot:hover {
+    color: #A8894A;
+    text-decoration: underline;
+}
+
+.btn-submit {
+    width: 100% !important;
+    height: 48px !important;
+    background: linear-gradient(135deg, #C9A961, #A8894A) !important;
+    color: #ffffff !important;
+    border: none !important;
+    border-radius: 10px !important;
+    font-family: inherit !important;
+    font-size: 14.5px !important;
+    font-weight: 600 !important;
+    letter-spacing: -0.005em !important;
+    cursor: pointer !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    gap: 8px !important;
+    transition: all 0.2s ease !important;
+    box-shadow: 0 4px 12px rgba(201, 169, 97, 0.3) !important;
+    padding: 0 !important;
+}
+
+.btn-submit:hover {
+    box-shadow: 0 8px 24px rgba(201, 169, 97, 0.45) !important;
+    transform: translateY(-1px);
+}
+
+.btn-submit:active {
+    transform: translateY(0);
+}
+
+.demo-box {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 24px;
+    padding: 10px 14px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 12.5px;
+    color: #475569;
+    line-height: 1.5;
+}
+
+.demo-box-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    background: #FAF5E6;
+    color: #A8894A;
+    flex-shrink: 0;
+}
+
+.demo-box-text strong {
+    color: #0f172a;
+    font-weight: 600;
+}
+
+.demo-box code {
+    background: #ffffff;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-family: ui-monospace, SF Mono, monospace;
+    font-size: 11.5px;
+    color: #A8894A;
+    border: 1px solid #e2e8f0;
+    transition: background 0.15s ease;
+}
+
+.demo-box code:hover {
+    background: #FAF5E6;
+}
+
+.form-footer {
+    text-align: center;
+    font-size: 12px;
+    color: #94a3b8;
+    margin-top: 24px;
+}
+
+/* RESPONSIVE TRÊN MÀN HÌNH NHỎ */
+@media (max-width: 1024px) {
+    .login-grid {
+        grid-template-columns: 1fr !important;
+    }
+    .login-grid .hero-side {
+        display: none !important;
+    }
+    .login-grid .form-side {
+        padding: 48px 24px !important;
+    }
+    .mobile-logo {
+        display: flex !important;
+    }
+}

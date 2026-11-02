@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Kế thừa giao diện Đăng nhập web.login_layout chia 2 cột tỉ lệ 8:2 chuẩn B-ACE SME -->
+    <template id="bace_login_layout" inherit_id="web.login_layout" priority="99">
+        <xpath expr="//div[hasclass('container')]" position="replace">
+            <div class="login-grid">
+                <!-- Cột trái (80%): Ảnh tập thể từ thư mục Picture -->
+                <aside class="hero-side">
+                    <div class="hero-image-overlay"/>
+                </aside>
+
+                <!-- Cột phải (20%): Form đăng nhập chuẩn B-ACE SME -->
+                <main class="form-side">
+                    <div class="form-inner">
+                        <div class="mobile-logo">
+                            <div class="mobile-logo-icon">
+                                <svg aria-hidden="true" class="lucide lucide-layers" fill="none" height="20" stroke="#fff" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="20" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/>
+                                    <path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/>
+                                    <path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/>
+                                </svg>
+                            </div>
+                            <span class="mobile-logo-name">B-ACE</span>
+                        </div>
+
+                        <div class="form-header">
+                            <h2 class="form-title">Đăng nhập</h2>
+                            <p class="form-subtitle">Chào mừng trở lại! Vui lòng đăng nhập để tiếp tục.</p>
+                        </div>
+
+                        <!-- Chèn form đăng nhập bên dưới -->
+                        <t t-out="0"/>
+
+                        <!-- Hộp Demo tài khoản -->
+                        <div class="demo-box">
+                            <div class="demo-box-icon">
+                                <svg aria-hidden="true" class="lucide lucide-key-round" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 1 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/>
+                                    <circle cx="16.5" cy="7.5" fill="currentColor" r=".5"/>
+                                </svg>
+                            </div>
+                            <div class="demo-box-text">
+                                <strong>Demo:</strong>
+                                <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin@b-ace.vn';if(p)p.value='password';" style="cursor:pointer;" title="Nhấp để điền">admin@b-ace.vn</code>
+                                <span style="margin:0 4px;color:#cbd5e1">·</span>
+                                <code onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin@b-ace.vn';if(p)p.value='password';" style="cursor:pointer;" title="Nhấp để điền">password</code>
+                            </div>
+                        </div>
+
+                        <p class="form-footer">
+                            B-ACE © 2026 · Phiên bản nội bộ
+                        </p>
+                    </div>
+                </main>
+            </div>
+        </xpath>
+    </template>
+
+    <!-- Kế thừa Form đăng nhập web.login với icon và thiết kế B-ACE SME -->
+    <template id="bace_login_form" inherit_id="web.login" priority="99">
+        <xpath expr="//form[hasclass('oe_login_form')]" position="replace">
+            <form class="oe_login_form" role="form" t-attf-action="/web/login" method="post" onsubmit="this.action = '/web/login' + location.hash">
+                <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                <!-- Thông báo lỗi đăng nhập nếu có -->
+                <div class="form-error" t-if="error" role="alert">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-alert-circle"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                    <span><t t-out="error"/></span>
+                </div>
+                <div class="alert alert-success" t-if="message" role="status">
+                    <t t-out="message"/>
+                </div>
+
+                <!-- Trường Email -->
+                <div class="form-group">
+                    <label class="form-label" for="login">Email</label>
+                    <div class="input-wrap">
+                        <svg aria-hidden="true" class="lucide lucide-mail icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+                            <path d="m22 7-8.991 5.727a2 2 0 0 1-2.009 0L2 7"/>
+                            <rect height="16" rx="2" width="20" x="2" y="4"/>
+                        </svg>
+                        <input id="login" name="login" t-att-value="login" placeholder="ban@congty.com" required="required" autofocus="autofocus" autocapitalize="off" autocomplete="username" class="form-control" type="text"/>
+                    </div>
+                </div>
+
+                <!-- Trường Mật khẩu -->
+                <div class="form-group">
+                    <label class="form-label" for="password">Mật khẩu</label>
+                    <div class="input-wrap">
+                        <svg aria-hidden="true" class="lucide lucide-lock icon" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+                            <rect height="11" rx="2" ry="2" width="18" x="3" y="11"/>
+                            <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+                        </svg>
+                        <input id="password" name="password" placeholder="••••••••" required="required" autocomplete="current-password" maxlength="4096" style="padding-right:44px" type="password"/>
+                        <button aria-label="Hiện mật khẩu" class="pwd-toggle" type="button" onclick="var p=document.getElementById('password');if(p)p.type=p.type==='password'?'text':'password';">
+                            <svg aria-hidden="true" class="lucide lucide-eye" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+                                <path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"/>
+                                <circle cx="12" cy="12" r="3"/>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Ghi nhớ đăng nhập & Quên mật khẩu -->
+                <div class="form-row">
+                    <label class="cbx">
+                        <input checked="checked" type="checkbox" name="remember"/>
+                        <span class="box">
+                            <svg viewBox="0 0 24 24">
+                                <polyline points="20 6 9 17 4 12"/>
+                            </svg>
+                        </span>
+                        <span>Ghi nhớ đăng nhập</span>
+                    </label>
+                    <a href="/web/reset_password" class="form-forgot">Quên mật khẩu?</a>
+                </div>
+
+                <input type="hidden" name="redirect" t-att-value="redirect"/>
+                <!-- Nút Đăng nhập -->
+                <button class="btn-submit" type="submit">
+                    <svg aria-hidden="true" class="lucide lucide-log-in" fill="none" height="16" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" viewBox="0 0 24 24" width="16" xmlns="http://www.w3.org/2000/svg">
+                        <path d="m10 17 5-5-5-5"/>
+                        <path d="M15 12H3"/>
+                        <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
+                    </svg>
+                    Đăng nhập
+                </button>
+
+                <t t-if="debug">
+                    <div class="text-center mt-3">
+                        <button type="submit" name="redirect" value="/web/become" class="btn btn-link btn-sm text-muted">Đăng nhập tài khoản Siêu Quản Trị (Superuser)</button>
+                    </div>
+                </t>
+            </form>
+        </xpath>
+    </template>
+</odoo>
