@@ -526,11 +526,11 @@ html, body {
 
 /* ---------------- Cột trái: Trình bày Giá Trị Cốt Lõi ---------------- */
 .presentation-side {
-    flex: 1 !important;
+    flex: 1.2 !important;
     display: flex !important;
     flex-direction: column !important;
     justify-content: space-between !important;
-    padding: 40px 52px 36px !important;
+    padding: 44px 60px 40px !important;
     position: relative !important;
     z-index: 2 !important;
     box-sizing: border-box !important;
@@ -542,7 +542,7 @@ html, body {
 }
 
 .top-brand-logo img {
-    height: 48px !important;
+    height: 56px !important;
     width: auto !important;
     display: block !important;
     object-fit: contain !important;
@@ -554,28 +554,28 @@ html, body {
     align-items: center !important;
     text-align: center !important;
     margin: auto 0 !important;
-    padding: 24px 0 !important;
-    max-width: 820px !important;
+    padding: 28px 0 !important;
+    max-width: 1040px !important;
     width: 100% !important;
     margin-left: auto !important;
     margin-right: auto !important;
 }
 
 .core-heading-wrap {
-    margin-bottom: 32px !important;
+    margin-bottom: 36px !important;
     text-align: center !important;
 }
 
 .core-title {
-    font-size: 46px !important;
+    font-size: 58px !important;
     font-weight: 800 !important;
-    letter-spacing: -0.01em !important;
-    line-height: 1.2 !important;
+    letter-spacing: -0.015em !important;
+    line-height: 1.18 !important;
     margin: 0 !important;
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    gap: 12px !important;
+    gap: 16px !important;
 }
 
 .word-navy {
@@ -588,60 +588,60 @@ html, body {
 }
 
 .title-gold-line {
-    width: 90px !important;
-    height: 4px !important;
+    width: 120px !important;
+    height: 5px !important;
     background: #EAA015 !important;
-    border-radius: 2px !important;
-    margin: 10px auto 0 !important;
+    border-radius: 3px !important;
+    margin: 14px auto 0 !important;
 }
 
 .core-subtitle {
-    font-size: 16.5px !important;
+    font-size: 19px !important;
     font-weight: 500 !important;
     color: #475569 !important;
     line-height: 1.65 !important;
-    margin: 18px 0 0 0 !important;
-    max-width: 660px !important;
+    margin: 20px 0 0 0 !important;
+    max-width: 780px !important;
 }
 
 .values-row {
     display: flex !important;
     justify-content: center !important;
-    gap: 20px !important;
+    gap: 26px !important;
     width: 100% !important;
-    margin-top: 16px !important;
+    margin-top: 24px !important;
 }
 
 .value-card {
-    flex: 1 !important;
-    max-width: 250px !important;
+    flex: 1 1 280px !important;
+    max-width: 330px !important;
     background: #FFFFFF !important;
     border: 1.5px solid rgba(240, 230, 210, 0.95) !important;
-    border-radius: 18px !important;
-    padding: 22px 22px 20px !important;
-    box-shadow: 0 10px 28px rgba(220, 180, 100, 0.1), 0 2px 8px rgba(0, 0, 0, 0.02) !important;
+    border-radius: 22px !important;
+    padding: 30px 28px 28px !important;
+    box-shadow: 0 14px 34px rgba(220, 180, 100, 0.14), 0 3px 10px rgba(0, 0, 0, 0.03) !important;
     text-align: left !important;
     transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease !important;
     box-sizing: border-box !important;
 }
 
 .value-card:hover {
-    transform: translateY(-4px) !important;
-    box-shadow: 0 16px 36px rgba(220, 180, 100, 0.18) !important;
+    transform: translateY(-5px) !important;
+    box-shadow: 0 20px 42px rgba(220, 180, 100, 0.22) !important;
     border-color: #EAA015 !important;
 }
 
 .value-card-header {
     display: flex !important;
     align-items: center !important;
-    gap: 12px !important;
-    margin-bottom: 12px !important;
+    gap: 14px !important;
+    margin-bottom: 14px !important;
 }
 
 .value-icon-box {
-    width: 44px !important;
-    height: 44px !important;
-    border-radius: 12px !important;
+    width: 54px !important;
+    height: 54px !important;
+    border-radius: 14px !important;
     background: #FFFBEB !important;
     border: 1.5px solid #FDE68A !important;
     display: flex !important;
@@ -649,27 +649,27 @@ html, body {
     justify-content: center !important;
     flex-shrink: 0 !important;
     color: #EAA015 !important;
-    box-shadow: 0 2px 6px rgba(234, 160, 21, 0.1) !important;
+    box-shadow: 0 3px 8px rgba(234, 160, 21, 0.12) !important;
 }
 
 .value-icon-box svg {
-    width: 22px !important;
-    height: 22px !important;
+    width: 28px !important;
+    height: 28px !important;
     stroke: #EAA015 !important;
-    stroke-width: 2.2 !important;
+    stroke-width: 2.3 !important;
 }
 
 /* Vạch màu vàng ở giữa icon và chữ theo đúng yêu cầu */
 .value-divider {
-    width: 2.5px !important;
-    height: 26px !important;
+    width: 3.5px !important;
+    height: 32px !important;
     background: #EAA015 !important;
     border-radius: 2px !important;
     flex-shrink: 0 !important;
 }
 
 .value-title {
-    font-size: 18px !important;
+    font-size: 22px !important;
     font-weight: 800 !important;
     color: #1E293B !important;
     margin: 0 !important;
@@ -677,18 +677,19 @@ html, body {
 }
 
 .value-desc {
-    font-size: 13px !important;
+    font-size: 15px !important;
     color: #64748B !important;
-    line-height: 1.55 !important;
+    line-height: 1.6 !important;
     margin: 0 !important;
+    font-weight: 500 !important;
 }
 
 .page-footer-left {
     text-align: left !important;
-    font-size: 13px !important;
+    font-size: 14px !important;
     color: #64748B !important;
     font-weight: 500 !important;
-    margin-top: 20px !important;
+    margin-top: 24px !important;
 }
 
 /* ---------------- Cột phải: Login Card nổi ---------------- */
@@ -1114,7 +1115,7 @@ button[value*="become"],
                         <div class="value-card">
                             <div class="value-card-header">
                                 <div class="value-icon-box">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-heart-handshake">
                                         <path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>
                                         <path d="M12 5 9.04 7.96a2.17 2.17 0 0 0 0 3.08v0c.82.82 2.13.85 3 .07l2.07-1.9a2.82 2.82 0 0 1 3.79 0l2.96 2.66"/>
                                         <path d="m18 15-2-2"/>
@@ -1134,7 +1135,7 @@ button[value*="become"],
                         <div class="value-card">
                             <div class="value-card-header">
                                 <div class="value-icon-box">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users">
                                         <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
                                         <circle cx="9" cy="7" r="4"/>
                                         <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
@@ -1154,7 +1155,7 @@ button[value*="become"],
                         <div class="value-card">
                             <div class="value-card-header">
                                 <div class="value-icon-box">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-shield-check">
                                         <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/>
                                         <path d="m9 12 2 2 4-4"/>
                                     </svg>
