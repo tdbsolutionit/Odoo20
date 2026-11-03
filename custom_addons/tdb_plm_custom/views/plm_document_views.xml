@@ -3,7 +3,7 @@
     <!-- ======================================================================= -->
     <!-- TDB SOLUTION - PHÂN TẦNG LAYER 5: VIEWS VÀ GIAO DIỆN BACKEND PLM       -->
     <!-- Kế thừa giao diện danh sách PLM Documents (ir_attachment_list)          -->
-    <!-- Chuẩn hóa 100% tiêu đề cột sang dạng: English Name (Tên Tiếng Việt)    -->
+    <!-- Hiển thị 2 dòng: Tiếng Anh ở trên, mở ngoặc (Tiếng Việt) ở dưới         -->
     <!-- ======================================================================= -->
 
     <record id="plm_ir_attachment_list_inherit_tdb" model="ir.ui.view">
@@ -18,59 +18,58 @@
                 <attribute name="string">Documents (Tài liệu kỹ thuật)</attribute>
             </xpath>
 
-            <!-- Preview -> Preview (Xem trước) -->
+            <!-- Preview -> Preview / (Xem trước) -->
             <xpath expr="//field[@name='preview']" position="attributes">
-                <attribute name="string">Preview (Xem trước)</attribute>
+                <attribute name="string">Preview&#10;(Xem trước)</attribute>
                 <attribute name="class">text-center</attribute>
             </xpath>
 
-            <!-- Tên -> Document Name (Tên tài liệu) -->
+            <!-- Tên -> Document Name / (Tên tài liệu) -->
             <xpath expr="//field[@name='name']" position="attributes">
-                <attribute name="string">Document Name (Tên tài liệu)</attribute>
+                <attribute name="string">Document Name&#10;(Tên tài liệu)</attribute>
             </xpath>
 
-            <!-- Engineering Revision -> Engineering Revision (Phiên bản kỹ thuật) -->
+            <!-- Engineering Revision -> Engineering Revision / (Phiên bản kỹ thuật) -->
             <xpath expr="//field[@name='engineering_revision']" position="attributes">
-                <attribute name="string">Engineering Revision (Phiên bản kỹ thuật)</attribute>
+                <attribute name="string">Engineering Revision&#10;(Phiên bản kỹ thuật)</attribute>
                 <attribute name="class">text-center</attribute>
             </xpath>
 
-            <!-- Engineering Status -> Engineering Status (Trạng thái kỹ thuật) -->
+            <!-- Engineering Status -> Engineering Status / (Trạng thái kỹ thuật) -->
             <xpath expr="//field[@name='engineering_state']" position="attributes">
-                <attribute name="string">Engineering Status (Trạng thái kỹ thuật)</attribute>
+                <attribute name="string">Engineering Status&#10;(Trạng thái kỹ thuật)</attribute>
                 <attribute name="class">text-center</attribute>
             </xpath>
 
-            <!-- Engineering Code -> Engineering Code (Mã kỹ thuật) -->
+            <!-- Engineering Code -> Engineering Code / (Mã kỹ thuật) -->
             <xpath expr="//field[@name='engineering_code']" position="attributes">
-                <attribute name="string">Engineering Code (Mã kỹ thuật)</attribute>
+                <attribute name="string">Engineering Code&#10;(Mã kỹ thuật)</attribute>
             </xpath>
 
-            <!-- Checked-Out By -> Checked-Out By (Được kiểm xuất bởi) -->
+            <!-- Checked-Out By -> Checked-Out By / (Được kiểm xuất bởi) -->
             <xpath expr="//field[@name='checkout_user']" position="attributes">
-                <attribute name="string">Checked-Out By (Được kiểm xuất bởi)</attribute>
+                <attribute name="string">Checked-Out By&#10;(Được kiểm xuất bởi)</attribute>
             </xpath>
 
-            <!-- Created By -> Created By (Người tạo) -->
+            <!-- Created By -> Created By / (Người tạo) -->
             <xpath expr="//field[@name='create_uid']" position="attributes">
-                <attribute name="string">Created By (Người tạo)</attribute>
+                <attribute name="string">Created By&#10;(Người tạo)</attribute>
             </xpath>
 
-            <!-- Creation Date -> Creation Date (Ngày tạo) -->
+            <!-- Creation Date -> Created Date / (Ngày tạo) -->
             <xpath expr="//field[@name='create_date']" position="attributes">
-                <attribute name="string">Created Date (Ngày tạo)</attribute>
+                <attribute name="string">Created Date&#10;(Ngày tạo)</attribute>
             </xpath>
 
-            <!-- Modified By -> Modified By (Người sửa) -->
+            <!-- Modified By -> Modified By / (Người sửa) -->
             <xpath expr="//field[@name='write_uid']" position="attributes">
-                <attribute name="string">Modified By (Người sửa)</attribute>
+                <attribute name="string">Modified By&#10;(Người sửa)</attribute>
             </xpath>
 
-            <!-- Modification Date -> Modification Date (Ngày sửa) -->
+            <!-- Modification Date -> Modified Date / (Ngày sửa) -->
             <xpath expr="//field[@name='write_date']" position="attributes">
-                <attribute name="string">Modified Date (Ngày sửa)</attribute>
+                <attribute name="string">Modified Date&#10;(Ngày sửa)</attribute>
             </xpath>
         </field>
     </record>
 </odoo>
-

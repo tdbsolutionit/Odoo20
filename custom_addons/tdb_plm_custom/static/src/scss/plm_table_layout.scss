@@ -26,7 +26,7 @@
         border-spacing: 0;
         border-bottom: 1px solid $plm-header-border;
 
-        // Dòng tiêu đề cột
+        // Dòng tiêu đề cột: Cho phép xuống 2 dòng (Tiếng Anh trên, Tiếng Việt dưới)
         thead {
             tr {
                 background-color: $plm-header-bg;
@@ -37,11 +37,23 @@
                 font-size: 0.815rem !important;
                 font-weight: 600 !important;
                 letter-spacing: 0.01em;
-                line-height: 1.35 !important;
+                line-height: 1.25 !important;
                 color: $plm-header-text !important;
-                white-space: nowrap !important;
+                white-space: normal !important; // Cho phép xuống dòng!
+                text-align: center !important;
+                vertical-align: middle !important;
 
-                span {
+                span,
+                .o_column_title,
+                .text-truncate,
+                .d-block {
+                    white-space: pre-line !important; // Hiển thị ngắt dòng \n thành 2 dòng!
+                    word-break: normal !important;
+                    overflow: visible !important;
+                    text-overflow: clip !important;
+                    line-height: 1.25 !important;
+                    display: block !important;
+                    text-align: center !important;
                     font-weight: 600 !important;
                 }
             }
@@ -65,4 +77,3 @@
         }
     }
 }
-

@@ -1,27 +1,38 @@
 // =============================================================================
 // TDB SOLUTION - PHÂN TẦNG SCSS 3: TABLE HEADER ALIGNMENT & COLUMN WIDTHS
-// Căn lề chuẩn hóa, đồng đều và cấp độ rộng tối thiểu cho từng cột PLM
-// Giải quyết dứt điểm tình trạng lệch mép và cắt chữ (Engineer..., Cad Surface...)
+// Căn lề chuẩn hóa 2 dòng: Tiếng Anh ở trên, mở ngoặc Tiếng Việt ở dưới
 // =============================================================================
 
 .tdb_plm_list_view table.o_list_table thead {
     th {
         vertical-align: middle !important;
-        padding: 9px 12px !important;
+        padding: 8px 10px !important;
         border-bottom: 2px solid $plm-header-border !important;
         border-right: 1px solid rgba(0, 0, 0, 0.04);
         position: relative;
         user-select: none;
+        text-align: center !important;
 
         &:last-child {
             border-right: none;
         }
 
-        // Căn thẳng hàng icon sắp xếp
+        // Căn giữa nội dung và icon sắp xếp
         .o_column_sortable {
             display: flex;
+            flex-direction: row;
+            justify-content: center !important;
             align-items: center;
             gap: 4px;
+        }
+
+        span,
+        .text-truncate {
+            white-space: pre-line !important;
+            overflow: visible !important;
+            text-overflow: clip !important;
+            text-align: center !important;
+            line-height: 1.25 !important;
         }
     }
 
@@ -33,99 +44,85 @@
         text-align: center !important;
     }
 
-    // 1. Hình ảnh: Image (Hình ảnh)
+    // 1. Hình ảnh: Image / (Hình ảnh)
     th[data-name="image_1920"],
     th[data-name="preview"],
     th[data-name="preview_related"] {
         width: $col-w-image !important;
         min-width: $col-w-image !important;
-        max-width: $col-w-image !important;
         text-align: center !important;
     }
 
-    // 2. Tên linh kiện: Name (Tên)
+    // 2. Tên linh kiện: Name / (Tên)
     th[data-name="name"] {
-        min-width: $col-w-name !important;
-        text-align: left !important;
+        min-width: 170px !important;
+        text-align: center !important;
     }
 
-    // Cột cấu hình: Configuration Name (Tên cấu hình)
+    // Cột cấu hình: Configuration Name / (Tên cấu hình)
     th[data-name="configuration_name"] {
-        min-width: $col-w-config !important;
-        text-align: left !important;
+        min-width: 180px !important;
+        text-align: center !important;
     }
 
-    // 3. Mã kỹ thuật: Engineering Code (Mã kỹ thuật)
+    // 3. Mã kỹ thuật: Engineering Code / (Mã kỹ thuật)
     th[data-name="engineering_code"] {
-        min-width: $col-w-eng-code !important;
-        text-align: left !important;
+        min-width: 180px !important;
+        text-align: center !important;
     }
 
-    // 4. Tham chiếu nội bộ: Internal Reference (Tham chiếu nội bộ)
+    // 4. Tham chiếu nội bộ: Internal Reference / (Tham chiếu nội bộ)
     th[data-name="default_code"] {
-        min-width: $col-w-default-code !important;
-        text-align: left !important;
+        min-width: 190px !important;
+        text-align: center !important;
     }
 
-    // 5. Phiên bản: Engineering Revision (Phiên bản kỹ thuật) - Canh giữa chuẩn
+    // 5. Phiên bản: Engineering Revision / (Phiên bản kỹ thuật)
     th[data-name="engineering_revision"] {
-        min-width: $col-w-revision !important;
+        min-width: 175px !important;
         text-align: center !important;
-
-        .o_column_sortable {
-            justify-content: center !important;
-        }
     }
 
-    // 6. Trạng thái: Engineering Status (Trạng thái kỹ thuật) - Canh giữa chuẩn
+    // 6. Trạng thái: Engineering Status / (Trạng thái kỹ thuật)
     th[data-name="engineering_state"] {
-        min-width: $col-w-status !important;
+        min-width: 180px !important;
         text-align: center !important;
-
-        .o_column_sortable {
-            justify-content: center !important;
-        }
     }
 
-    // 7. Mô tả: Description (Mô tả)
+    // 7. Mô tả: Description / (Mô tả)
     th[data-name="description"] {
-        min-width: $col-w-desc !important;
-        text-align: left !important;
-    }
-
-    // 8. Quyền ghi: Writable (Có thể chỉnh sửa) - Canh giữa chuẩn
-    th[data-name="engineering_writable"] {
-        min-width: $col-w-writable !important;
+        min-width: 170px !important;
         text-align: center !important;
-
-        .o_column_sortable {
-            justify-content: center !important;
-        }
     }
 
-    // 9. Vật liệu thô: CAD Raw Material (Vật liệu thô CAD)
+    // 8. Quyền ghi: Writable / (Có thể chỉnh sửa)
+    th[data-name="engineering_writable"] {
+        min-width: 160px !important;
+        text-align: center !important;
+    }
+
+    // 9. Vật liệu thô: CAD Raw Material / (Vật liệu thô CAD)
     th[data-name="engineering_material"] {
-        min-width: $col-w-material !important;
-        text-align: left !important;
+        min-width: 190px !important;
+        text-align: center !important;
     }
 
-    // 10. Hoàn thiện bề mặt: CAD Surface Finishing (Hoàn thiện bề mặt CAD)
+    // 10. Hoàn thiện bề mặt: CAD Surface Finishing / (Hoàn thiện bề mặt CAD)
     th[data-name="engineering_surface"] {
-        min-width: $col-w-surface !important;
-        text-align: left !important;
+        min-width: 210px !important;
+        text-align: center !important;
     }
 
-    // 11. Tài liệu liên kết: Linked Documents (Tài liệu liên kết)
+    // 11. Tài liệu liên kết: Linked Documents / (Tài liệu liên kết)
     th[data-name="linkeddocuments"] {
-        min-width: $col-w-linkeddocs !important;
-        text-align: left !important;
+        min-width: 180px !important;
+        text-align: center !important;
     }
 
-    // 12. Kiểm xuất: Checked-Out By (Được kiểm xuất bởi)
+    // 12. Kiểm xuất: Checked-Out By / (Được kiểm xuất bởi)
     th[data-name="document_checkout_user_ids"],
     th[data-name="checkout_user"] {
-        min-width: $col-w-checkout !important;
-        text-align: left !important;
+        min-width: 190px !important;
+        text-align: center !important;
     }
 }
-
