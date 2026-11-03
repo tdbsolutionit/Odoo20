@@ -3,9 +3,10 @@
 """
 Kịch bản tự động hóa cài đặt & nâng cấp E-Learning (Học trực tuyến) trên Windows Server:
 1. Tự động kiểm tra và nâng cấp module gốc 'website_slides' (eLearning) và 'tdb_slides_custom' (Video ổ đĩa).
-2. Tự động khởi tạo thư mục Video trên ổ đĩa Server (C:\\odoo20\\videos hoặc C:\\Videos) nếu chưa có.
+2. Tự động nhận diện thư mục Video trên ổ đĩa Server (Ưu tiên ổ D:\\KhoaHoc hoặc C:\\odoo20\\videos).
 3. Thiết lập thông số cấu hình hệ thống tdb_slides_custom.base_video_path tương thích 100% với Odoo 20.
-4. Làm mới Asset bundles cache để trình phát video Coursera và giao diện Quiz hoạt động hoàn hảo.
+4. Tự động quét và lập danh mục các thư mục video con có sẵn trong D:\\KhoaHoc để dùng ngay trong khóa học.
+5. Làm mới Asset bundles cache để trình phát video Coursera và giao diện Quiz hoạt động hoàn hảo.
 """
 import os
 import sys
@@ -87,9 +88,11 @@ def main():
     with registry.cursor() as cr:
         env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {'no_vat_validation': True})
 
-        # Bước 1: Chuẩn bị thư mục Video trên Server
-        print("\n[2/5] Kiểm tra và khởi tạo thư mục lưu trữ Video trên Server...")
+        # Bước 1: Chuẩn bị thư mục Video trên Server (Ưu tiên D:\KhoaHoc)
+        print("\n[2/5] Kiểm tra và thiết lập thư mục lưu trữ Video trên Server...")
         video_candidates = [
+            r'D:\KhoaHoc',
+            r'D:\videos',
             r'C:\odoo20\videos',
             r'C:\odoo20\odoo\videos',
             r'C:\Videos',
@@ -103,27 +106,18 @@ def main():
                 break
 
         if not target_video_dir:
-            target_video_dir = r'C:\odoo20\videos' if os.name == 'nt' else '/data/videos'
+            target_video_dir = r'D:\KhoaHoc' if os.path.exists('D:\\') else (r'C:\odoo20\videos' if os.name == 'nt' else '/data/videos')
             try:
                 os.makedirs(target_video_dir, exist_ok=True)
-                print(f"  [TẠO MỚI]: Đã tạo thư mục gốc: {target_video_dir}")
+                print(f"  [TẠO MỚI]: Đã tạo thư mục: {target_video_dir}")
             except Exception as e:
                 print(f"  [LƯU Ý]: Không thể tạo {target_video_dir}: {e}")
 
-        # Tạo sẵn các thư mục mẫu con
-        subfolders = ['python_demo', 'KhoaHocTest', 'Captures']
-        for sub in subfolders:
-            sub_p = os.path.join(target_video_dir, sub)
-            try:
-                os.makedirs(sub_p, exist_ok=True)
-            except Exception:
-                pass
-
-        print(f"  [OK] Thư mục Video gốc sẵn sàng: {target_video_dir}")
+        print(f"  [OK] Thư mục Video gốc được chọn: {target_video_dir}")
 
         # Lưu vào ir.config_parameter (tương thích Odoo 20)
         safe_set_param(env, 'tdb_slides_custom.base_video_path', target_video_dir)
-        print("  [OK] Đã lưu thông số 'tdb_slides_custom.base_video_path' vào Database.")
+        print("  [OK] Đã cấu hình 'tdb_slides_custom.base_video_path' = " + target_video_dir)
 
         # Bước 2: Nâng cấp / Cài đặt website_slides
         print("\n[3/5] Cài đặt & Kích hoạt module gốc 'website_slides' (eLearning)...")
@@ -183,22 +177,43 @@ def main():
             print("  [CẢNH BÁO]: Chưa tìm thấy module 'tdb_slides_custom' trong addons_path.")
             print("  Vui lòng đảm bảo 'c:\\odoo20\\custom_addons' có trong addons_path của odoo.conf.")
 
-        # Tạo bản ghi thư mục mẫu nếu chưa có
+        # Quét và tạo danh mục các thư mục video con trong target_video_dir (D:\KhoaHoc)
         try:
             Folder = env['slide.video.folder']
-            existing_folders = Folder.search([])
-            if not existing_folders and os.path.exists(target_video_dir):
-                for sub in subfolders:
-                    full_sub = os.path.join(target_video_dir, sub)
-                    if os.path.exists(full_sub):
-                        Folder.create({
-                            'name': f'Thư mục {sub}',
-                            'folder_path': sub,
-                            'description': f'Thư mục video tự động tại {full_sub}'
-                        })
-                print("  [OK] Đã tạo các bản ghi Thư mục Video mẫu trong Quản lý E-Learning!")
+            video_exts = ('.mp4', '.mkv', '.avi', '.mov', '.webm', '.flv', '.m4v')
+
+            # 1. Bản ghi thư mục gốc
+            root_rec = Folder.search(['|', ('folder_path', '=', target_video_dir), ('folder_path', '=', target_video_dir.rstrip(r'\/'))], limit=1)
+            root_name = os.path.basename(target_video_dir.rstrip(r'\/')) or 'KhoaHoc'
+            if not root_rec:
+                root_rec = Folder.create({
+                    'name': f'Thư mục gốc {root_name}',
+                    'folder_path': target_video_dir,
+                    'description': f'Thư mục video gốc tại {target_video_dir}'
+                })
+                print(f"  [TẠO MỚI]: Bản ghi thư mục gốc '{root_rec.name}' ({target_video_dir})")
+            else:
+                print(f"  [SẴN SÀNG]: Bản ghi thư mục gốc '{root_rec.name}' ({target_video_dir})")
+
+            # 2. Quét các thư mục con bên trong target_video_dir
+            if os.path.exists(target_video_dir) and os.path.isdir(target_video_dir):
+                for item in sorted(os.listdir(target_video_dir)):
+                    item_full = os.path.join(target_video_dir, item)
+                    if os.path.isdir(item_full) and not item.startswith('.'):
+                        vid_count = len([f for f in os.listdir(item_full) if f.lower().endswith(video_exts)])
+                        clean_name = item.replace('_', ' ').replace('-', ' ').title()
+                        f_rec = Folder.search(['|', ('folder_path', '=', item), ('folder_path', '=', item_full)], limit=1)
+                        if not f_rec:
+                            f_rec = Folder.create({
+                                'name': clean_name or f'Thư mục {item}',
+                                'folder_path': item_full,
+                                'description': f'Thư mục video tại {item_full} (Có {vid_count} video)'
+                            })
+                            print(f"  [PHÁT HIỆN]: Đã thêm thư mục '{clean_name}' ({item_full}) - Tìm thấy {vid_count} video.")
+                        else:
+                            print(f"  [SẴN SÀNG]: Thư mục '{f_rec.name}' ({item_full}) - Tìm thấy {vid_count} video.")
         except Exception as e:
-            print(f"  [Lưu ý tạo folder mẫu]: {e}")
+            print(f"  [Lưu ý quét thư mục video]: {e}")
 
         # Bước 4: Xóa sạch cache Asset Bundles và QWeb
         print("\n[5/5] Làm sạch bộ nhớ đệm Asset Bundles & QWeb cache...")

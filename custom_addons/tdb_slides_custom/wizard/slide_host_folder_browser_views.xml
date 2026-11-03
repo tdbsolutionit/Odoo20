@@ -9,6 +9,7 @@
                     <!-- Thanh điều hướng và lối tắt -->
                     <div class="d-flex align-items-center flex-wrap gap-2 p-2 bg-light rounded border mb-2">
                         <button name="action_go_up" string="Lên một cấp" type="object" class="btn-outline-dark btn-sm"/>
+                        <button name="action_go_d_drive" string="Ổ D:\KhoaHoc" type="object" class="btn-outline-info btn-sm fw-bold"/>
                         <button name="action_go_root" string="Thư mục gốc" type="object" class="btn-outline-secondary btn-sm"/>
                         <button name="action_go_base_videos" string="Thư mục mặc định" type="object" class="btn-outline-primary btn-sm"/>
                         <button name="action_go_project_videos" string="Thư mục dự án" type="object" class="btn-outline-secondary btn-sm"/>

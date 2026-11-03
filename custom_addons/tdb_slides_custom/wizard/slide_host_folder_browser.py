@@ -75,17 +75,21 @@ class SlideHostFolderBrowserWizard(models.TransientModel):
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
         base_dir = self.env['slide.video.folder']._get_base_video_path()
-        if is_in_docker():
+        if os.path.exists(base_dir):
+            default_dir = base_dir
+        elif os.path.exists(r'D:\KhoaHoc'):
+            default_dir = r'D:\KhoaHoc'
+        elif is_in_docker():
             if os.path.exists(win_to_container_path(base_dir)):
                 default_dir = base_dir
+            elif os.path.exists('/host_d/KhoaHoc'):
+                default_dir = 'D:\\KhoaHoc'
             elif os.path.exists('/host_c'):
                 default_dir = 'C:\\'
             else:
                 default_dir = '/mnt/videos'
-        elif os.path.exists(base_dir):
-            default_dir = base_dir
         elif os.name == 'nt':
-            default_dir = 'C:\\'
+            default_dir = r'D:\KhoaHoc' if os.path.exists(r'D:\KhoaHoc') else ('D:\\' if os.path.exists('D:\\') else 'C:\\')
         else:
             default_dir = '/'
         res['current_path'] = default_dir
@@ -206,6 +210,18 @@ class SlideHostFolderBrowserWizard(models.TransientModel):
     def action_go_c_drive(self):
         r"""Lối tắt đến ổ đĩa C:\ hoặc Root /"""
         return self.action_go_root()
+
+    def action_go_d_drive(self):
+        """Lối tắt đến ổ đĩa D:\\KhoaHoc hoặc D:\\"""
+        self.ensure_one()
+        d_path = r'D:\KhoaHoc' if os.path.exists(r'D:\KhoaHoc') else ('D:\\' if os.path.exists('D:\\') else 'C:\\')
+        if is_in_docker():
+            if os.path.exists('/host_d/KhoaHoc'):
+                d_path = 'D:\\KhoaHoc'
+            elif os.path.exists('/host_d'):
+                d_path = 'D:\\'
+        self._load_folder(d_path)
+        return self._reopen_wizard()
 
     def action_select_current_folder(self):
         """Chọn thư mục hiện tại đang đứng"""

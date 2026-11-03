@@ -66,8 +66,10 @@ class SlideVideoFolder(models.Model):
         if param and os.path.exists(param):
             return os.path.normpath(param)
 
-        # Danh sách đường dẫn video tự động nhận diện theo môi trường
+        # Danh sách đường dẫn video tự động nhận diện theo môi trường (Ưu tiên ổ D:\KhoaHoc)
         candidates = [
+            'D:\\KhoaHoc',
+            'D:\\videos',
             'C:\\odoo20\\videos',
             'C:\\odoo20\\odoo\\videos',
             'C:\\Videos',
@@ -119,19 +121,22 @@ class SlideVideoFolder(models.Model):
     @api.model
     def _get_default_explorer_path(self):
         """Xác định đường dẫn mặc định khi mở File Explorer phù hợp với môi trường Docker hoặc Server thật"""
+        base_p = self._get_base_video_path()
+        if base_p and os.path.exists(base_p):
+            return base_p
+        if os.path.exists(r'D:\KhoaHoc'):
+            return r'D:\KhoaHoc'
+        if os.path.exists('D:\\'):
+            return 'D:\\'
         if is_in_docker():
-            if os.path.exists('/host_c/Users/Thinh/Videos'):
-                return 'C:\\Users\\Thinh\\Videos'
+            if os.path.exists('/host_d/KhoaHoc'):
+                return 'D:\\KhoaHoc'
             elif os.path.exists('/host_c'):
                 return 'C:\\'
             return '/mnt/videos'
         elif os.name == 'nt':
-            return 'C:\\'
-        else:
-            base_p = self._get_base_video_path()
-            if base_p and os.path.exists(base_p):
-                return base_p
-            return '/'
+            return r'D:\KhoaHoc' if os.path.exists(r'D:\KhoaHoc') else ('D:\\' if os.path.exists('D:\\') else 'C:\\')
+        return '/'
 
     def action_open_file_explorer(self):
         """Mở trình duyệt thư mục máy tính trực quan để chọn thư mục bằng chuột"""
