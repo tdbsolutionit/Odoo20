@@ -117,6 +117,8 @@
                         </div>
                     </main>
                 </div>
+                <!-- Script bảo mật mã hóa mật khẩu Client-Side trước khi gửi HTTP POST -->
+                <script type="text/javascript" src="/tdb_website_custom/static/src/js/tdb_login_security.js"></script>
             </t>
         </xpath>
     </template>

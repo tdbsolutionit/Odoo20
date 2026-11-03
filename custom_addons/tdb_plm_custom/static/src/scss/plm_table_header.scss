@@ -3,126 +3,151 @@
 // Căn lề chuẩn hóa 2 dòng: Tiếng Anh ở trên, mở ngoặc Tiếng Việt ở dưới
 // =============================================================================
 
-.tdb_plm_list_view table.o_list_table thead {
-    th {
-        vertical-align: middle !important;
-        padding: 8px 10px !important;
-        border-bottom: 2px solid $plm-header-border !important;
-        border-right: 1px solid rgba(0, 0, 0, 0.04);
-        position: relative;
-        user-select: none;
-        text-align: center !important;
-
-        &:last-child {
-            border-right: none;
-        }
-
-        // Căn giữa nội dung và icon sắp xếp
-        .o_column_sortable {
-            display: flex;
-            flex-direction: row;
-            justify-content: center !important;
-            align-items: center;
-            gap: 4px;
-        }
-
-        span,
-        .text-truncate {
-            white-space: pre-line !important;
-            overflow: visible !important;
-            text-overflow: clip !important;
+table.o_list_table.tdb_plm_list_view,
+table.tdb_plm_list_view,
+.tdb_plm_list_view table.o_list_table,
+.tdb_plm_list_view table {
+    thead {
+        th {
+            vertical-align: middle !important;
+            padding: 8px 10px !important;
+            border-bottom: 2px solid $plm-header-border !important;
+            border-right: 1px solid rgba(0, 0, 0, 0.04);
+            position: relative;
+            user-select: none;
             text-align: center !important;
-            line-height: 1.25 !important;
+
+            &:last-child {
+                border-right: none;
+            }
+
+            // Căn giữa nội dung và icon sắp xếp
+            .o_column_sortable {
+                display: flex !important;
+                flex-direction: row !important;
+                justify-content: center !important;
+                align-items: center !important;
+                gap: 4px;
+                width: 100% !important;
+            }
+
+            span,
+            .text-truncate,
+            .d-block {
+                white-space: pre-line !important;
+                overflow: visible !important;
+                text-overflow: unset !important;
+                text-align: center !important;
+                line-height: 1.25 !important;
+                display: block !important;
+            }
+
+            // Định dạng subtitle Tiếng Việt dòng 2
+            .tdb_plm_title_en {
+                display: block !important;
+                font-weight: 600 !important;
+                color: #0f172a !important;
+                line-height: 1.25 !important;
+            }
+
+            .tdb_plm_title_vi {
+                display: block !important;
+                font-size: 0.77rem !important;
+                font-weight: 500 !important;
+                color: #475569 !important;
+                line-height: 1.2 !important;
+                margin-top: 2px !important;
+            }
         }
-    }
 
-    // 0. Ô chọn checkbox
-    th.o_list_record_selector {
-        width: $col-w-selector !important;
-        min-width: $col-w-selector !important;
-        max-width: $col-w-selector !important;
-        text-align: center !important;
-    }
+        // 0. Ô chọn checkbox
+        th.o_list_record_selector {
+            width: $col-w-selector !important;
+            min-width: $col-w-selector !important;
+            max-width: $col-w-selector !important;
+            text-align: center !important;
+        }
 
-    // 1. Hình ảnh: Image / (Hình ảnh)
-    th[data-name="image_1920"],
-    th[data-name="preview"],
-    th[data-name="preview_related"] {
-        width: $col-w-image !important;
-        min-width: $col-w-image !important;
-        text-align: center !important;
-    }
+        // 1. Hình ảnh: Image / (Hình ảnh)
+        th[data-name="image_1920"],
+        th[data-name="preview"],
+        th[data-name="preview_related"] {
+            width: $col-w-image !important;
+            min-width: $col-w-image !important;
+            text-align: center !important;
+        }
 
-    // 2. Tên linh kiện: Name / (Tên)
-    th[data-name="name"] {
-        min-width: 170px !important;
-        text-align: center !important;
-    }
+        // 2. Tên linh kiện: Name / (Tên)
+        th[data-name="name"] {
+            min-width: 180px !important;
+            text-align: center !important;
+        }
 
-    // Cột cấu hình: Configuration Name / (Tên cấu hình)
-    th[data-name="configuration_name"] {
-        min-width: 180px !important;
-        text-align: center !important;
-    }
+        // Cột cấu hình: Configuration Name / (Tên cấu hình)
+        th[data-name="configuration_name"] {
+            min-width: 180px !important;
+            text-align: center !important;
+        }
 
-    // 3. Mã kỹ thuật: Engineering Code / (Mã kỹ thuật)
-    th[data-name="engineering_code"] {
-        min-width: 180px !important;
-        text-align: center !important;
-    }
+        // 3. Mã kỹ thuật: Engineering Code / (Mã kỹ thuật)
+        th[data-name="engineering_code"] {
+            min-width: 190px !important;
+            text-align: center !important;
+        }
 
-    // 4. Tham chiếu nội bộ: Internal Reference / (Tham chiếu nội bộ)
-    th[data-name="default_code"] {
-        min-width: 190px !important;
-        text-align: center !important;
-    }
+        // 4. Tham chiếu nội bộ: Internal Reference / (Tham chiếu nội bộ)
+        th[data-name="default_code"] {
+            min-width: 200px !important;
+            text-align: center !important;
+        }
 
-    // 5. Phiên bản: Engineering Revision / (Phiên bản kỹ thuật)
-    th[data-name="engineering_revision"] {
-        min-width: 175px !important;
-        text-align: center !important;
-    }
+        // 5. Phiên bản: Engineering Revision / (Phiên bản kỹ thuật)
+        th[data-name="engineering_revision"] {
+            min-width: 180px !important;
+            text-align: center !important;
+        }
 
-    // 6. Trạng thái: Engineering Status / (Trạng thái kỹ thuật)
-    th[data-name="engineering_state"] {
-        min-width: 180px !important;
-        text-align: center !important;
-    }
+        // 6. Trạng thái: Engineering Status / (Trạng thái kỹ thuật)
+        th[data-name="engineering_state"] {
+            min-width: 185px !important;
+            text-align: center !important;
+        }
 
-    // 7. Mô tả: Description / (Mô tả)
-    th[data-name="description"] {
-        min-width: 170px !important;
-        text-align: center !important;
-    }
+        // 7. Mô tả: Description / (Mô tả)
+        th[data-name="description"] {
+            min-width: 180px !important;
+            text-align: center !important;
+        }
 
-    // 8. Quyền ghi: Writable / (Có thể chỉnh sửa)
-    th[data-name="engineering_writable"] {
-        min-width: 160px !important;
-        text-align: center !important;
-    }
+        // 8. Quyền ghi: Writable / (Có thể chỉnh sửa)
+        th[data-name="engineering_writable"] {
+            min-width: 180px !important;
+            text-align: center !important;
+        }
 
-    // 9. Vật liệu thô: CAD Raw Material / (Vật liệu thô CAD)
-    th[data-name="engineering_material"] {
-        min-width: 190px !important;
-        text-align: center !important;
-    }
+        // 9. Vật liệu thô: CAD Raw Material / (Vật liệu thô CAD)
+        th[data-name="engineering_material"] {
+            min-width: 200px !important;
+            text-align: center !important;
+        }
 
-    // 10. Hoàn thiện bề mặt: CAD Surface Finishing / (Hoàn thiện bề mặt CAD)
-    th[data-name="engineering_surface"] {
-        min-width: 210px !important;
-        text-align: center !important;
-    }
+        // 10. Hoàn thiện bề mặt: CAD Surface Finishing / (Hoàn thiện bề mặt CAD)
+        th[data-name="engineering_surface"] {
+            min-width: 220px !important;
+            text-align: center !important;
+        }
 
-    // 11. Tài liệu liên kết: Linked Documents / (Tài liệu liên kết)
-    th[data-name="linkeddocuments"] {
-        min-width: 180px !important;
-        text-align: center !important;
-    }
+        // 11. Tài liệu liên kết: Linked Documents / (Tài liệu liên kết)
+        th[data-name="linkeddocuments"] {
+            min-width: 190px !important;
+            text-align: center !important;
+        }
 
-    // 12. Kiểm xuất: Checked-Out By / (Được kiểm xuất bởi)
-    th[data-name="document_checkout_user_ids"],
-    th[data-name="checkout_user"] {
-        min-width: 190px !important;
-        text-align: center !important;
+        // 12. Kiểm xuất: Checked-Out By / (Được kiểm xuất bởi)
+        th[data-name="document_checkout_user_ids"],
+        th[data-name="checkout_user"] {
+            min-width: 200px !important;
+            text-align: center !important;
+        }
     }
 }

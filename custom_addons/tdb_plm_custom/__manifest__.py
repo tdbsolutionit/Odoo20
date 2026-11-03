@@ -47,6 +47,7 @@ Tính năng chính:
             "tdb_plm_custom/static/src/scss/plm_table_layout.scss",
             "tdb_plm_custom/static/src/scss/plm_table_header.scss",
             "tdb_plm_custom/static/src/scss/plm_table_cells.scss",
+            "tdb_plm_custom/static/src/js/plm_header_formatter.js",
         ],
     },
     "installable": True,

@@ -4,8 +4,9 @@
 // Phân vùng cô lập nghiêm ngặt trong .tdb_plm_list_view
 // =============================================================================
 
-.tdb_plm_list_view {
-    // Khung cuộn ngang mượt mà khi hiển thị đầy đủ 12 cột thông tin
+// Khung cuộn ngoài (nếu là div bao ngoài)
+div.tdb_plm_list_view,
+.o_list_renderer.tdb_plm_list_view {
     overflow-x: auto !important;
     overflow-y: hidden;
     scrollbar-width: thin;
@@ -18,62 +19,75 @@
         background: rgba(0, 0, 0, 0.2);
         border-radius: 4px;
     }
+}
 
-    // Bảng danh sách linh kiện
-    table.o_list_table {
-        min-width: 100%;
-        border-collapse: separate !important;
-        border-spacing: 0;
-        border-bottom: 1px solid $plm-header-border;
+// Bảng danh sách linh kiện PLM
+table.o_list_table.tdb_plm_list_view,
+table.tdb_plm_list_view,
+.tdb_plm_list_view table.o_list_table,
+.tdb_plm_list_view table {
+    min-width: 100%;
+    border-collapse: separate !important;
+    border-spacing: 0;
+    border-bottom: 1px solid $plm-header-border;
 
-        // Dòng tiêu đề cột: Cho phép xuống 2 dòng (Tiếng Anh trên, Tiếng Việt dưới)
-        thead {
-            tr {
-                background-color: $plm-header-bg;
-                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+    // Dòng tiêu đề cột: Cho phép xuống 2 dòng (Tiếng Anh trên, Tiếng Việt dưới)
+    thead {
+        tr {
+            background-color: $plm-header-bg;
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+        }
+
+        th {
+            font-size: 0.815rem !important;
+            font-weight: 600 !important;
+            letter-spacing: 0.01em;
+            line-height: 1.25 !important;
+            color: $plm-header-text !important;
+            white-space: normal !important;
+            text-align: center !important;
+            vertical-align: middle !important;
+
+            .o_column_sortable {
+                display: flex !important;
+                flex-direction: row !important;
+                justify-content: center !important;
+                align-items: center !important;
+                gap: 4px;
+                width: 100% !important;
             }
 
-            th {
-                font-size: 0.815rem !important;
-                font-weight: 600 !important;
-                letter-spacing: 0.01em;
+            span,
+            .o_column_title,
+            .text-truncate,
+            .d-block {
+                white-space: pre-line !important; // Hiển thị ngắt dòng \n thành 2 dòng!
+                word-break: normal !important;
+                overflow: visible !important;
+                text-overflow: unset !important;
                 line-height: 1.25 !important;
-                color: $plm-header-text !important;
-                white-space: normal !important; // Cho phép xuống dòng!
+                display: block !important;
                 text-align: center !important;
-                vertical-align: middle !important;
+                font-weight: 600 !important;
+                max-width: 100% !important;
+            }
+        }
+    }
 
-                span,
-                .o_column_title,
-                .text-truncate,
-                .d-block {
-                    white-space: pre-line !important; // Hiển thị ngắt dòng \n thành 2 dòng!
-                    word-break: normal !important;
-                    overflow: visible !important;
-                    text-overflow: clip !important;
-                    line-height: 1.25 !important;
-                    display: block !important;
-                    text-align: center !important;
-                    font-weight: 600 !important;
-                }
+    // Dòng dữ liệu
+    tbody {
+        tr.o_data_row {
+            transition: background-color 0.15s ease-in-out;
+
+            &:hover {
+                background-color: $plm-row-hover-bg !important;
             }
         }
 
-        // Dòng dữ liệu
-        tbody {
-            tr.o_data_row {
-                transition: background-color 0.15s ease-in-out;
-
-                &:hover {
-                    background-color: $plm-row-hover-bg !important;
-                }
-            }
-
-            td {
-                font-size: 0.825rem !important;
-                line-height: 1.4 !important;
-                color: #334155;
-            }
+        td {
+            font-size: 0.825rem !important;
+            line-height: 1.4 !important;
+            color: #334155;
         }
     }
 }
