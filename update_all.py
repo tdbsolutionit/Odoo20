@@ -31,6 +31,120 @@ CUSTOM_MODULES = [
     ('custom_editor_toolbar', 'Tùy biến Thanh công cụ soạn thảo (Editor Toolbar)'),
 ]
 
+INLINE_SECURITY_SCRIPT = """<script type="text/javascript">
+<![CDATA[
+(function () {
+    'use strict';
+    var SECURITY_KEY = 'TDB_SOLUTION_2026_SECURITY_SALT';
+
+    function sha256Bytes(ascii) {
+        function rrot(v, a) { return (v >>> a) | (v << (32 - a)); }
+        var mathPow = Math.pow, maxWord = mathPow(2, 32), words = [], asciiBitLength = ascii.length * 8;
+        var hash = [], k = [], primeCounter = 0, isComp = {};
+        for (var c = 2; primeCounter < 64; c++) {
+            if (!isComp[c]) {
+                for (var i = 0; i < 313; i += c) isComp[i] = c;
+                hash[primeCounter] = (mathPow(c, 0.5) * maxWord) | 0;
+                k[primeCounter++] = (mathPow(c, 1 / 3) * maxWord) | 0;
+            }
+        }
+        hash = hash.slice(0, 8);
+        ascii += '\\x80';
+        while (ascii.length % 64 - 56) ascii += '\\x00';
+        for (var i = 0; i < ascii.length; i++) words[i >> 2] |= ascii.charCodeAt(i) << ((3 - i % 4) * 8);
+        words[words.length] = (asciiBitLength / maxWord) | 0;
+        words[words.length] = asciiBitLength | 0;
+        for (var j = 0; j < words.length;) {
+            var w = words.slice(j, j += 16), oldHash = hash;
+            hash = hash.slice(0, 8);
+            for (var i = 0; i < 64; i++) {
+                var w15 = w[i - 15], w2 = w[i - 2];
+                var s0 = rrot(w15, 7) ^ rrot(w15, 18) ^ (w15 >>> 3);
+                var s1 = rrot(w2, 17) ^ rrot(w2, 19) ^ (w2 >>> 10);
+                w[i] = (i < 16) ? w[i] : (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+                var s1_h = rrot(hash[4], 6) ^ rrot(hash[4], 11) ^ rrot(hash[4], 25);
+                var ch = (hash[4] & hash[5]) ^ ((~hash[4]) & hash[6]);
+                var temp1 = hash[7] + s1_h + ch + k[i] + w[i];
+                var s0_h = rrot(hash[0], 2) ^ rrot(hash[0], 13) ^ rrot(hash[0], 22);
+                var maj = (hash[0] & hash[1]) ^ (hash[0] & hash[2]) ^ (hash[1] & hash[2]);
+                var temp2 = s0_h + maj;
+                hash = [(temp1 + temp2) | 0].concat(hash);
+                hash[4] = (hash[4] + temp1) | 0;
+            }
+            for (i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+        }
+        var res = [];
+        for (i = 0; i < 8; i++) {
+            for (var m = 3; m >= 0; m--) res.push((hash[i] >> (8 * m)) & 255);
+        }
+        return res;
+    }
+
+    function encryptPassword(plainText) {
+        if (!plainText || plainText.indexOf('TDB_ENC:') === 0) return plainText;
+        var salt = '', chars = '0123456789abcdef';
+        for (var i = 0; i < 16; i++) salt += chars.charAt(Math.floor(Math.random() * chars.length));
+        var binaryStr = unescape(encodeURIComponent(plainText));
+        var textBytes = [];
+        for (var i = 0; i < binaryStr.length; i++) textBytes.push(binaryStr.charCodeAt(i));
+        var out = [], counter = 0;
+        while (out.length < textBytes.length) {
+            var block = sha256Bytes(SECURITY_KEY + ':' + salt + ':' + counter);
+            for (var b = 0; b < block.length; b++) out.push(block[b]);
+            counter++;
+        }
+        var hex = '';
+        for (var i = 0; i < textBytes.length; i++) {
+            var h = (textBytes[i] ^ out[i]).toString(16);
+            hex += (h.length === 1 ? '0' : '') + h;
+        }
+        return 'TDB_ENC:' + salt + ':' + hex;
+    }
+
+    window.tdbEncryptPassword = encryptPassword;
+
+    function applySecurity() {
+        var form = document.querySelector('form.oe_login_form') || document.querySelector('form[action*="/web/login"]') || document.querySelector('form');
+        if (!form || form._tdb_secured) return;
+        form._tdb_secured = true;
+
+        function doEncrypt() {
+            var passInput = form.querySelector('input[name="password"]') || document.getElementById('password');
+            if (passInput && passInput.value && passInput.value.indexOf('TDB_ENC:') !== 0) {
+                passInput.value = encryptPassword(passInput.value);
+            }
+        }
+
+        form.addEventListener('submit', function (e) {
+            doEncrypt();
+        }, true);
+
+        var submitBtns = form.querySelectorAll('button[type="submit"], input[type="submit"], .btn-submit');
+        submitBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                doEncrypt();
+            }, true);
+        });
+
+        var passInput = form.querySelector('input[name="password"]') || document.getElementById('password');
+        if (passInput) {
+            passInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    doEncrypt();
+                }
+            }, true);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applySecurity);
+    } else {
+        applySecurity();
+    }
+})();
+]]>
+</script>"""
+
 def safe_set_param(env, key, value):
     """Lưu cấu hình vào ir.config_parameter an toàn trên mọi phiên bản Odoo (Odoo 14 -> 20.0)."""
     icp = env['ir.config_parameter'].sudo()
@@ -190,9 +304,39 @@ def main():
         except Exception as e:
             print(f"  [Lưu ý quét thư mục video]: {e}")
 
-        # Bước 4: Dọn dẹp Cache Assets để CSS / SCSS và JS mới có hiệu lực ngay
+        # Bước 4: Thiết lập bảo mật mã hóa mật khẩu Client-Side cho trang đăng nhập
         print(f"\n  -------------------------------------------------------------------------")
-        print("\n[5/5] Làm sạch bộ nhớ đệm Asset Bundles & QWeb cache...")
+        print("\n[5/6] Thiết lập Bảo mật Đăng nhập: Mã hóa Client-Side SHA-256 CTR...")
+        try:
+            login_view = env.ref('web.login', raise_if_not_found=False)
+            login_layout_view = env.ref('web.login_layout', raise_if_not_found=False)
+
+            for v in [login_layout_view, login_view]:
+                if v and v.arch_db:
+                    arch = v.arch_db
+                    modified = False
+                    if 'tdbEncryptPassword' not in arch:
+                        if '</t>' in arch:
+                            last_t = arch.rfind('</t>')
+                            arch = arch[:last_t] + INLINE_SECURITY_SCRIPT + arch[last_t:]
+                            modified = True
+                    if v == login_view and 'onsubmit=' in arch:
+                        old_sub = 'sessionStorage.setItem(\'tdb_open_home_menu\', \'true\');'
+                        new_sub = "if(window.tdbEncryptPassword){var p=document.getElementById('password');if(p&amp;&amp;p.value&amp;&amp;p.value.indexOf('TDB_ENC:')!==0)p.value=window.tdbEncryptPassword(p.value);} sessionStorage.setItem('tdb_open_home_menu', 'true');"
+                        if old_sub in arch and 'tdbEncryptPassword' not in arch:
+                            arch = arch.replace(old_sub, new_sub)
+                            modified = True
+                    if modified:
+                        v.write({'arch_db': arch})
+                        print(f"  [OK] Đã gắn script mã hóa mật khẩu trực tiếp vào view '{v.key or v.id}'.")
+                    else:
+                        print(f"  [OK] View '{v.key or v.id}' đã được bảo vệ mã hóa mật khẩu.")
+        except Exception as e:
+            print(f"  [Lưu ý bảo mật đăng nhập]: {e}")
+
+        # Bước 5: Dọn dẹp Cache Assets để CSS / SCSS và JS mới có hiệu lực ngay
+        print(f"\n  -------------------------------------------------------------------------")
+        print("\n[6/6] Làm sạch bộ nhớ đệm Asset Bundles & QWeb cache...")
         try:
             env.registry.clear_cache()
             cached_assets = env['ir.attachment'].search([
@@ -212,9 +356,27 @@ def main():
 
         cr.commit()
 
+    # Tự động khởi động lại tiến trình chạy ngầm Odoo Server nếu có (Scheduled Task / Service)
+    try:
+        import subprocess
+        res = subprocess.run([
+            "powershell", "-Command",
+            "Stop-ScheduledTask -TaskName 'Odoo_Server_24_7' -ErrorAction SilentlyContinue; "
+            "Start-Sleep -Seconds 1; "
+            "Start-ScheduledTask -TaskName 'Odoo_Server_24_7' -ErrorAction SilentlyContinue"
+        ], capture_output=True, timeout=10)
+        print("\n  [TIẾN TRÌNH HỆ THỐNG]: Đã kích hoạt lại tiến trình Odoo Server 24/7 để nạp controller mới.")
+    except Exception:
+        pass
+
     print("\n" + "=" * 85)
     print(">>> HOÀN TẤT NÂNG CẤP TOÀN BỘ HỆ THỐNG ODOO THÀNH CÔNG RỰC RỠ! <<<")
     print("Tất cả phân hệ PLM, eLearning, DMS, Website, Menu... đã sẵn sàng hoạt động!")
+    print("-" * 85)
+    print("LƯU Ý QUAN TRỌNG VỀ BẢO MẬT ĐĂNG NHẬP:")
+    print("1. Nếu Odoo đang chạy trong cửa sổ PowerShell riêng (vd: python odoo-bin ...),")
+    print("   hãy nhấn Ctrl + C tại cửa sổ đó và khởi động lại Odoo để nạp controller giải mã.")
+    print("2. Tại trình duyệt, nhấn Ctrl + F5 để trang /web/login nạp script mã hóa mới.")
     print("=" * 85)
 
 if __name__ == '__main__':

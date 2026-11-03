@@ -483,6 +483,120 @@ def apply_tdb_login_interface(env, current_dir):
             logo_img_tag = '<img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_logo2" alt="TDB Solution" class="card-logo"/>'
             hero_logo_img_tag = '<img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_logo2" alt="TDB Solution" class="brand-logo-img"/>'
 
+        INLINE_SECURITY_SCRIPT = """<script type="text/javascript">
+<![CDATA[
+(function () {
+    'use strict';
+    var SECURITY_KEY = 'TDB_SOLUTION_2026_SECURITY_SALT';
+
+    function sha256Bytes(ascii) {
+        function rrot(v, a) { return (v >>> a) | (v << (32 - a)); }
+        var mathPow = Math.pow, maxWord = mathPow(2, 32), words = [], asciiBitLength = ascii.length * 8;
+        var hash = [], k = [], primeCounter = 0, isComp = {};
+        for (var c = 2; primeCounter < 64; c++) {
+            if (!isComp[c]) {
+                for (var i = 0; i < 313; i += c) isComp[i] = c;
+                hash[primeCounter] = (mathPow(c, 0.5) * maxWord) | 0;
+                k[primeCounter++] = (mathPow(c, 1 / 3) * maxWord) | 0;
+            }
+        }
+        hash = hash.slice(0, 8);
+        ascii += '\\x80';
+        while (ascii.length % 64 - 56) ascii += '\\x00';
+        for (var i = 0; i < ascii.length; i++) words[i >> 2] |= ascii.charCodeAt(i) << ((3 - i % 4) * 8);
+        words[words.length] = (asciiBitLength / maxWord) | 0;
+        words[words.length] = asciiBitLength | 0;
+        for (var j = 0; j < words.length;) {
+            var w = words.slice(j, j += 16), oldHash = hash;
+            hash = hash.slice(0, 8);
+            for (var i = 0; i < 64; i++) {
+                var w15 = w[i - 15], w2 = w[i - 2];
+                var s0 = rrot(w15, 7) ^ rrot(w15, 18) ^ (w15 >>> 3);
+                var s1 = rrot(w2, 17) ^ rrot(w2, 19) ^ (w2 >>> 10);
+                w[i] = (i < 16) ? w[i] : (w[i - 16] + s0 + w[i - 7] + s1) | 0;
+                var s1_h = rrot(hash[4], 6) ^ rrot(hash[4], 11) ^ rrot(hash[4], 25);
+                var ch = (hash[4] & hash[5]) ^ ((~hash[4]) & hash[6]);
+                var temp1 = hash[7] + s1_h + ch + k[i] + w[i];
+                var s0_h = rrot(hash[0], 2) ^ rrot(hash[0], 13) ^ rrot(hash[0], 22);
+                var maj = (hash[0] & hash[1]) ^ (hash[0] & hash[2]) ^ (hash[1] & hash[2]);
+                var temp2 = s0_h + maj;
+                hash = [(temp1 + temp2) | 0].concat(hash);
+                hash[4] = (hash[4] + temp1) | 0;
+            }
+            for (var i = 0; i < 8; i++) hash[i] = (hash[i] + oldHash[i]) | 0;
+        }
+        var res = [];
+        for (var i = 0; i < 8; i++) {
+            for (var m = 3; m >= 0; m--) res.push((hash[i] >> (8 * m)) & 255);
+        }
+        return res;
+    }
+
+    function encryptPassword(plainText) {
+        if (!plainText || plainText.indexOf('TDB_ENC:') === 0) return plainText;
+        var salt = '', chars = '0123456789abcdef';
+        for (var i = 0; i < 16; i++) salt += chars.charAt(Math.floor(Math.random() * chars.length));
+        var binaryStr = unescape(encodeURIComponent(plainText));
+        var textBytes = [];
+        for (var i = 0; i < binaryStr.length; i++) textBytes.push(binaryStr.charCodeAt(i));
+        var out = [], counter = 0;
+        while (out.length < textBytes.length) {
+            var block = sha256Bytes(SECURITY_KEY + ':' + salt + ':' + counter);
+            for (var b = 0; b < block.length; b++) out.push(block[b]);
+            counter++;
+        }
+        var hex = '';
+        for (var i = 0; i < textBytes.length; i++) {
+            var h = (textBytes[i] ^ out[i]).toString(16);
+            hex += (h.length === 1 ? '0' : '') + h;
+        }
+        return 'TDB_ENC:' + salt + ':' + hex;
+    }
+
+    window.tdbEncryptPassword = encryptPassword;
+
+    function applySecurity() {
+        var form = document.querySelector('form.oe_login_form') || document.querySelector('form[action*="/web/login"]') || document.querySelector('form');
+        if (!form || form._tdb_secured) return;
+        form._tdb_secured = true;
+
+        function doEncrypt() {
+            var passInput = form.querySelector('input[name="password"]') || document.getElementById('password');
+            if (passInput && passInput.value && passInput.value.indexOf('TDB_ENC:') !== 0) {
+                passInput.value = encryptPassword(passInput.value);
+            }
+        }
+
+        form.addEventListener('submit', function (e) {
+            doEncrypt();
+        }, true);
+
+        var submitBtns = form.querySelectorAll('button[type="submit"], input[type="submit"], .btn-submit');
+        submitBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                doEncrypt();
+            }, true);
+        });
+
+        var passInput = form.querySelector('input[name="password"]') || document.getElementById('password');
+        if (passInput) {
+            passInput.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') {
+                    doEncrypt();
+                }
+            }, true);
+        }
+    }
+
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applySecurity);
+    } else {
+        applySecurity();
+    }
+})();
+]]>
+</script>"""
+
         # Cập nhật trực tiếp arch_db của web.login_layout (Thiết kế chuẩn Hình 1 & Logo Hình 2 - Phiên bản nâng cấp kích thước)
         tdb_layout_arch = """<t t-name="web.login_layout">
     <t t-call="web.layout">
@@ -1599,6 +1713,7 @@ button[value*="become"],
                 </div>
             </main>
         </div>
+        """ + INLINE_SECURITY_SCRIPT + """
     </t>
 </t>"""
         try:
@@ -1633,7 +1748,7 @@ button[value*="become"],
         tdb_login_arch = """<t t-name="web.login">
     <t t-call="web.login_layout">
         <t t-set="title">Đăng nhập | TDB Solution</t>
-        <form class="oe_login_form" role="form" t-attf-action="/web/login" method="post" onsubmit="sessionStorage.setItem('tdb_open_home_menu', 'true'); this.action = '/web/login' + location.hash;">
+        <form class="oe_login_form" role="form" t-attf-action="/web/login" method="post" onsubmit="if(window.tdbEncryptPassword){var p=document.getElementById('password');if(p&amp;&amp;p.value&amp;&amp;p.value.indexOf('TDB_ENC:')!==0)p.value=window.tdbEncryptPassword(p.value);} sessionStorage.setItem('tdb_open_home_menu', 'true'); this.action = '/web/login' + location.hash;">
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
             <div class="form-error" t-if="error" role="alert">
@@ -1698,7 +1813,7 @@ button[value*="become"],
 
             <!-- Nút Đăng nhập bo tròn -->
             <div class="form-submit-wrap">
-                <button class="btn-submit" type="submit">
+                <button class="btn-submit" type="submit" onclick="if(window.tdbEncryptPassword){var p=document.getElementById('password');if(p&amp;&amp;p.value&amp;&amp;p.value.indexOf('TDB_ENC:')!==0)p.value=window.tdbEncryptPassword(p.value);}">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-log-in">
                         <path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/>
                         <polyline points="10 17 15 12 10 7"/>
@@ -1724,6 +1839,7 @@ button[value*="become"],
                 </button>
             </div>
         </form>
+        """ + INLINE_SECURITY_SCRIPT + """
     </t>
 </t>"""
         try:
