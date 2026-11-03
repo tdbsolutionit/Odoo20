@@ -1,4 +1,3 @@
-/** @odoo-module **/
 /**
  * =============================================================================
  * TDB SOLUTION - CLIENT-SIDE PASSWORD ENCRYPTION FOR /web/login
@@ -147,3 +146,4 @@
     // Xuất ra window để các nút tự động / demo đăng nhập cũng có thể dùng
     window.tdbEncryptPassword = encryptPassword;
 })();
+
