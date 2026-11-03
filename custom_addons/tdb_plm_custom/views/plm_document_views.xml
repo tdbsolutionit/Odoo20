@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ======================================================================= -->
+    <!-- TDB SOLUTION - PHÂN TẦNG LAYER 5: VIEWS VÀ GIAO DIỆN BACKEND PLM       -->
+    <!-- Kế thừa giao diện danh sách PLM Documents (ir_attachment_list)          -->
+    <!-- Chuẩn hóa 100% tiêu đề cột sang dạng: English Name (Tên Tiếng Việt)    -->
+    <!-- ======================================================================= -->
+
+    <record id="plm_ir_attachment_list_inherit_tdb" model="ir.ui.view">
+        <field name="name">ir.attachment.list.plm.tdb.custom</field>
+        <field name="model">ir.attachment</field>
+        <field name="inherit_id" ref="plm.ir_attachment_list"/>
+        <field name="priority" eval="10"/>
+        <field name="arch" type="xml">
+            <!-- Thêm class nhận diện chung bảng PLM -->
+            <xpath expr="//list" position="attributes">
+                <attribute name="class">tdb_plm_list_view</attribute>
+                <attribute name="string">Documents (Tài liệu kỹ thuật)</attribute>
+            </xpath>
+
+            <!-- Preview -> Preview (Xem trước) -->
+            <xpath expr="//field[@name='preview']" position="attributes">
+                <attribute name="string">Preview (Xem trước)</attribute>
+                <attribute name="class">text-center</attribute>
+            </xpath>
+
+            <!-- Tên -> Document Name (Tên tài liệu) -->
+            <xpath expr="//field[@name='name']" position="attributes">
+                <attribute name="string">Document Name (Tên tài liệu)</attribute>
+            </xpath>
+
+            <!-- Engineering Revision -> Engineering Revision (Phiên bản kỹ thuật) -->
+            <xpath expr="//field[@name='engineering_revision']" position="attributes">
+                <attribute name="string">Engineering Revision (Phiên bản kỹ thuật)</attribute>
+                <attribute name="class">text-center</attribute>
+            </xpath>
+
+            <!-- Engineering Status -> Engineering Status (Trạng thái kỹ thuật) -->
+            <xpath expr="//field[@name='engineering_state']" position="attributes">
+                <attribute name="string">Engineering Status (Trạng thái kỹ thuật)</attribute>
+                <attribute name="class">text-center</attribute>
+            </xpath>
+
+            <!-- Engineering Code -> Engineering Code (Mã kỹ thuật) -->
+            <xpath expr="//field[@name='engineering_code']" position="attributes">
+                <attribute name="string">Engineering Code (Mã kỹ thuật)</attribute>
+            </xpath>
+
+            <!-- Checked-Out By -> Checked-Out By (Được kiểm xuất bởi) -->
+            <xpath expr="//field[@name='checkout_user']" position="attributes">
+                <attribute name="string">Checked-Out By (Được kiểm xuất bởi)</attribute>
+            </xpath>
+
+            <!-- Created By -> Created By (Người tạo) -->
+            <xpath expr="//field[@name='create_uid']" position="attributes">
+                <attribute name="string">Created By (Người tạo)</attribute>
+            </xpath>
+
+            <!-- Creation Date -> Creation Date (Ngày tạo) -->
+            <xpath expr="//field[@name='create_date']" position="attributes">
+                <attribute name="string">Created Date (Ngày tạo)</attribute>
+            </xpath>
+
+            <!-- Modified By -> Modified By (Người sửa) -->
+            <xpath expr="//field[@name='write_uid']" position="attributes">
+                <attribute name="string">Modified By (Người sửa)</attribute>
+            </xpath>
+
+            <!-- Modification Date -> Modification Date (Ngày sửa) -->
+            <xpath expr="//field[@name='write_date']" position="attributes">
+                <attribute name="string">Modified Date (Ngày sửa)</attribute>
+            </xpath>
+        </field>
+    </record>
+</odoo>

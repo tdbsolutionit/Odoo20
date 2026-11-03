@@ -1,0 +1,137 @@
+// =============================================================================
+// TDB SOLUTION - PHÂN TẦNG SCSS: COMPONENTS / TABLE HEADER
+// Căn lề chuẩn hóa, đồng đều và cấp độ rộng tối thiểu cho từng cột PLM
+// Giải quyết dứt điểm tình trạng lệch mép, co cụm và cắt chữ (Engineer..., Cad Surface...)
+// =============================================================================
+
+.tdb_plm_list_view,
+.o_list_renderer:has(th[data-name="engineering_code"]) {
+    table.o_list_table thead {
+        th {
+            vertical-align: middle !important;
+            padding: 9px 12px !important;
+            border-bottom: 2px solid $plm-header-border !important;
+            border-right: 1px solid rgba(0, 0, 0, 0.04);
+            position: relative;
+            user-select: none;
+
+            &:last-child {
+                border-right: none;
+            }
+
+            // Nút sort icon canh giữa thẳng hàng
+            .o_column_sortable {
+                display: flex;
+                align-items: center;
+                gap: 4px;
+            }
+        }
+
+        // --- CĂN LỀ & ĐỘ RỘNG RIÊNG TỪNG CỘT TIÊU ĐỀ ---
+
+        // 0. Ô chọn checkbox
+        th.o_list_record_selector {
+            width: $col-w-selector !important;
+            min-width: $col-w-selector !important;
+            max-width: $col-w-selector !important;
+            text-align: center !important;
+        }
+
+        // 1. Hình ảnh: Image (Hình ảnh)
+        th[data-name="image_1920"],
+        th[data-name="preview"],
+        th[data-name="preview_related"] {
+            width: $col-w-image !important;
+            min-width: $col-w-image !important;
+            max-width: $col-w-image !important;
+            text-align: center !important;
+        }
+
+        // 2. Tên linh kiện: Name (Tên)
+        th[data-name="name"] {
+            min-width: $col-w-name !important;
+            text-align: left !important;
+        }
+
+        // Cột cấu hình: Configuration Name (Tên cấu hình)
+        th[data-name="configuration_name"] {
+            min-width: $col-w-config !important;
+            text-align: left !important;
+        }
+
+        // 3. Mã kỹ thuật: Engineering Code (Mã kỹ thuật)
+        th[data-name="engineering_code"] {
+            min-width: $col-w-eng-code !important;
+            text-align: left !important;
+        }
+
+        // 4. Tham chiếu nội bộ: Internal Reference (Tham chiếu nội bộ)
+        th[data-name="default_code"] {
+            min-width: $col-w-default-code !important;
+            text-align: left !important;
+        }
+
+        // 5. Phiên bản: Engineering Revision (Phiên bản kỹ thuật)
+        // Fix dứt điểm căn lệch phải o_list_number_th và cắt chữ "Engineer..."
+        th[data-name="engineering_revision"] {
+            min-width: $col-w-revision !important;
+            text-align: center !important;
+
+            .o_column_sortable {
+                justify-content: center !important;
+            }
+        }
+
+        // 6. Trạng thái: Engineering Status (Trạng thái kỹ thuật)
+        th[data-name="engineering_state"] {
+            min-width: $col-w-status !important;
+            text-align: center !important;
+
+            .o_column_sortable {
+                justify-content: center !important;
+            }
+        }
+
+        // 7. Mô tả: Description (Mô tả)
+        th[data-name="description"] {
+            min-width: $col-w-desc !important;
+            text-align: left !important;
+        }
+
+        // 8. Quyền ghi: Writable (Có thể chỉnh sửa)
+        th[data-name="engineering_writable"] {
+            min-width: $col-w-writable !important;
+            text-align: center !important;
+
+            .o_column_sortable {
+                justify-content: center !important;
+            }
+        }
+
+        // 9. Vật liệu thô: CAD Raw Material (Vật liệu thô CAD)
+        th[data-name="engineering_material"] {
+            min-width: $col-w-material !important;
+            text-align: left !important;
+        }
+
+        // 10. Hoàn thiện bề mặt: CAD Surface Finishing (Hoàn thiện bề mặt CAD)
+        // Fix dứt điểm cắt chữ "Cad Surface Finishi..."
+        th[data-name="engineering_surface"] {
+            min-width: $col-w-surface !important;
+            text-align: left !important;
+        }
+
+        // 11. Tài liệu liên kết: Linked Documents (Tài liệu liên kết)
+        th[data-name="linkeddocuments"] {
+            min-width: $col-w-linkeddocs !important;
+            text-align: left !important;
+        }
+
+        // 12. Kiểm xuất: Checked-Out By (Được kiểm xuất bởi)
+        th[data-name="document_checkout_user_ids"],
+        th[data-name="checkout_user"] {
+            min-width: $col-w-checkout !important;
+            text-align: left !important;
+        }
+    }
+}
