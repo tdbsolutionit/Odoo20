@@ -52,8 +52,16 @@ class SlideVideoFolder(models.Model):
     def _get_base_video_path(self):
         icp = self.env['ir.config_parameter'].sudo()
         param = ''
-        if hasattr(icp, 'get_param'):
-            param = (icp.get_param('tdb_slides_custom.base_video_path') or '').strip()
+        getter = getattr(icp, 'get_str', getattr(icp, 'get_param', None))
+        if getter:
+            try:
+                param = (getter('tdb_slides_custom.base_video_path', default='') or '').strip()
+            except Exception:
+                param = ''
+        if not param:
+            rec = icp.search([('key', '=', 'tdb_slides_custom.base_video_path')], limit=1)
+            if rec and rec.value:
+                param = (rec.value or '').strip()
 
         if param and os.path.exists(param):
             return os.path.normpath(param)

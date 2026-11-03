@@ -198,7 +198,13 @@ class SlideSlide(models.Model):
     def _get_iis_video_url(self):
         """Tính toán URL phát trực tiếp từ máy chủ IIS (nếu có cấu hình)"""
         self.ensure_one()
-        iis_base = (self.env['ir.config_parameter'].sudo().get_param('tdb_slides_custom.iis_media_url', '') or '').strip().rstrip('/')
+        icp = self.env['ir.config_parameter'].sudo()
+        getter = getattr(icp, 'get_str', getattr(icp, 'get_param', None))
+        if getter:
+            iis_base = (getter('tdb_slides_custom.iis_media_url', default='') or '').strip().rstrip('/')
+        else:
+            rec = icp.search([('key', '=', 'tdb_slides_custom.iis_media_url')], limit=1)
+            iis_base = (rec.value or '').strip().rstrip('/') if rec else ''
         if not iis_base or not self.local_video_filename:
             return False
 
