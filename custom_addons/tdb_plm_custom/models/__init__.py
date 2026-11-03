@@ -6,3 +6,4 @@ Tuân thủ Layer 2: Data & Core Business Logic.
 """
 from . import product_template
 from . import product_product
+

@@ -1,0 +1,26 @@
+/* =============================================================================
+   TDB SOLUTION - TẦNG CSS 2: TYPOGRAPHY (CHUẨN HÓA KIỂU CHỮ PLM)
+   Phân vùng cô lập riêng biệt cho phân hệ PLM, không ảnh hưởng các module khác
+   ============================================================================= */
+
+.tdb_plm_list_view thead th,
+.tdb_plm_list_view .o_list_table thead th {
+    font-size: 0.815rem !important;
+    font-weight: 600 !important;
+    letter-spacing: 0.01em;
+    line-height: 1.35 !important;
+    color: var(--plm-header-text, #0f172a) !important;
+    white-space: nowrap !important;
+}
+
+.tdb_plm_list_view thead th span,
+.tdb_plm_list_view .o_list_table thead th span {
+    font-weight: 600 !important;
+}
+
+.tdb_plm_list_view tbody td,
+.tdb_plm_list_view .o_list_table tbody td {
+    font-size: 0.825rem !important;
+    line-height: 1.4 !important;
+    color: #334155;
+}

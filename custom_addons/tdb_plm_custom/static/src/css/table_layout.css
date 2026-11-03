@@ -1,0 +1,36 @@
+/* =============================================================================
+   TDB SOLUTION - TẦNG CSS 3: TABLE LAYOUT (BỐ CỤC KHUNG BẢNG PLM)
+   Tạo thanh cuộn ngang mượt mà, cô lập hoàn toàn trong .tdb_plm_list_view
+   ============================================================================= */
+
+.tdb_plm_list_view {
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+}
+
+.tdb_plm_list_view::-webkit-scrollbar {
+    height: 6px;
+}
+
+.tdb_plm_list_view::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+}
+
+.tdb_plm_list_view table.o_list_table {
+    min-width: 100%;
+    border-collapse: separate !important;
+    border-spacing: 0;
+    border-bottom: 1px solid var(--plm-header-border, #e2e8f0);
+}
+
+.tdb_plm_list_view table.o_list_table thead tr {
+    background-color: var(--plm-header-bg, #f8fafc);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.tdb_plm_list_view table.o_list_table tbody tr.o_data_row:hover {
+    background-color: var(--plm-row-hover-bg, rgba(245, 158, 11, 0.04)) !important;
+}

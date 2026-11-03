@@ -19,3 +19,4 @@ class ProductTemplate(models.Model):
     # === Ghi chú & Logic nghiệp vụ ===
     # Các trường đặc thù PLM đã được khai báo qua plm_mixin / product_template của plm.
     # Model này sẵn sàng nhận mở rộng nghiệp vụ kỹ thuật tương lai mà không sửa core.
+

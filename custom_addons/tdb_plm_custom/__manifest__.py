@@ -23,8 +23,8 @@ Tính năng chính:
    - Linked Documents (Tài liệu liên kết)
    - Checked-Out By (Được kiểm xuất bởi)
 2. Căn lề chuẩn hóa, đồng đều cho cả tiêu đề cột và ô dữ liệu.
-3. Thiết lập độ rộng cột tối thiểu và thanh cuộn ngang mượt mà, khắc phục triệt để tình trạng cắt chữ (Engineer..., Cad Surface Finishi...).
-4. Kiến trúc phân tầng SCSS Sass 7-1 sạch sẽ, chuyên nghiệp, dễ bảo trì.
+3. Thiết lập độ rộng cột tối thiểu và thanh cuộn ngang mượt mà, khắc phục triệt để tình trạng cắt chữ.
+4. Tách tầng CSS theo 5 tệp modular độc lập, an toàn tuyệt đối không gây lỗi Sass compiler.
     """,
     "author": "TDB Solution",
     "website": "https://tdbsolution.com",
@@ -39,7 +39,11 @@ Tính năng chính:
     ],
     "assets": {
         "web.assets_backend": [
-            "tdb_plm_custom/static/src/scss/plm_custom.scss",
+            "tdb_plm_custom/static/src/css/variables.css",
+            "tdb_plm_custom/static/src/css/typography.css",
+            "tdb_plm_custom/static/src/css/table_layout.css",
+            "tdb_plm_custom/static/src/css/table_header.css",
+            "tdb_plm_custom/static/src/css/table_cells.css",
         ],
     },
     "installable": True,

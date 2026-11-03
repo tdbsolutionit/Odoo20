@@ -18,3 +18,4 @@ class ProductProduct(models.Model):
 
     # === 1. FIELDS & METADATA ===
     # Giữ nguyên cấu trúc quan hệ và logic Odoo core/PLM, sẵn sàng mở rộng các compute fields.
+

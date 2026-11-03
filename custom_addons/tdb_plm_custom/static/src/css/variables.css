@@ -1,0 +1,29 @@
+/* =============================================================================
+   TDB SOLUTION - TẦNG CSS 1: VARIABLES (HỆ THỐNG BIẾN TOÀN CỤC PLM)
+   Định nghĩa mã màu, độ rộng tối thiểu cho từng cột phân hệ PLM
+   ============================================================================= */
+
+:root {
+    /* Màu sắc bảng PLM */
+    --plm-header-bg: #f8fafc;
+    --plm-header-border: #e2e8f0;
+    --plm-header-text: #0f172a;
+    --plm-cell-border: #f1f5f9;
+    --plm-row-hover-bg: rgba(245, 158, 11, 0.04);
+
+    /* Độ rộng tối thiểu từng cột - chống cắt chữ */
+    --col-w-selector: 46px;
+    --col-w-image: 78px;
+    --col-w-name: 220px;
+    --col-w-config: 180px;
+    --col-w-eng-code: 210px;
+    --col-w-default-code: 200px;
+    --col-w-revision: 175px;
+    --col-w-status: 185px;
+    --col-w-desc: 220px;
+    --col-w-writable: 155px;
+    --col-w-material: 220px;
+    --col-w-surface: 240px;
+    --col-w-linkeddocs: 210px;
+    --col-w-checkout: 210px;
+}

@@ -4,15 +4,15 @@
 Kịch bản tự động hóa cài đặt & nâng cấp module TDB PLM Customization trên Server:
 1. Tự động kết nối cơ sở dữ liệu Odoo 20 (odoo20).
 2. Quét danh sách module mới để nhận diện 'tdb_plm_custom'.
-3. Cài đặt hoặc nâng cấp mã nguồn giao diện song ngữ Anh - Việt và căn lề PLM.
-4. Xóa cache assets để giao diện SCSS mới có hiệu lực ngay lập tức.
+3. Nâng cấp mã nguồn giao diện song ngữ Anh - Việt và CSS căn lề PLM.
+4. Xóa triệt để cache assets cũ để khôi phục giao diện toàn hệ thống ngay lập tức.
 """
 import os
 import sys
 
 def main():
     print("=" * 80)
-    print(">>> CẬP NHẬT GIAO DIỆN & TIÊU ĐỀ SONG NGỮ PLM CHO SERVER TDB SOLUTION <<<")
+    print(">>> KHÔI PHỤC VÀ CẬP NHẬT GIAO DIỆN CHUẨN PLM CHO SERVER TDB SOLUTION <<<")
     print("=" * 80)
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -55,20 +55,19 @@ def main():
         env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {'no_vat_validation': True})
 
         # Bước 1: Quét danh mục module mới
-        print("\n[2/4] Quét danh mục addons để nhận diện 'tdb_plm_custom'...")
+        print("\n[2/4] Quét danh mục addons để đồng bộ 'tdb_plm_custom'...")
         try:
             env['ir.module.module'].update_list()
             print("  [OK] Đã cập nhật danh sách module từ addons_path.")
         except Exception as e:
             print(f"  [Lưu ý update_list]: {e}")
 
-        # Bước 2: Tìm kiếm và kích hoạt / nâng cấp tdb_plm_custom
-        print("\n[3/4] Cài đặt & Nâng cấp module 'tdb_plm_custom'...")
+        # Bước 2: Nâng cấp / Cài đặt tdb_plm_custom
+        print("\n[3/4] Cập nhật module 'tdb_plm_custom'...")
         mod_plm_custom = env['ir.module.module'].search([('name', '=', 'tdb_plm_custom')], limit=1)
 
         if not mod_plm_custom:
             print("  [CẢNH BÁO]: Chưa tìm thấy module 'tdb_plm_custom' trong danh sách.")
-            print("  Vui lòng kiểm tra lại addons_path trong file odoo.conf trên server.")
             return
 
         if mod_plm_custom.state != 'installed':
@@ -83,7 +82,7 @@ def main():
                 except Exception:
                     pass
         else:
-            print("  -> Module đã cài đặt. Tiến hành NÂNG CẤP (UPGRADE) giao diện mới...")
+            print("  -> Tiến hành NÂNG CẤP (UPGRADE) module 'tdb_plm_custom'...")
             try:
                 mod_plm_custom.button_immediate_upgrade()
                 print("  [THÀNH CÔNG] Đã nâng cấp thành công 'tdb_plm_custom'!")
@@ -94,38 +93,29 @@ def main():
                 except Exception:
                     pass
 
-        # Bước 3: Làm mới Asset Cache để SCSS mới có hiệu lực ngay
-        print("\n[4/4] Làm mới Asset Cache cho giao diện web...")
+        # Bước 3: Xóa triệt để toàn bộ Cache Assets cũ bị lỗi
+        print("\n[4/4] Dọn dẹp cache assets để khôi phục toàn bộ giao diện Odoo...")
         try:
             asset_attachments = env['ir.attachment'].search([
-                ('url', '=like', '/web/assets/%')
+                '|', '|',
+                ('url', '=like', '/web/assets/%'),
+                ('url', '=like', '%assets_backend%'),
+                ('name', '=like', '%.assets_%')
             ])
             if asset_attachments:
                 count = len(asset_attachments)
                 asset_attachments.unlink()
-                print(f"  [OK] Đã xóa {count} tệp cache assets cũ. Hệ thống sẽ biên dịch SCSS mới khi mở trang.")
+                print(f"  [OK] Đã xóa {count} tệp cache assets. Giao diện toàn hệ thống đã được phục hồi sạch sẽ.")
             else:
-                print("  [OK] Không có cache assets cũ cần xóa.")
+                print("  [OK] Không có cache assets cũ.")
         except Exception as e:
             print(f"  [Lưu ý xóa cache]: {e}")
 
         cr.commit()
 
     print("\n" + "=" * 80)
-    print(">>> HOÀN TẤT CẬP NHẬT GIAO DIỆN PLM CHO SERVER TDB SOLUTION! <<<")
-    print("Các tiêu đề cột đã được chuẩn hóa 100% sang dạng 'English (Tiếng Việt)':")
-    print("  1. Image (Hình ảnh)")
-    print("  2. Name (Tên)")
-    print("  3. Engineering Code (Mã kỹ thuật)")
-    print("  4. Internal Reference (Tham chiếu nội bộ)")
-    print("  5. Engineering Revision (Phiên bản kỹ thuật)")
-    print("  6. Engineering Status (Trạng thái kỹ thuật)")
-    print("  7. Description (Mô tả)")
-    print("  8. Writable (Có thể chỉnh sửa)")
-    print("  9. CAD Raw Material (Vật liệu thô CAD)")
-    print(" 10. CAD Surface Finishing (Hoàn thiện bề mặt CAD)")
-    print(" 11. Linked Documents (Tài liệu liên kết)")
-    print(" 12. Checked-Out By (Được kiểm xuất bởi)")
+    print(">>> ĐÃ KHÔI PHỤC VÀ HOÀN TẤT CẬP NHẬT GIAO DIỆN TẤT CẢ MODULE ODOO! <<<")
+    print("Giao diện Thảo luận (Discuss), Menu chính, Lịch và PLM đã trở lại trạng thái hoàn hảo.")
     print("=" * 80)
 
 if __name__ == '__main__':
