@@ -1,0 +1,40 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* tdb_slides_custom
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 20.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-03 10:00+0000\n"
+"PO-Revision-Date: 2026-11-03 10:00+0000\n"
+"Last-Translator: TDB Solution\n"
+"Language-Team: Vietnamese <vi@li.org>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: tdb_slides_custom
+#: model:ir.model,name:tdb_slides_custom.model_slide_video_folder
+msgid "Thư mục Video cục bộ"
+msgstr "Thư mục Video cục bộ"
+
+#. module: tdb_slides_custom
+#: code:addons/tdb_slides_custom/wizard/slide_add_video_wizard.py:0
+#, python-format
+msgid "Vui lòng chọn file video từ thư mục!"
+msgstr "Vui lòng chọn file video từ thư mục!"
+
+#. module: tdb_slides_custom
+#: code:addons/tdb_slides_custom/wizard/slide_add_video_wizard.py:0
+#, python-format
+msgid "Vui lòng nhập tên bài học / tiêu đề!"
+msgstr "Vui lòng nhập tên bài học / tiêu đề!"
+
+#. module: tdb_slides_custom
+#: code:addons/tdb_slides_custom/wizard/slide_add_video_wizard.py:0
+#, python-format
+msgid "Vui lòng tích chọn ít nhất 1 video để đưa vào khóa học!"
+msgstr "Vui lòng tích chọn ít nhất 1 video để đưa vào khóa học!"

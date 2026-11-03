@@ -1,0 +1,27 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* tdb_dms_custom
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 20.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-03 10:00+0000\n"
+"PO-Revision-Date: 2026-11-03 10:00+0000\n"
+"Last-Translator: TDB Solution\n"
+"Language-Team: Vietnamese <vi@li.org>\n"
+"Language: vi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: tdb_dms_custom
+#: model:ir.model,name:tdb_dms_custom.model_create_subfolder_wizard
+msgid "Tạo thư mục con"
+msgstr "Tạo thư mục con"
+
+#. module: tdb_dms_custom
+#: model:ir.model,name:tdb_dms_custom.model_file_date_filter_wizard
+msgid "Bộ lọc ngày tải lên file"
+msgstr "Bộ lọc ngày tải lên file"
