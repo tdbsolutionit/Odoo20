@@ -1,0 +1,67 @@
+// =============================================================================
+// TDB SOLUTION - PHÂN TẦNG SCSS 2: TABLE LAYOUT & TYPOGRAPHY
+// Bố cục khung bảng, thanh cuộn ngang mượt mà và font chữ chuẩn Odoo PLM
+// Phân vùng cô lập nghiêm ngặt trong .tdb_plm_list_view
+// =============================================================================
+
+.tdb_plm_list_view {
+    // Khung cuộn ngang mượt mà khi hiển thị đầy đủ 12 cột thông tin
+    overflow-x: auto !important;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+
+    &::-webkit-scrollbar {
+        height: 6px;
+    }
+    &::-webkit-scrollbar-thumb {
+        background: rgba(0, 0, 0, 0.2);
+        border-radius: 4px;
+    }
+
+    // Bảng danh sách linh kiện
+    table.o_list_table {
+        min-width: 100%;
+        border-collapse: separate !important;
+        border-spacing: 0;
+        border-bottom: 1px solid $plm-header-border;
+
+        // Dòng tiêu đề cột
+        thead {
+            tr {
+                background-color: $plm-header-bg;
+                box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+            }
+
+            th {
+                font-size: 0.815rem !important;
+                font-weight: 600 !important;
+                letter-spacing: 0.01em;
+                line-height: 1.35 !important;
+                color: $plm-header-text !important;
+                white-space: nowrap !important;
+
+                span {
+                    font-weight: 600 !important;
+                }
+            }
+        }
+
+        // Dòng dữ liệu
+        tbody {
+            tr.o_data_row {
+                transition: background-color 0.15s ease-in-out;
+
+                &:hover {
+                    background-color: $plm-row-hover-bg !important;
+                }
+            }
+
+            td {
+                font-size: 0.825rem !important;
+                line-height: 1.4 !important;
+                color: #334155;
+            }
+        }
+    }
+}

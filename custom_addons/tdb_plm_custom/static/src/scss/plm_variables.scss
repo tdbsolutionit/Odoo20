@@ -1,0 +1,27 @@
+// =============================================================================
+// TDB SOLUTION - PHÂN TẦNG SCSS 1: VARIABLES & TOKENS
+// Định nghĩa các biến kích thước cột, màu sắc, font chữ chuẩn phân hệ PLM
+// =============================================================================
+
+// Màu sắc giao diện bảng PLM
+$plm-header-bg:          #f8fafc;
+$plm-header-border:      #e2e8f0;
+$plm-header-text:        #0f172a;
+$plm-cell-border:        #f1f5f9;
+$plm-row-hover-bg:       rgba(245, 158, 11, 0.04);
+
+// Độ rộng cột tối thiểu - đảm bảo không bao giờ bị cắt chữ
+$col-w-selector:         46px;
+$col-w-image:            78px;
+$col-w-name:             220px;
+$col-w-config:           180px;
+$col-w-eng-code:         210px;
+$col-w-default-code:     200px;
+$col-w-revision:         175px;
+$col-w-status:           185px;
+$col-w-desc:             220px;
+$col-w-writable:         155px;
+$col-w-material:         220px;
+$col-w-surface:          240px;
+$col-w-linkeddocs:       210px;
+$col-w-checkout:         210px;
