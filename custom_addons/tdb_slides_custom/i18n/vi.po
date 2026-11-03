@@ -38,3 +38,4 @@ msgstr "Vui lòng nhập tên bài học / tiêu đề!"
 #, python-format
 msgid "Vui lòng tích chọn ít nhất 1 video để đưa vào khóa học!"
 msgstr "Vui lòng tích chọn ít nhất 1 video để đưa vào khóa học!"
+

@@ -25,3 +25,4 @@ msgstr "Đăng nhập"
 #: model_terms:ir.ui.view,arch_db:tdb_website_custom.tdb_login_layout
 msgid "Giá trị cốt lõi"
 msgstr "Giá trị cốt lõi"
+

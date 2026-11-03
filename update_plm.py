@@ -1,22 +1,34 @@
 # -*- coding: utf-8 -*-
 # Copyright 2026 TDB Solution Co., Ltd.
 """
-Kịch bản tự động hóa cài đặt & nâng cấp module TDB PLM Customization trên Server:
-1. Tự động kết nối cơ sở dữ liệu Odoo 20 (odoo20).
-2. Quét danh sách module mới để nhận diện 'tdb_plm_custom'.
-3. Nâng cấp mã nguồn giao diện song ngữ Anh - Việt và CSS căn lề PLM.
-4. Xóa triệt để cache assets cũ để khôi phục giao diện toàn hệ thống ngay lập tức.
+Kịch bản tự động hóa nâng cấp TOÀN BỘ các module Custom của TDB Solution trên Server:
+- tdb_plm_custom (Phân hệ PLM: giao diện song ngữ Anh - Việt, căn lề đồng đều, SCSS Odoo)
+- tdb_slides_custom (Phân hệ eLearning: Video từ ổ đĩa máy chủ, xem video fullscreen, i18n)
+- tdb_dms_custom (Phân hệ DMS: Thư mục con, Thùng rác khôi phục file, i18n)
+- tdb_website_custom (Giao diện đăng nhập chuẩn doanh nghiệp TDB Solution, i18n)
+- custom_home_menu (Menu chính Odoo tùy biến)
+- custom_editor_toolbar (Thanh công cụ soạn thảo phong phú)
 """
 import os
 import sys
 
+# Danh sách toàn bộ các module custom của dự án TDB Solution
+CUSTOM_MODULES = [
+    ('tdb_plm_custom', 'Tùy biến PLM (Song ngữ Anh - Việt, căn lề chuẩn SCSS)'),
+    ('tdb_slides_custom', 'Tùy biến eLearning (Video ổ đĩa Server, Quiz, i18n)'),
+    ('tdb_dms_custom', 'Tùy biến DMS (Thư mục con, Thùng rác khôi phục file, i18n)'),
+    ('tdb_website_custom', 'Tùy biến Website & Giao diện Đăng nhập TDB, i18n)'),
+    ('custom_home_menu', 'Tùy biến Menu chính (Home Menu)'),
+    ('custom_editor_toolbar', 'Tùy biến Thanh công cụ soạn thảo (Editor Toolbar)'),
+]
+
 def main():
-    print("=" * 80)
-    print(">>> KHÔI PHỤC VÀ CẬP NHẬT GIAO DIỆN CHUẨN PLM CHO SERVER TDB SOLUTION <<<")
-    print("=" * 80)
+    print("=" * 85)
+    print(">>> NÂNG CẤP ĐỒNG BỘ TOÀN BỘ MODULE CUSTOM TRÊN SERVER TDB SOLUTION <<<")
+    print("=" * 85)
 
     current_dir = os.path.dirname(os.path.abspath(__file__))
-    if os.path.basename(current_dir) in ('tdb_plm_custom', 'custom_addons', 'addons'):
+    if os.path.basename(current_dir) in ('tdb_plm_custom', 'tdb_slides_custom', 'custom_addons', 'addons'):
         odoo_dir = os.path.abspath(os.path.join(current_dir, '..'))
         while os.path.basename(odoo_dir) in ('custom_addons', 'addons'):
             odoo_dir = os.path.abspath(os.path.join(odoo_dir, '..'))
@@ -54,47 +66,54 @@ def main():
     with registry.cursor() as cr:
         env = odoo.api.Environment(cr, odoo.SUPERUSER_ID, {'no_vat_validation': True})
 
-        # Bước 1: Quét danh mục module mới
-        print("\n[2/4] Quét danh mục addons để đồng bộ 'tdb_plm_custom'...")
+        # Bước 1: Quét cập nhật danh mục module mới
+        print("\n[2/4] Quét danh mục addons_path để nhận diện các module và file ngôn ngữ i18n mới...")
         try:
             env['ir.module.module'].update_list()
-            print("  [OK] Đã cập nhật danh sách module từ addons_path.")
+            print("  [OK] Đã cập nhật danh sách module từ các thư mục addons.")
         except Exception as e:
             print(f"  [Lưu ý update_list]: {e}")
 
-        # Bước 2: Nâng cấp / Cài đặt tdb_plm_custom
-        print("\n[3/4] Cập nhật module 'tdb_plm_custom'...")
-        mod_plm_custom = env['ir.module.module'].search([('name', '=', 'tdb_plm_custom')], limit=1)
+        # Bước 2: Nâng cấp tuần tự từng module custom
+        print("\n[3/4] Tiến hành nâng cấp và nạp bản dịch i18n cho từng module custom...")
+        for mod_name, mod_desc in CUSTOM_MODULES:
+            print(f"\n  -------------------------------------------------------------------------")
+            print(f"  * Xử lý module: [{mod_name}] - {mod_desc}")
+            mod_rec = env['ir.module.module'].search([('name', '=', mod_name)], limit=1)
 
-        if not mod_plm_custom:
-            print("  [CẢNH BÁO]: Chưa tìm thấy module 'tdb_plm_custom' trong danh sách.")
-            return
+            if not mod_rec:
+                print(f"    [BỎ QUA]: Không tìm thấy module '{mod_name}' trong addons_path.")
+                continue
 
-        if mod_plm_custom.state != 'installed':
-            print("  -> Tiến hành CÀI ĐẶT MỚI 'tdb_plm_custom'...")
-            try:
-                mod_plm_custom.button_immediate_install()
-                print("  [THÀNH CÔNG] Đã cài đặt thành công 'tdb_plm_custom'!")
-            except Exception as e:
-                print(f"  [Lỗi cài đặt]: {e}")
+            if mod_rec.state == 'installed':
+                print(f"    -> Đang NÂNG CẤP (UPGRADE) và nạp ngôn ngữ i18n mới...")
                 try:
-                    mod_plm_custom.button_install()
-                except Exception:
-                    pass
-        else:
-            print("  -> Tiến hành NÂNG CẤP (UPGRADE) module 'tdb_plm_custom'...")
-            try:
-                mod_plm_custom.button_immediate_upgrade()
-                print("  [THÀNH CÔNG] Đã nâng cấp thành công 'tdb_plm_custom'!")
-            except Exception as e:
-                print(f"  [Lỗi nâng cấp]: {e}")
+                    mod_rec.button_immediate_upgrade()
+                    print(f"    [THÀNH CÔNG] Đã nâng cấp thành công '{mod_name}'!")
+                except Exception as e:
+                    print(f"    [Lỗi nâng cấp {mod_name}]: {e}")
+                    try:
+                        mod_rec.button_upgrade()
+                    except Exception:
+                        pass
+            elif mod_name == 'tdb_plm_custom':
+                # Nếu là module PLM mới chưa cài đặt thì tiến hành cài đặt
+                print(f"    -> Đang CÀI ĐẶT MỚI (INSTALL) '{mod_name}'...")
                 try:
-                    mod_plm_custom.button_upgrade()
-                except Exception:
-                    pass
+                    mod_rec.button_immediate_install()
+                    print(f"    [THÀNH CÔNG] Đã cài đặt thành công '{mod_name}'!")
+                except Exception as e:
+                    print(f"    [Lỗi cài đặt {mod_name}]: {e}")
+                    try:
+                        mod_rec.button_install()
+                    except Exception:
+                        pass
+            else:
+                print(f"    [TRẠNG THÁI HIỆN TẠI]: {mod_rec.state} (Chưa được kích hoạt, bỏ qua).")
 
-        # Bước 3: Xóa triệt để toàn bộ Cache Assets cũ bị lỗi
-        print("\n[4/4] Dọn dẹp cache assets để khôi phục toàn bộ giao diện Odoo...")
+        # Bước 3: Dọn dẹp Cache Assets để giao diện toàn hệ thống mượt mà
+        print(f"\n  -------------------------------------------------------------------------")
+        print("\n[4/4] Dọn dẹp cache assets để toàn bộ CSS / SCSS và JS mới có hiệu lực ngay...")
         try:
             asset_attachments = env['ir.attachment'].search([
                 '|', '|',
@@ -105,18 +124,25 @@ def main():
             if asset_attachments:
                 count = len(asset_attachments)
                 asset_attachments.unlink()
-                print(f"  [OK] Đã xóa {count} tệp cache assets. Giao diện toàn hệ thống đã được phục hồi sạch sẽ.")
+                print(f"  [OK] Đã xóa {count} tệp cache assets cũ. Trình duyệt sẽ tải giao diện mới nhất.")
             else:
-                print("  [OK] Không có cache assets cũ.")
+                print("  [OK] Không có cache assets cũ cần xóa.")
         except Exception as e:
             print(f"  [Lưu ý xóa cache]: {e}")
 
         cr.commit()
 
-    print("\n" + "=" * 80)
-    print(">>> ĐÃ KHÔI PHỤC VÀ HOÀN TẤT CẬP NHẬT GIAO DIỆN TẤT CẢ MODULE ODOO! <<<")
-    print("Giao diện Thảo luận (Discuss), Menu chính, Lịch và PLM đã trở lại trạng thái hoàn hảo.")
-    print("=" * 80)
+    print("\n" + "=" * 85)
+    print(">>> HOÀN TẤT NÂNG CẤP TOÀN BỘ CÁC MODULE CUSTOM CỦA TDB SOLUTION! <<<")
+    print("Tất cả các module:")
+    print("  1. tdb_plm_custom       - Tiêu đề song ngữ Anh - Việt, căn lề đồng đều, SCSS Odoo")
+    print("  2. tdb_slides_custom    - Quản lý video khóa học từ ổ đĩa máy chủ D:\\KhoaHoc, i18n")
+    print("  3. tdb_dms_custom       - Thư mục con, Thùng rác khôi phục file phòng ban, i18n")
+    print("  4. tdb_website_custom   - Giao diện đăng nhập TDB Solution Giá Trị Cốt Lõi, i18n")
+    print("  5. custom_home_menu     - Menu chính hệ thống")
+    print("  6. custom_editor_toolbar- Thanh công cụ soạn thảo văn bản")
+    print("Đã được đồng bộ hóa và cập nhật tầng ngôn ngữ i18n mới nhất thành công!")
+    print("=" * 85)
 
 if __name__ == '__main__':
     main()

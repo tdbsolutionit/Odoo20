@@ -120,3 +120,4 @@ msgstr "Modified By (Người sửa)"
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
 msgid "Modified Date"
 msgstr "Modified Date (Ngày sửa)"
+
