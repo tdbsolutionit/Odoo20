@@ -1594,7 +1594,7 @@ button[value*="become"],
 
                     <!-- Chân Card -->
                     <div class="card-footer">
-                        TDB Solution © 2026. Phát triển bền vững cùng nhau.
+                        TDB Solution © 2026.
                     </div>
                 </div>
             </main>
@@ -1633,7 +1633,7 @@ button[value*="become"],
         tdb_login_arch = """<t t-name="web.login">
     <t t-call="web.login_layout">
         <t t-set="title">Đăng nhập | TDB Solution</t>
-        <form class="oe_login_form" role="form" t-attf-action="/web/login" method="post" onsubmit="this.action = '/web/login' + location.hash">
+        <form class="oe_login_form" role="form" t-attf-action="/web/login" method="post" onsubmit="sessionStorage.setItem('tdb_open_home_menu', 'true'); this.action = '/web/login' + location.hash;">
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
             <div class="form-error" t-if="error" role="alert">

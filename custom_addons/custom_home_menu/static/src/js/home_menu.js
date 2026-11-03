@@ -2,13 +2,71 @@
 
 import { patch } from "@web/core/utils/patch";
 import { NavBar } from "@web/webclient/navbar/navbar";
-import { useListener } from "@odoo/owl";
+import { useListener, onWillUnmount } from "@odoo/owl";
 
 patch(NavBar.prototype, {
     setup() {
         super.setup();
-        this.state.isHomeMenuOpened = false;
+
+        // 1. Kiểm tra trạng thái đăng nhập hoặc landing mặc định để mở ngay Home Menu
+        const isFromLogin =
+            sessionStorage.getItem("tdb_open_home_menu") === "true" ||
+            (document.referrer && document.referrer.includes("/web/login"));
+
+        const isDefaultLanding =
+            window.location.pathname === "/odoo/discuss" ||
+            window.location.pathname === "/odoo" ||
+            window.location.pathname === "/odoo/" ||
+            window.location.pathname === "/web" ||
+            window.location.pathname === "/web/" ||
+            !window.location.hash ||
+            window.location.hash === "#" ||
+            window.location.hash.includes("action=mail.action_discuss");
+
+        const shouldOpenHomeMenu = isFromLogin || isDefaultLanding;
+
+        if (sessionStorage.getItem("tdb_open_home_menu")) {
+            sessionStorage.removeItem("tdb_open_home_menu");
+        }
+
+        this.state.isHomeMenuOpened = Boolean(shouldOpenHomeMenu);
         this.state.searchQuery = "";
+        this.state.currentDateTime = this.getFormattedDateTime();
+
+        if (this.state.isHomeMenuOpened) {
+            this._suppressMenuAppChanged = true;
+            document.title = "TDB Solution";
+            setTimeout(() => {
+                this._suppressMenuAppChanged = false;
+            }, 1000);
+            setTimeout(() => {
+                const input = document.querySelector(".o_home_menu_search_input");
+                input?.focus();
+            }, 120);
+        }
+
+        // Tự động cập nhật ngày giờ thời gian thực mỗi giây
+        if (this.dateTimeTimer) {
+            clearInterval(this.dateTimeTimer);
+        }
+        this.dateTimeTimer = setInterval(() => {
+            if (this.state.isHomeMenuOpened) {
+                this.state.currentDateTime = this.getFormattedDateTime();
+            }
+        }, 1000);
+
+        try {
+            if (typeof onWillUnmount === "function") {
+                onWillUnmount(() => {
+                    if (this.dateTimeTimer) {
+                        clearInterval(this.dateTimeTimer);
+                        this.dateTimeTimer = null;
+                    }
+                });
+            }
+        } catch (e) {
+            // Safe fallback
+        }
 
         useListener(window, "keydown", (ev) => {
             if (this.state.isHomeMenuOpened && ev.key === "Escape") {
@@ -16,10 +74,36 @@ patch(NavBar.prototype, {
                 this.state.searchQuery = "";
             }
         });
+
         useListener(this.env.bus, "MENUS:APP-CHANGED", () => {
+            if (this._suppressMenuAppChanged) {
+                return;
+            }
             this.state.isHomeMenuOpened = false;
             this.state.searchQuery = "";
         });
+    },
+
+    getFormattedDateTime() {
+        const now = new Date();
+        const days = [
+            "Chủ Nhật",
+            "Thứ Hai",
+            "Thứ Ba",
+            "Thứ Tư",
+            "Thứ Năm",
+            "Thứ Sáu",
+            "Thứ Bảy",
+        ];
+        const day = days[now.getDay()];
+        const pad = (n) => String(n).padStart(2, "0");
+        const d = pad(now.getDate());
+        const m = pad(now.getMonth() + 1);
+        const y = now.getFullYear();
+        const hours = pad(now.getHours());
+        const minutes = pad(now.getMinutes());
+        const seconds = pad(now.getSeconds());
+        return `${day}, ${d}/${m}/${y} - ${hours}:${minutes}:${seconds}`;
     },
 
     toggleHomeMenu(force) {
@@ -27,6 +111,8 @@ patch(NavBar.prototype, {
             typeof force === "boolean" ? force : !this.state.isHomeMenuOpened;
         this.state.searchQuery = "";
         if (this.state.isHomeMenuOpened) {
+            this.state.currentDateTime = this.getFormattedDateTime();
+            document.title = "TDB Solution";
             setTimeout(() => {
                 const input = document.querySelector(".o_home_menu_search_input");
                 input?.focus();
@@ -35,6 +121,7 @@ patch(NavBar.prototype, {
     },
 
     onAppClick(app) {
+        this._suppressMenuAppChanged = false;
         this.state.isHomeMenuOpened = false;
         this.state.searchQuery = "";
         this.onNavBarDropdownItemSelection(app);

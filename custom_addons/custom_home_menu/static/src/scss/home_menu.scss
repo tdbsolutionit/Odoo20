@@ -2,14 +2,65 @@
 // Enterprise Style Home Menu (9 Chấm) SCSS
 // ============================================================================
 
-// Ẩn các thành phần navbar khi mở Home Menu
+// Khi mở Home Menu: Giữ nguyên thanh tím và systray bên phải, ẩn breadcrumbs và menu sections ở giữa
 .o_navbar.o_navbar_home_menu_active {
+    z-index: 1050;
+
     .o_menu_brand,
     .o_navbar_breadcrumbs,
-    .o_menu_sections,
-    .o_menu_systray {
+    .o_menu_sections {
+        display: none !important;
         visibility: hidden !important;
         pointer-events: none !important;
+    }
+
+    // Giữ nguyên Systray bên phải: Thông báo/Chat, Hoạt động, Đổi công ty, Avatar người dùng
+    .o_menu_systray {
+        display: flex !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+        margin-left: auto !important;
+        align-items: center !important;
+    }
+}
+
+// Khối hiển thị Ngày Giờ thời gian thực bên trái trên thanh tím
+.o_home_menu_datetime {
+    display: inline-flex;
+    align-items: center;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: #ffffff;
+    letter-spacing: 0.25px;
+    padding: 3px 12px;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    user-select: none;
+    white-space: nowrap;
+    line-height: 1.4;
+    transition: background-color 0.2s ease;
+
+    &:hover {
+        background: rgba(255, 255, 255, 0.16);
+    }
+
+    svg {
+        display: inline-block;
+        vertical-align: middle;
+        opacity: 0.85;
+    }
+
+    .o_home_menu_datetime_text {
+        font-family: inherit;
+        color: #ffffff;
+    }
+}
+
+@media (max-width: 767.98px) {
+    .o_home_menu_datetime {
+        font-size: 11.5px;
+        padding: 2px 7px;
     }
 }
 
