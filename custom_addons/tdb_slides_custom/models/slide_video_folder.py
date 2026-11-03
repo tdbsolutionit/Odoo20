@@ -51,14 +51,34 @@ class SlideVideoFolder(models.Model):
     @api.model
     def _get_base_video_path(self):
         icp = self.env['ir.config_parameter'].sudo()
-        default_p = '/mnt/videos' if is_in_docker() else ('C:\\Videos' if os.name == 'nt' else '/data/videos')
-        if hasattr(icp, 'get_str'):
-            base_path = icp.get_str('tdb_slides_custom.base_video_path', default=default_p)
-        elif hasattr(icp, 'get_param'):
-            base_path = icp.get_param('tdb_slides_custom.base_video_path', default=default_p)
-        else:
-            base_path = default_p
-        return (base_path or default_p).strip()
+        param = ''
+        if hasattr(icp, 'get_param'):
+            param = (icp.get_param('tdb_slides_custom.base_video_path') or '').strip()
+
+        if param and os.path.exists(param):
+            return os.path.normpath(param)
+
+        # Danh sách đường dẫn video tự động nhận diện theo môi trường
+        candidates = [
+            'C:\\odoo20\\videos',
+            'C:\\odoo20\\odoo\\videos',
+            'C:\\Videos',
+            'C:\\Work\\odoo20-docker\\videos',
+            os.path.abspath(os.path.join(os.getcwd(), 'videos')),
+            '/mnt/videos',
+            '/data/videos',
+        ]
+        for c in candidates:
+            if os.path.exists(c):
+                return os.path.normpath(c)
+
+        # Mặc định theo hệ điều hành nếu chưa tồn tại thư mục nào
+        default_p = 'C:\\odoo20\\videos' if os.name == 'nt' else ('/mnt/videos' if is_in_docker() else '/data/videos')
+        try:
+            os.makedirs(default_p, exist_ok=True)
+        except Exception:
+            pass
+        return os.path.normpath(default_p)
 
     @api.depends('folder_path')
     def _compute_full_path(self):

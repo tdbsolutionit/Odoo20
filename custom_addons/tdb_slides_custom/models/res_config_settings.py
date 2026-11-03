@@ -8,8 +8,8 @@ class ResConfigSettings(models.TransientModel):
     slide_base_video_path = fields.Char(
         string='Thư mục Video Gốc trên Máy tính',
         config_parameter='tdb_slides_custom.base_video_path',
-        default='/mnt/videos',
-        help='Đường dẫn thư mục gốc trên server (mặc định /mnt/videos tương ứng thư mục videos trong dự án trên máy tính). '
+        default=lambda self: self.env['slide.video.folder']._get_base_video_path(),
+        help='Đường dẫn thư mục gốc trên server lưu trữ video bài giảng. '
              'Người dùng có thể tạo các thư mục con trong Odoo để quản lý video theo từng khóa học mà không cần can thiệp code.'
     )
     iis_media_server_url = fields.Char(

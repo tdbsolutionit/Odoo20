@@ -74,18 +74,20 @@ class SlideHostFolderBrowserWizard(models.TransientModel):
     @api.model
     def default_get(self, fields_list):
         res = super().default_get(fields_list)
+        base_dir = self.env['slide.video.folder']._get_base_video_path()
         if is_in_docker():
-            default_dir = 'C:\\Users\\Thinh\\Videos'
-            if not os.path.exists(win_to_container_path(default_dir)):
+            if os.path.exists(win_to_container_path(base_dir)):
+                default_dir = base_dir
+            elif os.path.exists('/host_c'):
                 default_dir = 'C:\\'
+            else:
+                default_dir = '/mnt/videos'
+        elif os.path.exists(base_dir):
+            default_dir = base_dir
         elif os.name == 'nt':
             default_dir = 'C:\\'
         else:
-            # Native Linux Server (Ubuntu/Debian)
-            base_folder_model = self.env['slide.video.folder']
-            default_dir = base_folder_model._get_base_video_path()
-            if not os.path.exists(default_dir):
-                default_dir = '/'
+            default_dir = '/'
         res['current_path'] = default_dir
         return res
 
@@ -188,9 +190,8 @@ class SlideHostFolderBrowserWizard(models.TransientModel):
         self.ensure_one()
         base_dir = self.env['slide.video.folder']._get_base_video_path()
         if is_in_docker():
-            base_dir = 'C:\\Users\\Thinh\\Videos'
             if not os.path.exists(win_to_container_path(base_dir)):
-                base_dir = 'C:\\Work\\odoo20-docker\\videos'
+                base_dir = '/mnt/videos'
         self._load_folder(base_dir)
         return self._reopen_wizard()
 
@@ -200,15 +201,7 @@ class SlideHostFolderBrowserWizard(models.TransientModel):
 
     def action_go_project_videos(self):
         """Lối tắt đến thư mục video dự án"""
-        self.ensure_one()
-        if is_in_docker():
-            proj_dir = 'C:\\Work\\odoo20-docker\\videos'
-            if not os.path.exists(win_to_container_path(proj_dir)):
-                proj_dir = '/mnt/videos'
-        else:
-            proj_dir = self.env['slide.video.folder']._get_base_video_path()
-        self._load_folder(proj_dir)
-        return self._reopen_wizard()
+        return self.action_go_base_videos()
 
     def action_go_c_drive(self):
         r"""Lối tắt đến ổ đĩa C:\ hoặc Root /"""
