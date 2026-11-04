@@ -22,25 +22,37 @@ SHA256_ADMIN = hashlib.sha256(b'admin').hexdigest().lower()
 def resolve_tdb_password(token: str) -> str:
     """
     Xử lý mật khẩu gửi từ client:
-    1. Nếu là chuỗi hash SHA-256 (bắt đầu bằng SHA256: hoặc là chuỗi hex 64 ký tự):
-       - Khớp với SHA256('MatKhauMoi') -> trả về 'MatKhauMoi'
-       - Khớp với SHA256('admin') -> trả về 'admin'
-       - Nếu có token cipher phụ trợ (SHA256:<hash>:<cipher>) -> giải mã cipher
-    2. Nếu là định dạng TDB_ENC:... -> giải mã stream cipher
+    1. Khớp chính xác MatKhauMoi hoặc admin dưới mọi định dạng:
+       - 'MatKhauMoi'
+       - 'SHA256:MatKhauMoi'
+       - 'SHA256:2d11659c11fde108ffc78dfc4ffbdf69f65f4e8029506ad2207e4b3a03986232'
+       - '2d11659c11fde108ffc78dfc4ffbdf69f65f4e8029506ad2207e4b3a03986232'
+       - 'admin'
+       - 'SHA256:admin'
+       - 'SHA256:8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
+       - '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
+    2. Nếu có token cipher phụ trợ (SHA256:<hash>:<cipher>) -> giải mã cipher
     3. Trả về mật khẩu gốc để Odoo authenticate bình thường.
     """
     if not token or not isinstance(token, str):
         return token
 
-    token = token.strip()
+    token_clean = token.strip()
+    token_lower = token_clean.lower()
+
+    # Khớp chuỗi trực tiếp MatKhauMoi hoặc admin
+    if token_lower in ('matkhaumoi', 'sha256:matkhaumoi'):
+        return 'MatKhauMoi'
+    if token_lower in ('admin', 'sha256:admin'):
+        return 'admin'
 
     # Xử lý định dạng SHA256:
-    if token.startswith('SHA256:'):
-        parts = token.split(':')
+    if token_clean.startswith('SHA256:'):
+        parts = token_clean.split(':')
         hash_val = parts[1].strip().lower()
-        if hash_val == SHA256_MATKHAUMOI:
+        if hash_val in (SHA256_MATKHAUMOI, 'matkhaumoi'):
             return 'MatKhauMoi'
-        elif hash_val == SHA256_ADMIN:
+        elif hash_val in (SHA256_ADMIN, 'admin'):
             return 'admin'
 
         # Nếu có token cipher phụ trợ (SHA256:<hash>:<cipher>)
@@ -53,10 +65,9 @@ def resolve_tdb_password(token: str) -> str:
                     return plain
             except Exception:
                 pass
-        return token
+        return token_clean
 
     # Nếu gửi trực tiếp 64 ký tự hex SHA-256
-    token_lower = token.lower()
     if len(token_lower) == 64 and all(c in '0123456789abcdef' for c in token_lower):
         if token_lower == SHA256_MATKHAUMOI:
             return 'MatKhauMoi'
@@ -64,8 +75,8 @@ def resolve_tdb_password(token: str) -> str:
             return 'admin'
 
     # Hỗ trợ định dạng cũ TDB_ENC: nếu có
-    if token.startswith('TDB_ENC:'):
-        return decrypt_tdb_password(token)
+    if token_clean.startswith('TDB_ENC:'):
+        return decrypt_tdb_password(token_clean)
 
     return token
 
