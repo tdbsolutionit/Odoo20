@@ -112,16 +112,38 @@ def main():
             break
 
     print(f"\n[1/6] Kết nối cơ sở dữ liệu odoo20 (config: {config_path})...")
-    config.parse_config(['-c', config_path])
+    try:
+        config.parse_config(['-c', config_path], setup_logging=False)
+    except TypeError:
+        config.parse_config(['-c', config_path])
 
     # Thiết lập đường dẫn addons_path đầy đủ cho toàn bộ hệ thống
     custom_addons_path = os.path.join(odoo_dir, 'custom_addons')
     base_addons_path = os.path.join(odoo_dir, 'addons')
-    current_paths = [p for p in config.get('addons_path', '').split(',') if p]
+    raw_addons = config.get('addons_path') or ''
+    if isinstance(raw_addons, list):
+        current_paths = [p for p in raw_addons if p]
+    elif isinstance(raw_addons, str):
+        current_paths = [p.strip() for p in raw_addons.split(',') if p.strip()]
+    else:
+        current_paths = []
+
     for p in [custom_addons_path, base_addons_path]:
         if os.path.exists(p) and p not in current_paths:
             current_paths.append(p)
-    config['addons_path'] = ','.join(current_paths)
+
+    if isinstance(raw_addons, list):
+        config['addons_path'] = current_paths
+    else:
+        config['addons_path'] = ','.join(current_paths)
+
+    try:
+        import odoo.addons
+        for p in current_paths:
+            if p not in odoo.addons.__path__:
+                odoo.addons.__path__.append(p)
+    except Exception:
+        pass
 
     db_name = config.get('db_name') or 'odoo20'
     registry = Registry(db_name)
