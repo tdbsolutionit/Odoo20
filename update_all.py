@@ -210,13 +210,96 @@ def main():
             else:
                 print(f"    [TRẠNG THÁI HIỆN TẠI]: {mod_rec.state} (Chưa được kích hoạt, bỏ qua).")
 
-        # Nạp lại bản dịch cho các ngôn ngữ đang kích hoạt
+        # Nạp lại bản dịch cho các ngôn ngữ đang kích hoạt và đồng bộ hóa đa ngôn ngữ toàn hệ thống
         print(f"\n  -------------------------------------------------------------------------")
         print("\n  [i18n]: Đồng bộ hóa từ điển và nạp file i18n/vi.po cho toàn bộ module...")
         try:
+            # 1. Kích hoạt tiếng Việt và tiếng Anh trong res.lang
+            Lang = env['res.lang'].sudo()
+            for code, name in [('vi_VN', 'Vietnamese / Tiếng Việt'), ('en_US', 'English (US)')]:
+                l = Lang.search([('code', '=', code)], limit=1)
+                if l and not l.active:
+                    l.active = True
+                elif not l:
+                    try:
+                        Lang._activate_lang(code)
+                    except Exception:
+                        try:
+                            Lang.create({'code': code, 'name': name, 'active': True})
+                        except Exception:
+                            pass
+
+            # 2. Đồng bộ hóa bản dịch menu PLM (vi_VN <-> en_US)
+            menu_translations = {
+                'plm.plm_component_menu_view': ('Components', 'Linh kiện'),
+                'plm.ir_attachment_form': ('Documents', 'Tài liệu'),
+                'plm.plm_menu_relation': ('Component Relations', 'Quan hệ linh kiện'),
+                'plm.plm_menu_dictionaries': ('Configuration', 'Cấu hình'),
+                'plm.menu_document_files': ('Search on Documents', 'Tìm kiếm tài liệu'),
+                'plm.menu_backupdoc': ('Search on Backup Data Set', 'Tìm kiếm bộ sao lưu'),
+                'plm.menu_checkout': ('Search on Checked-Out Documents', 'Tài liệu đang kiểm xuất'),
+                'plm.menu_component_component': ('Engineering Parts', 'Linh kiện kỹ thuật'),
+            }
+            for xmlid, (en_name, vi_name) in menu_translations.items():
+                menu = env.ref(xmlid, raise_if_not_found=False)
+                if menu:
+                    try:
+                        menu.with_context(lang='en_US').write({'name': en_name})
+                        menu.with_context(lang='vi_VN').write({'name': vi_name})
+                    except Exception as e:
+                        pass
+
+            # 3. Đồng bộ hóa window action PLM (vi_VN <-> en_US)
+            action_translations = {
+                'plm.plm_action_component_base': ('Engineering Parts', 'Linh kiện kỹ thuật'),
+                'plm.plm_action_document_form': ('Documents', 'Tài liệu kỹ thuật'),
+                'plm.action_plm_relation': ('Component Relations', 'Quan hệ linh kiện'),
+            }
+            for xmlid, (en_name, vi_name) in action_translations.items():
+                act = env.ref(xmlid, raise_if_not_found=False)
+                if act:
+                    try:
+                        act.with_context(lang='en_US').write({'name': en_name})
+                        act.with_context(lang='vi_VN').write({'name': vi_name})
+                    except Exception as e:
+                        pass
+
+            # 4. Đồng bộ hóa tiêu đề trường (Field Description / Column Headers)
+            field_translations = {
+                ('product.product', 'image_1920'): ('Image', 'Hình ảnh'),
+                ('product.product', 'name'): ('Name', 'Tên linh kiện'),
+                ('product.product', 'configuration_name'): ('Configuration Name', 'Tên cấu hình'),
+                ('product.product', 'engineering_code'): ('Engineering Code', 'Mã kỹ thuật'),
+                ('product.product', 'default_code'): ('Internal Reference', 'Tham chiếu nội bộ'),
+                ('product.product', 'engineering_revision'): ('Engineering Revision', 'Phiên bản kỹ thuật'),
+                ('product.product', 'engineering_state'): ('Engineering Status', 'Trạng thái kỹ thuật'),
+                ('product.product', 'description'): ('Description', 'Mô tả'),
+                ('product.product', 'engineering_writable'): ('Writable', 'Có thể chỉnh sửa'),
+                ('product.product', 'engineering_material'): ('CAD Raw Material', 'Vật liệu thô CAD'),
+                ('product.product', 'engineering_surface'): ('CAD Surface Finishing', 'Hoàn thiện bề mặt CAD'),
+                ('product.product', 'linkeddocuments'): ('Linked Documents', 'Tài liệu liên kết'),
+                ('product.product', 'document_checkout_user_ids'): ('Checked-Out By', 'Được kiểm xuất bởi'),
+                ('ir.attachment', 'preview'): ('Preview', 'Xem trước'),
+                ('ir.attachment', 'name'): ('Document Name', 'Tên tài liệu'),
+                ('ir.attachment', 'checkout_user'): ('Checked-Out By', 'Được kiểm xuất bởi'),
+                ('ir.attachment', 'create_uid'): ('Created By', 'Người tạo'),
+                ('ir.attachment', 'create_date'): ('Created Date', 'Ngày tạo'),
+                ('ir.attachment', 'write_uid'): ('Modified By', 'Người sửa'),
+                ('ir.attachment', 'write_date'): ('Modified Date', 'Ngày sửa'),
+            }
+            FieldModel = env['ir.model.fields'].sudo()
+            for (model_name, fname), (en_desc, vi_desc) in field_translations.items():
+                f_rec = FieldModel.search([('model', '=', model_name), ('name', '=', fname)], limit=1)
+                if f_rec:
+                    try:
+                        f_rec.with_context(lang='en_US').write({'field_description': en_desc})
+                        f_rec.with_context(lang='vi_VN').write({'field_description': vi_desc})
+                    except Exception as e:
+                        pass
+
             installed_modules = env['ir.module.module'].search([('state', '=', 'installed')])
             installed_modules._update_translations(['vi_VN', 'en_US'], overwrite=True)
-            print("  [OK] Đã nạp thành công toàn bộ bản dịch ngôn ngữ mới.")
+            print("  [OK] Đã nạp thành công toàn bộ bản dịch ngôn ngữ mới (VI <-> EN).")
         except Exception as e:
             print(f"  [Lưu ý _update_translations]: {e}")
 
@@ -258,7 +341,7 @@ def main():
             login_view = env.ref('web.login', raise_if_not_found=False)
             login_layout_view = env.ref('web.login_layout', raise_if_not_found=False)
 
-            clean_onsubmit = 'sessionStorage.setItem(\'tdb_open_home_menu\', \'true\'); this.action = \'/web/login\' + location.hash;'
+            clean_onsubmit = 'sessionStorage.setItem(\'tdb_open_home_menu\', \'true\'); if(window.applyHash)window.applyHash(); this.action = \'/web/login\' + location.hash;'
             for v in [login_layout_view, login_view]:
                 if v and v.arch_db:
                     arch = v.arch_db

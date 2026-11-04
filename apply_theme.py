@@ -1633,7 +1633,7 @@ button[value*="become"],
         tdb_login_arch = """<t t-name="web.login">
     <t t-call="web.login_layout">
         <t t-set="title">Đăng nhập | TDB Solution</t>
-        <form class="oe_login_form" role="form" t-attf-action="/web/login" method="post" onsubmit="sessionStorage.setItem('tdb_open_home_menu', 'true'); this.action = '/web/login' + location.hash;">
+        <form class="oe_login_form" role="form" t-attf-action="/web/login" method="post" onsubmit="sessionStorage.setItem('tdb_open_home_menu', 'true'); if(window.applyHash)window.applyHash(); this.action = '/web/login' + location.hash;">
             <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
 
             <div class="form-error" t-if="error" role="alert">
@@ -1715,7 +1715,7 @@ button[value*="become"],
 
             <!-- Nút Demo: admin -->
             <div class="demo-btn-wrap">
-                <button type="button" class="btn-demo" onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin';if(p)p.value='admin';" title="Nhấp để tự động điền tài khoản demo">
+                <button type="button" class="btn-demo" onclick="var l=document.getElementById('login'),p=document.getElementById('password');if(l)l.value='admin';if(p)p.value='MatKhauMoi';" title="Nhấp để tự động điền tài khoản demo">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-key-round">
                         <path d="M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 1 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z"/>
                         <circle cx="16.5" cy="7.5" fill="currentColor" r=".5"/>

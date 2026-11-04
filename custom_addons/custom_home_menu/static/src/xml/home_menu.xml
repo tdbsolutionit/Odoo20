@@ -8,21 +8,29 @@
         </xpath>
         <xpath expr="//div[hasclass('o_menu_systray')]" position="before">
             <!-- Nút chuyển đổi nhanh ngôn ngữ EN | VI -->
-            <div class="o_tdb_lang_switcher d-flex align-items-center me-2 user-select-none">
-                <div class="btn-group btn-group-sm tdb-lang-pill shadow-sm" role="group" aria-label="Chuyển đổi ngôn ngữ">
+            <div class="o_tdb_lang_switcher d-flex align-items-center me-3 user-select-none">
+                <div class="tdb-lang-pill" role="group" aria-label="Chuyển đổi ngôn ngữ">
                     <button type="button"
-                            class="btn btn-sm tdb-lang-btn"
+                            class="tdb-lang-btn"
                             t-att-class="{'active': this.currentLanguage === 'VI'}"
                             t-on-click="() => this.switchLanguage('VI')"
-                            title="Chuyển sang Tiếng Việt">
-                        🇻🇳 VI
+                            title="Đang dùng / Chuyển sang Tiếng Việt">
+                        <span class="tdb-lang-flag">🇻🇳</span>
+                        <span class="tdb-lang-text">VI</span>
+                        <t t-if="this.currentLanguage === 'VI'">
+                            <span class="tdb-active-indicator" title="Đang kích hoạt">●</span>
+                        </t>
                     </button>
                     <button type="button"
-                            class="btn btn-sm tdb-lang-btn"
+                            class="tdb-lang-btn"
                             t-att-class="{'active': this.currentLanguage === 'EN'}"
                             t-on-click="() => this.switchLanguage('EN')"
-                            title="Switch to English">
-                        🇬🇧 EN
+                            title="Active / Switch to English">
+                        <span class="tdb-lang-flag">🇬🇧</span>
+                        <span class="tdb-lang-text">EN</span>
+                        <t t-if="this.currentLanguage === 'EN'">
+                            <span class="tdb-active-indicator" title="Currently Active">●</span>
+                        </t>
                     </button>
                 </div>
             </div>

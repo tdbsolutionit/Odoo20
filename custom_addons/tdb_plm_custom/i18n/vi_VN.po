@@ -1,0 +1,183 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* tdb_plm_custom
+# 	* plm
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 20.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-11-04 08:00+0000\n"
+"PO-Revision-Date: 2026-11-04 08:00+0000\n"
+"Last-Translator: TDB Solution\n"
+"Language-Team: Vietnamese <vi@li.org>\n"
+"Language: vi_VN\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=1; plural=0;\n"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.ui.menu,name:plm.plm_component_menu_view
+msgid "Components"
+msgstr "Linh kiện"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.ui.menu,name:plm.ir_attachment_form
+msgid "Documents"
+msgstr "Tài liệu"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.ui.menu,name:plm.plm_menu_relation
+msgid "Component Relations"
+msgstr "Quan hệ linh kiện"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.ui.menu,name:plm.plm_menu_dictionaries
+msgid "Configuration"
+msgstr "Cấu hình"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.ui.menu,name:plm.menu_document_files
+msgid "Search on Documents"
+msgstr "Tìm kiếm tài liệu"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.ui.menu,name:plm.menu_backupdoc
+msgid "Search on Backup Data Set"
+msgstr "Tìm kiếm bộ sao lưu"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.ui.menu,name:plm.menu_checkout
+msgid "Search on Checked-Out Documents"
+msgstr "Tài liệu đang kiểm xuất"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.actions.act_window,name:plm.plm_action_component_base
+#: model:ir.ui.menu,name:plm.menu_component_component
+#: model_terms:ir.ui.view,arch_db:plm.plm_component_base_tree
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Engineering Parts"
+msgstr "Linh kiện kỹ thuật"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Image"
+msgstr "Hình ảnh"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Name"
+msgstr "Tên linh kiện"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Configuration Name"
+msgstr "Tên cấu hình"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Engineering Code"
+msgstr "Mã kỹ thuật"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Internal Reference"
+msgstr "Tham chiếu nội bộ"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Engineering Revision"
+msgstr "Phiên bản kỹ thuật"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Engineering Status"
+msgstr "Trạng thái kỹ thuật"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Description"
+msgstr "Mô tả"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Writable"
+msgstr "Có thể chỉnh sửa"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "CAD Raw Material"
+msgstr "Vật liệu thô CAD"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "CAD Surface Finishing"
+msgstr "Hoàn thiện bề mặt CAD"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Linked Documents"
+msgstr "Tài liệu liên kết"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Checked-Out By"
+msgstr "Được kiểm xuất bởi"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
+msgid "Preview"
+msgstr "Xem trước"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
+msgid "Document Name"
+msgstr "Tên tài liệu"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
+msgid "Created By"
+msgstr "Người tạo"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
+msgid "Created Date"
+msgstr "Ngày tạo"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
+msgid "Modified By"
+msgstr "Người sửa"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
+msgid "Modified Date"
+msgstr "Ngày sửa"
