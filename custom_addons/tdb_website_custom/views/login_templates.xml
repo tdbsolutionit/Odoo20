@@ -98,7 +98,23 @@
 
                     <!-- Khu vực bên phải: Login Card nổi -->
                     <main class="login-card-side">
-                        <div class="login-card">
+                        <div class="login-card position-relative">
+                            <!-- Chuyển đổi ngôn ngữ trực tiếp trên trang Đăng nhập -->
+                            <div class="position-absolute top-0 end-0 p-3 user-select-none" style="z-index: 5;">
+                                <div class="btn-group btn-group-sm bg-white rounded-pill p-1 shadow-sm border" role="group">
+                                    <a href="/web/session/switch_language_http?lang=vi_VN&amp;redirect=/web/login"
+                                       t-attf-class="btn btn-sm rounded-pill px-2 py-0 fw-semibold text-decoration-none #{'btn-primary text-white' if (request.env.context.get('lang') or 'vi_VN').startswith('vi') else 'text-muted'}"
+                                       style="font-size: 11px;">
+                                        🇻🇳 VI
+                                    </a>
+                                    <a href="/web/session/switch_language_http?lang=en_US&amp;redirect=/web/login"
+                                       t-attf-class="btn btn-sm rounded-pill px-2 py-0 fw-semibold text-decoration-none #{'btn-primary text-white' if not (request.env.context.get('lang') or 'vi_VN').startswith('vi') else 'text-muted'}"
+                                       style="font-size: 11px;">
+                                        🇬🇧 EN
+                                    </a>
+                                </div>
+                            </div>
+
                             <!-- Logo TDB Solution (Hình 2) trong Card -->
                             <div class="card-logo-wrap">
                                 <img src="/tdb_website_custom/static/src/img/tdb_logo.png?v=20261102_logo2" alt="TDB Solution" class="card-logo"/>

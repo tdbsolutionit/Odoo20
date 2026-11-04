@@ -5,6 +5,7 @@ import { NavBar } from "@web/webclient/navbar/navbar";
 import { useListener, onWillUnmount } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { session } from "@web/session";
+import { rpc } from "@web/core/network/rpc";
 
 patch(NavBar.prototype, {
     setup() {
@@ -224,19 +225,17 @@ patch(NavBar.prototype, {
         if (current === targetLangCode) return;
         const lang = targetLangCode === "VI" ? "vi_VN" : "en_US";
         try {
-            if (this.rpc) {
+            if (typeof rpc === "function") {
+                await rpc("/web/session/switch_language", { lang: lang });
+            } else if (this.rpc) {
                 await this.rpc("/web/session/switch_language", { lang: lang });
-            } else if (this.env?.services?.rpc) {
-                await this.env.services.rpc("/web/session/switch_language", { lang: lang });
             } else {
-                await fetch("/web/session/switch_language", {
-                    method: "POST",
-                    headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ jsonrpc: "2.0", method: "call", params: { lang: lang } }),
-                });
+                await fetch("/web/session/switch_language_http?lang=" + lang);
             }
         } catch (e) {
             console.warn("Lưu ý switch_language:", e);
+            window.location.href = "/web/session/switch_language_http?lang=" + lang + "&redirect=" + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
+            return;
         }
         window.location.reload();
     },

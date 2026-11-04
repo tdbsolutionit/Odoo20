@@ -1,3 +1,4 @@
 # -*- coding: utf-8 -*-
 # Copyright 2026 TDB Solution Co., Ltd.
 from . import controllers
+from . import models

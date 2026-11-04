@@ -42,7 +42,10 @@ def decrypt_tdb_password(token: str, key: str = SECURITY_KEY) -> str:
         return token
 
 
-class TdbLoginSecurityController(Home):
+LoginBaseClass = Website if (Website != http.Controller and issubclass(Website, Home)) else Home
+
+
+class TdbLoginSecurityController(LoginBaseClass):
 
     @http.route('/web/login', type='http', auth="none")
     def web_login(self, redirect=None, **kw):
