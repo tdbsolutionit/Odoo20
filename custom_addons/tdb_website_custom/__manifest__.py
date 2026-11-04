@@ -32,7 +32,6 @@ Module tùy biến giao diện TDB Solution:
             'tdb_website_custom/static/src/scss/components/_login_card.scss',
             'tdb_website_custom/static/src/scss/layout/_responsive.scss',
             'tdb_website_custom/static/src/scss/login_custom.scss',
-            'tdb_website_custom/static/src/js/tdb_login_security.js',
         ],
     },
     'installable': True,

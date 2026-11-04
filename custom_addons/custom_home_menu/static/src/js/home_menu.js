@@ -221,23 +221,17 @@ patch(NavBar.prototype, {
     },
 
     async switchLanguage(targetLangCode) {
-        const current = this.currentLanguage;
-        if (current === targetLangCode) return;
         const lang = targetLangCode === "VI" ? "vi_VN" : "en_US";
         try {
             if (typeof rpc === "function") {
                 await rpc("/web/session/switch_language", { lang: lang });
             } else if (this.rpc) {
                 await this.rpc("/web/session/switch_language", { lang: lang });
-            } else {
-                await fetch("/web/session/switch_language_http?lang=" + lang);
             }
         } catch (e) {
             console.warn("Lưu ý switch_language:", e);
-            window.location.href = "/web/session/switch_language_http?lang=" + lang + "&redirect=" + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
-            return;
         }
-        window.location.reload();
+        window.location.href = "/web/session/switch_language_http?lang=" + lang + "&redirect=" + encodeURIComponent(window.location.pathname + window.location.search + window.location.hash);
     },
 });
 

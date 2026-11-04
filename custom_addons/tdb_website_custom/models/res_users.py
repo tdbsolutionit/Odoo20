@@ -44,3 +44,4 @@ class ResUsers(models.Model):
                 credential['password'] = decrypt_tdb_password(pwd)
                 _logger.info("[TDB SECURITY] Đã giải mã mật khẩu an toàn trong authenticate cho tài khoản: %s", credential.get('login'))
         return super().authenticate(credential, user_agent_env=user_agent_env)
+
