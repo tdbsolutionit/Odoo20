@@ -179,17 +179,6 @@ def main():
     if odoo_dir not in sys.path:
         sys.path.insert(0, odoo_dir)
 
-    potential_server_paths = [
-        r'C:\Program Files\Odoo 20.0.20260927\server',
-        r'C:\odoo20\server',
-        r'C:\odoo20\odoo',
-        os.path.join(odoo_dir, 'server'),
-        os.path.join(odoo_dir, 'odoo'),
-    ]
-    for p in potential_server_paths:
-        if os.path.exists(p) and p not in sys.path:
-            sys.path.insert(0, p)
-
     try:
         import odoo
         from odoo.tools import config
@@ -197,10 +186,28 @@ def main():
             from odoo.modules.registry import Registry
         except ImportError:
             from odoo.orm.registry import Registry
-    except ImportError as e:
-        print(f"[LỖI]: Không thể nạp thư viện Odoo: {e}.")
-        print("Vui lòng kích hoạt môi trường ảo Python trước khi chạy (ví dụ: .venv\\Scripts\\activate).")
-        return
+    except ImportError:
+        # Nếu chưa tìm thấy odoo trong odoo_dir, thử tìm thư mục server chứa package odoo
+        candidate_roots = [
+            r'C:\Program Files\Odoo 20.0.20260927\server',
+            r'C:\odoo20\server',
+            os.path.join(odoo_dir, 'server'),
+        ]
+        for c in candidate_roots:
+            if os.path.exists(os.path.join(c, 'odoo', '__init__.py')) and c not in sys.path:
+                sys.path.append(c)
+                break
+        try:
+            import odoo
+            from odoo.tools import config
+            try:
+                from odoo.modules.registry import Registry
+            except ImportError:
+                from odoo.orm.registry import Registry
+        except ImportError as e:
+            print(f"[LỖI]: Không thể nạp thư viện Odoo: {e}.")
+            print("Vui lòng kích hoạt môi trường ảo Python trước khi chạy (ví dụ: .venv\\Scripts\\activate).")
+            return
 
     config_candidates = [
         os.path.join(odoo_dir, 'odoo.conf'),
