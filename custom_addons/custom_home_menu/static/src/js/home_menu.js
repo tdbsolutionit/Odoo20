@@ -3,10 +3,18 @@
 import { patch } from "@web/core/utils/patch";
 import { NavBar } from "@web/webclient/navbar/navbar";
 import { useListener, onWillUnmount } from "@odoo/owl";
+import { useService } from "@web/core/utils/hooks";
+import { session } from "@web/session";
 
 patch(NavBar.prototype, {
     setup() {
         super.setup();
+
+        try {
+            this.rpc = useService("rpc");
+        } catch (e) {
+            this.rpc = null;
+        }
 
         // 1. Kiểm tra trạng thái đăng nhập hoặc landing mặc định để mở ngay Home Menu
         const isFromLogin =
@@ -204,6 +212,33 @@ patch(NavBar.prototype, {
         }
         const query = this.state.searchQuery.toLowerCase().trim();
         return apps.filter((app) => app && app.name && app.name.toLowerCase().includes(query));
+    },
+
+    get currentLanguage() {
+        const lang = (session.user_context && session.user_context.lang) || "vi_VN";
+        return lang.startsWith("vi") ? "VI" : "EN";
+    },
+
+    async switchLanguage(targetLangCode) {
+        const current = this.currentLanguage;
+        if (current === targetLangCode) return;
+        const lang = targetLangCode === "VI" ? "vi_VN" : "en_US";
+        try {
+            if (this.rpc) {
+                await this.rpc("/web/session/switch_language", { lang: lang });
+            } else if (this.env?.services?.rpc) {
+                await this.env.services.rpc("/web/session/switch_language", { lang: lang });
+            } else {
+                await fetch("/web/session/switch_language", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ jsonrpc: "2.0", method: "call", params: { lang: lang } }),
+                });
+            }
+        } catch (e) {
+            console.warn("Lưu ý switch_language:", e);
+        }
+        window.location.reload();
     },
 });
 

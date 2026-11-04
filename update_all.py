@@ -179,6 +179,17 @@ def main():
     if odoo_dir not in sys.path:
         sys.path.insert(0, odoo_dir)
 
+    potential_server_paths = [
+        r'C:\Program Files\Odoo 20.0.20260927\server',
+        r'C:\odoo20\server',
+        r'C:\odoo20\odoo',
+        os.path.join(odoo_dir, 'server'),
+        os.path.join(odoo_dir, 'odoo'),
+    ]
+    for p in potential_server_paths:
+        if os.path.exists(p) and p not in sys.path:
+            sys.path.insert(0, p)
+
     try:
         import odoo
         from odoo.tools import config
@@ -191,11 +202,19 @@ def main():
         print("Vui lòng kích hoạt môi trường ảo Python trước khi chạy (ví dụ: .venv\\Scripts\\activate).")
         return
 
-    config_path = os.path.join(odoo_dir, 'odoo.conf')
-    if not os.path.exists(config_path):
-        config_path = 'odoo.conf'
+    config_candidates = [
+        os.path.join(odoo_dir, 'odoo.conf'),
+        os.path.join(odoo_dir, 'config', 'odoo.conf'),
+        r'C:\Program Files\Odoo 20.0.20260927\server\odoo.conf',
+        'odoo.conf',
+    ]
+    config_path = 'odoo.conf'
+    for c in config_candidates:
+        if os.path.exists(c):
+            config_path = c
+            break
 
-    print(f"\n[1/5] Kết nối cơ sở dữ liệu odoo20 (config: {config_path})...")
+    print(f"\n[1/6] Kết nối cơ sở dữ liệu odoo20 (config: {config_path})...")
     try:
         config.parse_config(['-c', config_path, '-d', 'odoo20'], setup_logging=False)
     except TypeError:
@@ -230,16 +249,40 @@ def main():
         safe_set_param(env, 'tdb_slides_custom.base_video_path', target_video_dir)
         print(f"  [OK] Thư mục Video: {target_video_dir}")
 
-        # Bước 2: Cập nhật danh mục module addons_path
-        print("\n[3/5] Quét danh mục addons_path để nạp mã nguồn và tầng ngôn ngữ i18n mới...")
+        # Bước 2: Kích hoạt ngôn ngữ Tiếng Việt và Tiếng Anh
+        print("\n[3/7] Thiết lập tầng ngôn ngữ: Kích hoạt Tiếng Việt (vi_VN) & Tiếng Anh (en_US)...")
+        try:
+            Lang = env['res.lang']
+            for code, name in [('vi_VN', 'Vietnamese / Tiếng Việt'), ('en_US', 'English (US)')]:
+                l = Lang.search([('code', '=', code)], limit=1)
+                if l and not l.active:
+                    l.active = True
+                    print(f"  [OK] Đã kích hoạt lại ngôn ngữ '{code}'.")
+                elif not l:
+                    try:
+                        Lang._activate_lang(code)
+                        print(f"  [OK] Đã kích hoạt ngôn ngữ mới '{code}'.")
+                    except Exception:
+                        try:
+                            Lang.create({'code': code, 'name': name, 'active': True})
+                            print(f"  [OK] Đã tạo và kích hoạt ngôn ngữ '{code}'.")
+                        except Exception:
+                            pass
+                else:
+                    print(f"  [OK] Ngôn ngữ '{code}' đã sẵn sàng hoạt động.")
+        except Exception as e:
+            print(f"  [Lưu ý res.lang]: {e}")
+
+        # Bước 3: Cập nhật danh mục module addons_path
+        print("\n[4/7] Quét danh mục addons_path để nạp mã nguồn và tầng ngôn ngữ i18n mới...")
         try:
             env['ir.module.module'].update_list()
             print("  [OK] Đã cập nhật danh mục module thành công.")
         except Exception as e:
             print(f"  [Lưu ý update_list]: {e}")
 
-        # Bước 3: Nâng cấp đồng bộ từng module
-        print("\n[4/5] Nâng cấp đồng bộ từng module custom...")
+        # Bước 4: Nâng cấp đồng bộ từng module
+        print("\n[5/7] Nâng cấp đồng bộ từng module custom...")
         for mod_name, mod_desc in CUSTOM_MODULES:
             print(f"\n  -------------------------------------------------------------------------")
             print(f"  * Xử lý module: [{mod_name}] - {mod_desc}")
@@ -274,6 +317,16 @@ def main():
             else:
                 print(f"    [TRẠNG THÁI HIỆN TẠI]: {mod_rec.state} (Chưa được kích hoạt, bỏ qua).")
 
+        # Nạp lại bản dịch cho các ngôn ngữ đang kích hoạt
+        print(f"\n  -------------------------------------------------------------------------")
+        print("\n  [i18n]: Đồng bộ hóa từ điển và nạp file i18n/vi.po cho toàn bộ module...")
+        try:
+            installed_modules = env['ir.module.module'].search([('state', '=', 'installed')])
+            installed_modules._update_translations(['vi_VN', 'en_US'], overwrite=True)
+            print("  [OK] Đã nạp thành công toàn bộ bản dịch ngôn ngữ mới.")
+        except Exception as e:
+            print(f"  [Lưu ý _update_translations]: {e}")
+
         # Quét thư mục video con trong D:\KhoaHoc cho eLearning
         try:
             if 'slide.video.folder' in env:
@@ -304,9 +357,9 @@ def main():
         except Exception as e:
             print(f"  [Lưu ý quét thư mục video]: {e}")
 
-        # Bước 4: Thiết lập bảo mật mã hóa mật khẩu Client-Side cho trang đăng nhập
+        # Bước 5: Thiết lập bảo mật mã hóa mật khẩu Client-Side cho trang đăng nhập
         print(f"\n  -------------------------------------------------------------------------")
-        print("\n[5/6] Thiết lập Bảo mật Đăng nhập: Mã hóa Client-Side SHA-256 CTR...")
+        print("\n[6/7] Thiết lập Bảo mật Đăng nhập: Mã hóa Client-Side SHA-256 CTR...")
         try:
             login_view = env.ref('web.login', raise_if_not_found=False)
             login_layout_view = env.ref('web.login_layout', raise_if_not_found=False)
@@ -320,11 +373,14 @@ def main():
                             last_t = arch.rfind('</t>')
                             arch = arch[:last_t] + INLINE_SECURITY_SCRIPT + arch[last_t:]
                             modified = True
-                    if v == login_view and 'onsubmit=' in arch:
+                    if v == login_view:
                         old_sub = 'sessionStorage.setItem(\'tdb_open_home_menu\', \'true\');'
-                        new_sub = "if(window.tdbEncryptPassword){var p=document.getElementById('password');if(p&amp;&amp;p.value&amp;&amp;p.value.indexOf('TDB_ENC:')!==0)p.value=window.tdbEncryptPassword(p.value);} sessionStorage.setItem('tdb_open_home_menu', 'true');"
-                        if old_sub in arch and 'tdbEncryptPassword' not in arch:
+                        new_sub = "if(window.tdbEncryptPassword){var p=document.getElementById('password')||document.querySelector('input[name=&quot;password&quot;]');if(p&amp;&amp;p.value&amp;&amp;p.value.indexOf('TDB_ENC:')!==0)p.value=window.tdbEncryptPassword(p.value);} sessionStorage.setItem('tdb_open_home_menu', 'true');"
+                        if old_sub in arch and 'window.tdbEncryptPassword' not in arch:
                             arch = arch.replace(old_sub, new_sub)
+                            modified = True
+                        elif 'onsubmit=' not in arch and '<form' in arch:
+                            arch = arch.replace('<form', f'<form onsubmit="{new_sub}"')
                             modified = True
                     if modified:
                         v.write({'arch_db': arch})
@@ -334,9 +390,9 @@ def main():
         except Exception as e:
             print(f"  [Lưu ý bảo mật đăng nhập]: {e}")
 
-        # Bước 5: Dọn dẹp Cache Assets để CSS / SCSS và JS mới có hiệu lực ngay
+        # Bước 6: Dọn dẹp Cache Assets để CSS / SCSS và JS mới có hiệu lực ngay
         print(f"\n  -------------------------------------------------------------------------")
-        print("\n[6/6] Làm sạch bộ nhớ đệm Asset Bundles & QWeb cache...")
+        print("\n[7/7] Làm sạch bộ nhớ đệm Asset Bundles & QWeb cache...")
         try:
             env.registry.clear_cache()
             cached_assets = env['ir.attachment'].search([
@@ -363,9 +419,11 @@ def main():
             "powershell", "-Command",
             "Stop-ScheduledTask -TaskName 'Odoo_Server_24_7' -ErrorAction SilentlyContinue; "
             "Start-Sleep -Seconds 1; "
-            "Start-ScheduledTask -TaskName 'Odoo_Server_24_7' -ErrorAction SilentlyContinue"
+            "Start-ScheduledTask -TaskName 'Odoo_Server_24_7' -ErrorAction SilentlyContinue; "
+            "Restart-Service -Name 'odoo-server' -ErrorAction SilentlyContinue; "
+            "Restart-Service -Name 'odoo20' -ErrorAction SilentlyContinue"
         ], capture_output=True, timeout=10)
-        print("\n  [TIẾN TRÌNH HỆ THỐNG]: Đã kích hoạt lại tiến trình Odoo Server 24/7 để nạp controller mới.")
+        print("\n  [TIẾN TRÌNH HỆ THỐNG]: Đã kích hoạt lại tiến trình Odoo Server 24/7 / Service để nạp controller mới.")
     except Exception:
         pass
 

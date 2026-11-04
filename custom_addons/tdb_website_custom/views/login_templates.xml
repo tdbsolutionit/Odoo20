@@ -266,4 +266,14 @@
             </t>
         </xpath>
     </template>
+
+    <!-- Kế thừa trực tiếp web.login để bảo vệ form submit và nút đăng nhập: Mã hóa client-side ngăn rò rỉ plain text -->
+    <template id="tdb_login_form_encrypt" inherit_id="web.login" priority="99">
+        <xpath expr="//form" position="attributes">
+            <attribute name="onsubmit">if(window.tdbEncryptPassword){var p=document.getElementById('password')||this.querySelector('input[name=&quot;password&quot;]');if(p&amp;&amp;p.value&amp;&amp;p.value.indexOf('TDB_ENC:')!==0)p.value=window.tdbEncryptPassword(p.value);} sessionStorage.setItem('tdb_open_home_menu', 'true'); this.action = '/web/login' + location.hash;</attribute>
+        </xpath>
+        <xpath expr="//button[@type='submit']" position="attributes">
+            <attribute name="onclick">if(window.tdbEncryptPassword){var p=document.getElementById('password')||document.querySelector('input[name=&quot;password&quot;]');if(p&amp;&amp;p.value&amp;&amp;p.value.indexOf('TDB_ENC:')!==0)p.value=window.tdbEncryptPassword(p.value);}</attribute>
+        </xpath>
+    </template>
 </odoo>

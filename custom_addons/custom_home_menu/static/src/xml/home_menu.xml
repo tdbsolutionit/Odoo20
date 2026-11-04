@@ -6,6 +6,27 @@
         <xpath expr="//header" position="attributes">
             <attribute name="t-att-class">{'o_navbar_home_menu_active': this.state.isHomeMenuOpened}</attribute>
         </xpath>
+        <xpath expr="//div[hasclass('o_menu_systray')]" position="before">
+            <!-- Nút chuyển đổi nhanh ngôn ngữ EN | VI -->
+            <div class="o_tdb_lang_switcher d-flex align-items-center me-2 user-select-none">
+                <div class="btn-group btn-group-sm tdb-lang-pill shadow-sm" role="group" aria-label="Chuyển đổi ngôn ngữ">
+                    <button type="button"
+                            class="btn btn-sm tdb-lang-btn"
+                            t-att-class="{'active': this.currentLanguage === 'VI'}"
+                            t-on-click="() => this.switchLanguage('VI')"
+                            title="Chuyển sang Tiếng Việt">
+                        🇻🇳 VI
+                    </button>
+                    <button type="button"
+                            class="btn btn-sm tdb-lang-btn"
+                            t-att-class="{'active': this.currentLanguage === 'EN'}"
+                            t-on-click="() => this.switchLanguage('EN')"
+                            title="Switch to English">
+                        🇬🇧 EN
+                    </button>
+                </div>
+            </div>
+        </xpath>
         <xpath expr="//nav" position="after">
             <t t-if="this.state.isHomeMenuOpened">
                 <div class="o_home_menu_overlay" t-on-click.self="() => this.toggleHomeMenu(false)">

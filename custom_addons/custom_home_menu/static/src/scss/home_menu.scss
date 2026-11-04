@@ -22,6 +22,63 @@
         margin-left: auto !important;
         align-items: center !important;
     }
+
+    // Luôn giữ khối chuyển đổi ngôn ngữ hiển thị trên Navbar
+    .o_tdb_lang_switcher {
+        display: inline-flex !important;
+        visibility: visible !important;
+        pointer-events: auto !important;
+    }
+}
+
+// Khối chuyển đổi nhanh ngôn ngữ [ 🇻🇳 VI | 🇬🇧 EN ] trên Navbar
+.o_tdb_lang_switcher {
+    display: inline-flex !important;
+    align-items: center;
+    user-select: none;
+    margin-right: 8px;
+
+    .tdb-lang-pill {
+        display: inline-flex;
+        align-items: center;
+        background: rgba(255, 255, 255, 0.12);
+        border: 1px solid rgba(255, 255, 255, 0.22);
+        border-radius: 20px;
+        padding: 2px 3px;
+        gap: 2px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: rgba(255, 255, 255, 0.18);
+            border-color: rgba(255, 255, 255, 0.35);
+        }
+
+        .tdb-lang-btn {
+            border: none;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.82);
+            font-size: 11.5px;
+            font-weight: 600;
+            padding: 2px 8px;
+            border-radius: 14px;
+            line-height: 1.5;
+            cursor: pointer;
+            transition: all 0.15s ease-in-out;
+
+            &:hover {
+                color: #ffffff;
+                background: rgba(255, 255, 255, 0.16);
+            }
+
+            &.active {
+                background: #ffffff;
+                color: #0f172a !important;
+                font-weight: 700;
+                box-shadow: 0 1px 4px rgba(0, 0, 0, 0.25);
+            }
+        }
+    }
 }
 
 // Khối hiển thị Ngày Giờ thời gian thực bên trái trên thanh tím

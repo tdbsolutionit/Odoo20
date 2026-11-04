@@ -3,7 +3,7 @@
     <!-- ======================================================================= -->
     <!-- TDB SOLUTION - PHÂN TẦNG LAYER 5: VIEWS VÀ GIAO DIỆN BACKEND PLM       -->
     <!-- Kế thừa giao diện danh sách Engineering Parts (plm_component_base_tree) -->
-    <!-- Hiển thị 2 dòng: Tiếng Anh ở trên, mở ngoặc (Tiếng Việt) ở dưới         -->
+    <!-- Chuẩn hóa chuỗi gốc tiếng Anh - Bản dịch tiếng Việt quản lý tại i18n   -->
     <!-- ======================================================================= -->
 
     <record id="plm_component_base_tree_inherit_tdb" model="ir.ui.view">
@@ -15,86 +15,86 @@
             <!-- Thêm class nhận diện riêng cho bảng danh sách linh kiện PLM -->
             <xpath expr="//list" position="attributes">
                 <attribute name="class">tdb_plm_list_view</attribute>
-                <attribute name="string">Engineering Parts (Linh kiện kỹ thuật)</attribute>
+                <attribute name="string">Engineering Parts</attribute>
             </xpath>
 
-            <!-- Cột 1: Hình ảnh -> Image / (Hình ảnh) -->
+            <!-- Cột 1: Hình ảnh -> Image -->
             <xpath expr="//field[@name='image_1920']" position="attributes">
-                <attribute name="string">Image&#10;(Hình ảnh)</attribute>
+                <attribute name="string">Image</attribute>
                 <attribute name="class">text-center</attribute>
                 <attribute name="optional">show</attribute>
             </xpath>
 
-            <!-- Cột 2: Tên -> Name / (Tên) -->
+            <!-- Cột 2: Tên -> Name -->
             <xpath expr="//field[@name='name']" position="attributes">
-                <attribute name="string">Name&#10;(Tên)</attribute>
+                <attribute name="string">Name</attribute>
             </xpath>
 
-            <!-- Cột Tùy chọn: Tên cấu hình -> Configuration Name / (Tên cấu hình) -->
+            <!-- Cột Tùy chọn: Tên cấu hình -> Configuration Name -->
             <xpath expr="//field[@name='configuration_name']" position="attributes">
-                <attribute name="string">Configuration Name&#10;(Tên cấu hình)</attribute>
+                <attribute name="string">Configuration Name</attribute>
             </xpath>
 
-            <!-- Cột 3: Engineering Code -> Engineering Code / (Mã kỹ thuật) -->
+            <!-- Cột 3: Engineering Code -->
             <xpath expr="//field[@name='engineering_code']" position="attributes">
-                <attribute name="string">Engineering Code&#10;(Mã kỹ thuật)</attribute>
+                <attribute name="string">Engineering Code</attribute>
             </xpath>
 
-            <!-- Cột 4: Tham chiếu nội bộ -> Internal Reference / (Tham chiếu nội bộ) -->
+            <!-- Cột 4: Internal Reference -->
             <xpath expr="//field[@name='default_code']" position="attributes">
-                <attribute name="string">Internal Reference&#10;(Tham chiếu nội bộ)</attribute>
+                <attribute name="string">Internal Reference</attribute>
             </xpath>
 
-            <!-- Cột 5: Engineer... -> Engineering Revision / (Phiên bản kỹ thuật) -->
+            <!-- Cột 5: Engineering Revision -->
             <xpath expr="//field[@name='engineering_revision']" position="attributes">
-                <attribute name="string">Engineering Revision&#10;(Phiên bản kỹ thuật)</attribute>
+                <attribute name="string">Engineering Revision</attribute>
                 <attribute name="class">text-center</attribute>
             </xpath>
 
-            <!-- Cột 6: Engineering Status -> Engineering Status / (Trạng thái kỹ thuật) -->
+            <!-- Cột 6: Engineering Status -->
             <xpath expr="//field[@name='engineering_state']" position="attributes">
-                <attribute name="string">Engineering Status&#10;(Trạng thái kỹ thuật)</attribute>
+                <attribute name="string">Engineering Status</attribute>
                 <attribute name="class">text-center</attribute>
             </xpath>
 
-            <!-- Cột 7: Mô tả -> Description / (Mô tả) -->
+            <!-- Cột 7: Description -->
             <xpath expr="//field[@name='description']" position="attributes">
-                <attribute name="string">Description&#10;(Mô tả)</attribute>
+                <attribute name="string">Description</attribute>
                 <attribute name="invisible">0</attribute>
                 <attribute name="optional">show</attribute>
             </xpath>
 
-            <!-- Cột 8: Writable -> Writable / (Có thể chỉnh sửa) -->
+            <!-- Cột 8: Writable -->
             <xpath expr="//field[@name='engineering_writable']" position="attributes">
-                <attribute name="string">Writable&#10;(Có thể chỉnh sửa)</attribute>
+                <attribute name="string">Writable</attribute>
                 <attribute name="invisible">0</attribute>
                 <attribute name="optional">show</attribute>
                 <attribute name="class">text-center</attribute>
             </xpath>
 
-            <!-- Cột 9: Cad Raw Material -> CAD Raw Material / (Vật liệu thô CAD) -->
+            <!-- Cột 9: CAD Raw Material -->
             <xpath expr="//field[@name='engineering_material']" position="attributes">
-                <attribute name="string">CAD Raw Material&#10;(Vật liệu thô CAD)</attribute>
+                <attribute name="string">CAD Raw Material</attribute>
                 <attribute name="optional">show</attribute>
             </xpath>
 
-            <!-- Cột 10: Cad Surface Finishi... -> CAD Surface Finishing / (Hoàn thiện bề mặt CAD) -->
+            <!-- Cột 10: CAD Surface Finishing -->
             <xpath expr="//field[@name='engineering_surface']" position="attributes">
-                <attribute name="string">CAD Surface Finishing&#10;(Hoàn thiện bề mặt CAD)</attribute>
+                <attribute name="string">CAD Surface Finishing</attribute>
                 <attribute name="optional">show</attribute>
             </xpath>
 
-            <!-- Cột 11: Linked Docs -> Linked Documents / (Tài liệu liên kết) -->
+            <!-- Cột 11: Linked Documents -->
             <xpath expr="//field[@name='linkeddocuments']" position="attributes">
-                <attribute name="string">Linked Documents&#10;(Tài liệu liên kết)</attribute>
+                <attribute name="string">Linked Documents</attribute>
                 <attribute name="invisible">0</attribute>
                 <attribute name="optional">show</attribute>
                 <attribute name="widget">many2many_tags</attribute>
             </xpath>
 
-            <!-- Cột 12: Checked-Out By -> Checked-Out By / (Được kiểm xuất bởi) -->
+            <!-- Cột 12: Checked-Out By -->
             <xpath expr="//field[@name='document_checkout_user_ids']" position="attributes">
-                <attribute name="string">Checked-Out By&#10;(Được kiểm xuất bởi)</attribute>
+                <attribute name="string">Checked-Out By</attribute>
                 <attribute name="optional">show</attribute>
                 <attribute name="widget">many2many_tags</attribute>
             </xpath>
@@ -103,10 +103,10 @@
 
     <!-- Cập nhật tiêu đề Action cửa sổ phân hệ PLM -->
     <record id="plm.action_plm_component_base" model="ir.actions.act_window">
-        <field name="name">Engineering Parts (Linh kiện kỹ thuật)</field>
+        <field name="name">Engineering Parts</field>
     </record>
 
     <record id="plm.action_plm_component_base_cad_form" model="ir.actions.act_window">
-        <field name="name">Engineering Parts (Linh kiện kỹ thuật)</field>
+        <field name="name">Engineering Parts</field>
     </record>
 </odoo>

@@ -31,7 +31,7 @@ table.tdb_plm_list_view,
     border-spacing: 0;
     border-bottom: 1px solid $plm-header-border;
 
-    // Dòng tiêu đề cột: Cho phép xuống 2 dòng (Tiếng Anh trên, Tiếng Việt dưới)
+    // Dòng tiêu đề cột chuẩn doanh nghiệp
     thead {
         tr {
             background-color: $plm-header-bg;
@@ -42,9 +42,9 @@ table.tdb_plm_list_view,
             font-size: 0.815rem !important;
             font-weight: 600 !important;
             letter-spacing: 0.01em;
-            line-height: 1.25 !important;
+            line-height: 1.3 !important;
             color: $plm-header-text !important;
-            white-space: normal !important;
+            white-space: nowrap !important;
             text-align: center !important;
             vertical-align: middle !important;
 
@@ -61,11 +61,10 @@ table.tdb_plm_list_view,
             .o_column_title,
             .text-truncate,
             .d-block {
-                white-space: pre-line !important; // Hiển thị ngắt dòng \n thành 2 dòng!
-                word-break: normal !important;
-                overflow: visible !important;
-                text-overflow: unset !important;
-                line-height: 1.25 !important;
+                white-space: nowrap !important;
+                overflow: hidden !important;
+                text-overflow: ellipsis !important;
+                line-height: 1.3 !important;
                 display: block !important;
                 text-align: center !important;
                 font-weight: 600 !important;

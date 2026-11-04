@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 20.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-03 10:00+0000\n"
-"PO-Revision-Date: 2026-11-03 10:00+0000\n"
+"POT-Creation-Date: 2026-11-04 08:00+0000\n"
+"PO-Revision-Date: 2026-11-04 08:00+0000\n"
 "Last-Translator: TDB Solution\n"
 "Language-Team: Vietnamese <vi@li.org>\n"
 "Language: vi\n"
@@ -18,105 +18,105 @@ msgstr ""
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Engineering Parts (Linh kiện kỹ thuật)"
-msgstr "Engineering Parts (Linh kiện kỹ thuật)"
+msgid "Engineering Parts"
+msgstr "Linh kiện kỹ thuật"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Image\n(Hình ảnh)"
-msgstr "Image\n(Hình ảnh)"
+msgid "Image"
+msgstr "Hình ảnh"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Name\n(Tên)"
-msgstr "Name\n(Tên)"
+msgid "Name"
+msgstr "Tên linh kiện"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Engineering Code\n(Mã kỹ thuật)"
-msgstr "Engineering Code\n(Mã kỹ thuật)"
+msgid "Configuration Name"
+msgstr "Tên cấu hình"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Internal Reference\n(Tham chiếu nội bộ)"
-msgstr "Internal Reference\n(Tham chiếu nội bộ)"
+msgid "Engineering Code"
+msgstr "Mã kỹ thuật"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Engineering Revision\n(Phiên bản kỹ thuật)"
-msgstr "Engineering Revision\n(Phiên bản kỹ thuật)"
+msgid "Internal Reference"
+msgstr "Tham chiếu nội bộ"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Engineering Status\n(Trạng thái kỹ thuật)"
-msgstr "Engineering Status\n(Trạng thái kỹ thuật)"
+msgid "Engineering Revision"
+msgstr "Phiên bản kỹ thuật"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Description\n(Mô tả)"
-msgstr "Description\n(Mô tả)"
+msgid "Engineering Status"
+msgstr "Trạng thái kỹ thuật"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Writable\n(Có thể chỉnh sửa)"
-msgstr "Writable\n(Có thể chỉnh sửa)"
+msgid "Description"
+msgstr "Mô tả"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "CAD Raw Material\n(Vật liệu thô CAD)"
-msgstr "CAD Raw Material\n(Vật liệu thô CAD)"
+msgid "Writable"
+msgstr "Có thể chỉnh sửa"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "CAD Surface Finishing\n(Hoàn thiện bề mặt CAD)"
-msgstr "CAD Surface Finishing\n(Hoàn thiện bề mặt CAD)"
+msgid "CAD Raw Material"
+msgstr "Vật liệu thô CAD"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Linked Documents\n(Tài liệu liên kết)"
-msgstr "Linked Documents\n(Tài liệu liên kết)"
+msgid "CAD Surface Finishing"
+msgstr "Hoàn thiện bề mặt CAD"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Checked-Out By\n(Được kiểm xuất bởi)"
-msgstr "Checked-Out By\n(Được kiểm xuất bởi)"
+msgid "Linked Documents"
+msgstr "Tài liệu liên kết"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Configuration Name\n(Tên cấu hình)"
-msgstr "Configuration Name\n(Tên cấu hình)"
+msgid "Checked-Out By"
+msgstr "Được kiểm xuất bởi"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Documents (Tài liệu kỹ thuật)"
-msgstr "Documents (Tài liệu kỹ thuật)"
+msgid "Documents"
+msgstr "Tài liệu kỹ thuật"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Preview\n(Xem trước)"
-msgstr "Preview\n(Xem trước)"
+msgid "Preview"
+msgstr "Xem trước"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Document Name\n(Tên tài liệu)"
-msgstr "Document Name\n(Tên tài liệu)"
+msgid "Document Name"
+msgstr "Tên tài liệu"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Created By\n(Người tạo)"
-msgstr "Created By\n(Người tạo)"
+msgid "Created By"
+msgstr "Người tạo"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Created Date\n(Ngày tạo)"
-msgstr "Created Date\n(Ngày tạo)"
+msgid "Created Date"
+msgstr "Ngày tạo"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Modified By\n(Người sửa)"
-msgstr "Modified By\n(Người sửa)"
+msgid "Modified By"
+msgstr "Người sửa"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Modified Date\n(Ngày sửa)"
-msgstr "Modified Date\n(Ngày sửa)"
+msgid "Modified Date"
+msgstr "Ngày sửa"
