@@ -3,7 +3,7 @@
     <!-- ======================================================================= -->
     <!-- TDB SOLUTION - PHÂN TẦNG LAYER 5: VIEWS VÀ GIAO DIỆN BACKEND PLM       -->
     <!-- Kế thừa giao diện danh sách PLM Documents (ir_attachment_list)          -->
-    <!-- Chuẩn hóa chuỗi gốc tiếng Anh - Bản dịch tiếng Việt quản lý tại i18n   -->
+    <!-- Tiêu đề cột tự động lấy theo ngôn ngữ người dùng từ ir.model.fields    -->
     <!-- ======================================================================= -->
 
     <record id="plm_ir_attachment_list_inherit_tdb" model="ir.ui.view">
@@ -15,60 +15,21 @@
             <!-- Thêm class nhận diện chung bảng PLM -->
             <xpath expr="//list" position="attributes">
                 <attribute name="class">tdb_plm_list_view</attribute>
-                <attribute name="string">Documents</attribute>
             </xpath>
 
             <!-- Preview -->
             <xpath expr="//field[@name='preview']" position="attributes">
-                <attribute name="string">Preview</attribute>
                 <attribute name="class">text-center</attribute>
-            </xpath>
-
-            <!-- Document Name -->
-            <xpath expr="//field[@name='name']" position="attributes">
-                <attribute name="string">Document Name</attribute>
             </xpath>
 
             <!-- Engineering Revision -->
             <xpath expr="//field[@name='engineering_revision']" position="attributes">
-                <attribute name="string">Engineering Revision</attribute>
                 <attribute name="class">text-center</attribute>
             </xpath>
 
             <!-- Engineering Status -->
             <xpath expr="//field[@name='engineering_state']" position="attributes">
-                <attribute name="string">Engineering Status</attribute>
                 <attribute name="class">text-center</attribute>
-            </xpath>
-
-            <!-- Engineering Code -->
-            <xpath expr="//field[@name='engineering_code']" position="attributes">
-                <attribute name="string">Engineering Code</attribute>
-            </xpath>
-
-            <!-- Checked-Out By -->
-            <xpath expr="//field[@name='checkout_user']" position="attributes">
-                <attribute name="string">Checked-Out By</attribute>
-            </xpath>
-
-            <!-- Created By -->
-            <xpath expr="//field[@name='create_uid']" position="attributes">
-                <attribute name="string">Created By</attribute>
-            </xpath>
-
-            <!-- Created Date -->
-            <xpath expr="//field[@name='create_date']" position="attributes">
-                <attribute name="string">Created Date</attribute>
-            </xpath>
-
-            <!-- Modified By -->
-            <xpath expr="//field[@name='write_uid']" position="attributes">
-                <attribute name="string">Modified By</attribute>
-            </xpath>
-
-            <!-- Modified Date -->
-            <xpath expr="//field[@name='write_date']" position="attributes">
-                <attribute name="string">Modified Date</attribute>
             </xpath>
         </field>
     </record>

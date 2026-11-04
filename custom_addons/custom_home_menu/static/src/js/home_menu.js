@@ -216,13 +216,47 @@ patch(NavBar.prototype, {
     },
 
     get currentLanguage() {
-        const lang = (session.user_context && session.user_context.lang) || "vi_VN";
-        return lang.startsWith("vi") ? "VI" : "EN";
+        let lang = "";
+        try {
+            if (this.env && this.env.services && this.env.services.user && this.env.services.user.context) {
+                lang = this.env.services.user.context.lang;
+            }
+        } catch (e) {}
+
+        if (!lang) {
+            try {
+                if (window.odoo && window.odoo.loader && window.odoo.loader.modules) {
+                    const userMod = window.odoo.loader.modules.get("@web/core/user");
+                    if (userMod && userMod.user && userMod.user.context) {
+                        lang = userMod.user.context.lang;
+                    }
+                }
+            } catch (e) {}
+        }
+
+        if (!lang) {
+            lang = document.documentElement.getAttribute("lang") || "";
+        }
+
+        if (!lang) {
+            const m = document.cookie.match(/(?:^|;\s*)frontend_lang=([^;]+)/);
+            if (m) {
+                lang = decodeURIComponent(m[1]);
+            }
+        }
+
+        if (!lang && window.odoo && window.odoo.__session_info__ && window.odoo.__session_info__.user_context) {
+            lang = window.odoo.__session_info__.user_context.lang;
+        }
+
+        lang = (lang || "").toLowerCase();
+        return lang.startsWith("en") ? "EN" : "VI";
     },
 
     async switchLanguage(targetLangCode) {
         const lang = targetLangCode === "VI" ? "vi_VN" : "en_US";
         try {
+            document.cookie = "frontend_lang=" + lang + ";path=/;max-age=" + (365 * 24 * 3600);
             if (typeof rpc === "function") {
                 await rpc("/web/session/switch_language", { lang: lang });
             } else if (this.rpc) {

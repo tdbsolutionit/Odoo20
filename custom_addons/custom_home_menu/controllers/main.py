@@ -18,8 +18,11 @@ class TdbLanguageController(http.Controller):
         """
         Chuyển đổi ngôn ngữ hiển thị qua HTTP GET/POST và chuyển hướng trang.
         """
-        self._do_switch_language(lang or 'vi_VN')
-        return request.redirect(redirect or '/odoo')
+        target_lang = lang or 'vi_VN'
+        self._do_switch_language(target_lang)
+        response = request.redirect(redirect or '/odoo')
+        response.set_cookie('frontend_lang', target_lang, max_age=365 * 24 * 3600, path='/')
+        return response
 
     def _do_switch_language(self, lang):
         valid_langs = ['vi_VN', 'en_US']

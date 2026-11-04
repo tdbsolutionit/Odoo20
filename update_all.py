@@ -251,7 +251,8 @@ def main():
 
             # 3. Đồng bộ hóa window action PLM (vi_VN <-> en_US)
             action_translations = {
-                'plm.plm_action_component_base': ('Engineering Parts', 'Linh kiện kỹ thuật'),
+                'plm.action_plm_component_base': ('Engineering Parts', 'Linh kiện kỹ thuật'),
+                'plm.action_plm_component_base_cad_form': ('Engineering Parts', 'Linh kiện kỹ thuật'),
                 'plm.plm_action_document_form': ('Documents', 'Tài liệu kỹ thuật'),
                 'plm.action_plm_relation': ('Component Relations', 'Quan hệ linh kiện'),
             }
@@ -261,41 +262,72 @@ def main():
                     try:
                         act.with_context(lang='en_US').write({'name': en_name})
                         act.with_context(lang='vi_VN').write({'name': vi_name})
-                    except Exception as e:
+                    except Exception:
+                        pass
+
+            # Quét toàn bộ action của product.product để đồng bộ tiêu đề linh kiện kỹ thuật (Action 953)
+            for act in env['ir.actions.act_window'].sudo().search([('res_model', '=', 'product.product')]):
+                if act.name in ('Engineering Parts', 'Linh kiện kỹ thuật') or act.id == 953:
+                    try:
+                        act.with_context(lang='en_US').write({'name': 'Engineering Parts'})
+                        act.with_context(lang='vi_VN').write({'name': 'Linh kiện kỹ thuật'})
+                    except Exception:
                         pass
 
             # 4. Đồng bộ hóa tiêu đề trường (Field Description / Column Headers)
-            field_translations = {
-                ('product.product', 'image_1920'): ('Image', 'Hình ảnh'),
-                ('product.product', 'name'): ('Name', 'Tên linh kiện'),
-                ('product.product', 'configuration_name'): ('Configuration Name', 'Tên cấu hình'),
-                ('product.product', 'engineering_code'): ('Engineering Code', 'Mã kỹ thuật'),
-                ('product.product', 'default_code'): ('Internal Reference', 'Tham chiếu nội bộ'),
-                ('product.product', 'engineering_revision'): ('Engineering Revision', 'Phiên bản kỹ thuật'),
-                ('product.product', 'engineering_state'): ('Engineering Status', 'Trạng thái kỹ thuật'),
-                ('product.product', 'description'): ('Description', 'Mô tả'),
-                ('product.product', 'engineering_writable'): ('Writable', 'Có thể chỉnh sửa'),
-                ('product.product', 'engineering_material'): ('CAD Raw Material', 'Vật liệu thô CAD'),
-                ('product.product', 'engineering_surface'): ('CAD Surface Finishing', 'Hoàn thiện bề mặt CAD'),
-                ('product.product', 'linkeddocuments'): ('Linked Documents', 'Tài liệu liên kết'),
-                ('product.product', 'document_checkout_user_ids'): ('Checked-Out By', 'Được kiểm xuất bởi'),
-                ('ir.attachment', 'preview'): ('Preview', 'Xem trước'),
-                ('ir.attachment', 'name'): ('Document Name', 'Tên tài liệu'),
-                ('ir.attachment', 'checkout_user'): ('Checked-Out By', 'Được kiểm xuất bởi'),
-                ('ir.attachment', 'create_uid'): ('Created By', 'Người tạo'),
-                ('ir.attachment', 'create_date'): ('Created Date', 'Ngày tạo'),
-                ('ir.attachment', 'write_uid'): ('Modified By', 'Người sửa'),
-                ('ir.attachment', 'write_date'): ('Modified Date', 'Ngày sửa'),
-            }
+            field_translations = [
+                ('image_1920', 'Image', 'Hình ảnh'),
+                ('name', 'Name', 'Tên linh kiện'),
+                ('configuration_name', 'Configuration Name', 'Tên cấu hình'),
+                ('engineering_code', 'Engineering Code', 'Mã kỹ thuật'),
+                ('default_code', 'Internal Reference', 'Tham chiếu nội bộ'),
+                ('engineering_revision', 'Engineering Revision', 'Phiên bản kỹ thuật'),
+                ('engineering_state', 'Engineering Status', 'Trạng thái kỹ thuật'),
+                ('description', 'Description', 'Mô tả'),
+                ('engineering_writable', 'Writable', 'Có thể chỉnh sửa'),
+                ('engineering_material', 'CAD Raw Material', 'Vật liệu thô CAD'),
+                ('engineering_surface', 'CAD Surface Finishing', 'Hoàn thiện bề mặt CAD'),
+                ('linkeddocuments', 'Linked Documents', 'Tài liệu liên kết'),
+                ('document_checkout_user_ids', 'Checked-Out By', 'Được kiểm xuất bởi'),
+            ]
             FieldModel = env['ir.model.fields'].sudo()
-            for (model_name, fname), (en_desc, vi_desc) in field_translations.items():
-                f_rec = FieldModel.search([('model', '=', model_name), ('name', '=', fname)], limit=1)
+            for model_name in ['product.product', 'product.template']:
+                for fname, en_desc, vi_desc in field_translations:
+                    f_rec = FieldModel.search([('model', '=', model_name), ('name', '=', fname)], limit=1)
+                    if f_rec:
+                        try:
+                            f_rec.with_context(lang='en_US').write({'field_description': en_desc})
+                            f_rec.with_context(lang='vi_VN').write({'field_description': vi_desc})
+                        except Exception:
+                            pass
+
+            doc_field_translations = [
+                ('preview', 'Preview', 'Xem trước'),
+                ('name', 'Document Name', 'Tên tài liệu'),
+                ('checkout_user', 'Checked-Out By', 'Được kiểm xuất bởi'),
+                ('create_uid', 'Created By', 'Người tạo'),
+                ('create_date', 'Created Date', 'Ngày tạo'),
+                ('write_uid', 'Modified By', 'Người sửa'),
+                ('write_date', 'Modified Date', 'Ngày sửa'),
+            ]
+            for fname, en_desc, vi_desc in doc_field_translations:
+                f_rec = FieldModel.search([('model', '=', 'ir.attachment'), ('name', '=', fname)], limit=1)
                 if f_rec:
                     try:
                         f_rec.with_context(lang='en_US').write({'field_description': en_desc})
                         f_rec.with_context(lang='vi_VN').write({'field_description': vi_desc})
-                    except Exception as e:
+                    except Exception:
                         pass
+
+            # Dọn sạch các attribute string cứng còn sót lại trong arch_db của views PLM
+            import re
+            for v_xmlid in ['plm.plm_component_base_tree', 'tdb_plm_custom.plm_component_base_tree_inherit_tdb', 'plm.ir_attachment_list', 'tdb_plm_custom.plm_ir_attachment_list_inherit_tdb']:
+                v_rec = env.ref(v_xmlid, raise_if_not_found=False)
+                if v_rec and v_rec.arch_db:
+                    old_arch = v_rec.arch_db
+                    cleaned = re.sub(r'<attribute name="string">[^<]+</attribute>', '', old_arch)
+                    if cleaned != old_arch:
+                        v_rec.write({'arch_db': cleaned})
 
             installed_modules = env['ir.module.module'].search([('state', '=', 'installed')])
             installed_modules._update_translations(['vi_VN', 'en_US'], overwrite=True)
@@ -333,35 +365,27 @@ def main():
         except Exception as e:
             print(f"  [Lưu ý quét thư mục video]: {e}")
 
-        # Bước 5: Khôi phục cơ chế Đăng nhập chuẩn Odoo & Đồng bộ tài khoản admin
+        # Bước 5: Cấu hình cơ chế Đăng nhập băm SHA-256 an toàn & Đồng bộ tài khoản admin
         print(f"\n  -------------------------------------------------------------------------")
-        print("\n[6/7] Khôi phục cơ chế Đăng nhập chuẩn Odoo & Đồng bộ tài khoản admin...")
+        print("\n[6/7] Cấu hình cơ chế Đăng nhập băm SHA-256 an toàn & Đồng bộ tài khoản admin...")
         try:
             import re
             login_view = env.ref('web.login', raise_if_not_found=False)
             login_layout_view = env.ref('web.login_layout', raise_if_not_found=False)
 
-            clean_onsubmit = 'sessionStorage.setItem(\'tdb_open_home_menu\', \'true\'); if(window.applyHash)window.applyHash(); this.action = \'/web/login\' + location.hash;'
+            clean_onsubmit = "sessionStorage.setItem('tdb_open_home_menu', 'true'); var p=document.getElementById('password')||this.querySelector('input[name=\\'password\\']'); if(p &amp;&amp; p.value &amp;&amp; !p.value.startsWith('SHA256:')){ p.value = 'SHA256:' + (window.tdbSha256 ? window.tdbSha256(p.value) : p.value); }; this.action = '/web/login' + location.hash;"
             for v in [login_layout_view, login_view]:
                 if v and v.arch_db:
                     arch = v.arch_db
-                    modified = False
-                    if 'tdbEncryptPassword' in arch or 'TDB_ENC' in arch:
-                        # Gỡ bỏ script inline mã hóa gây lỗi
-                        arch = re.sub(r'<script\b[^>]*>[\s\S]*?tdbEncryptPassword[\s\S]*?</script>', '', arch)
-                        # Khôi phục onsubmit sạch không mã hóa client
-                        arch = re.sub(r'onsubmit="[^"]*tdbEncryptPassword[^"]*"', f'onsubmit="{clean_onsubmit}"', arch)
-                        arch = re.sub(r'onclick="[^"]*tdbEncryptPassword[^"]*"', '', arch)
-                        modified = True
+                    # Gỡ bỏ các đoạn script cũ nếu có
+                    arch = re.sub(r'<script\b[^>]*>[\s\S]*?tdbEncryptPassword[\s\S]*?</script>', '', arch)
+                    arch = re.sub(r'onclick="[^"]*tdbEncryptPassword[^"]*"', '', arch)
+                    # Cập nhật onsubmit luôn luôn gọi băm SHA-256
+                    arch = re.sub(r'onsubmit="[^"]*"', f'onsubmit="{clean_onsubmit}"', arch)
                     # Cập nhật nút Demo: admin điền mật khẩu MatKhauMoi
-                    if 'p.value=\'admin\'' in arch:
-                        arch = arch.replace('p.value=\'admin\'', 'p.value=\'MatKhauMoi\'')
-                        modified = True
-                    if modified:
-                        v.write({'arch_db': arch})
-                        print(f"  [OK] Đã dọn sạch script mã hóa cũ trong view '{v.key or v.id}'.")
-                    else:
-                        print(f"  [OK] View '{v.key or v.id}' đã sạch sẽ chuẩn Odoo.")
+                    arch = arch.replace("p.value='admin'", "p.value='MatKhauMoi'").replace('p.value="admin"', 'p.value="MatKhauMoi"')
+                    v.write({'arch_db': arch})
+                    print(f"  [OK] Đã cấu hình băm SHA-256 trực tiếp trong view '{v.key or v.id}'.")
 
             # Đảm bảo tài khoản admin luôn đăng nhập được với mật khẩu MatKhauMoi
             admin_user = env['res.users'].sudo().search([('login', '=', 'admin')], limit=1)
@@ -369,7 +393,7 @@ def main():
                 admin_user.write({'password': 'MatKhauMoi'})
                 print("  [OK] Đã đảm bảo mật khẩu tài khoản 'admin' là: MatKhauMoi")
         except Exception as e:
-            print(f"  [Lưu ý khôi phục đăng nhập]: {e}")
+            print(f"  [Lưu ý cấu hình đăng nhập]: {e}")
 
         # Bước 6: Dọn dẹp Cache Assets để CSS / SCSS và JS mới có hiệu lực ngay
         print(f"\n  -------------------------------------------------------------------------")

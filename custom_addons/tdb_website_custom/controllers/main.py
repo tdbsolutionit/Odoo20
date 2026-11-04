@@ -102,7 +102,7 @@ LoginBaseClass = Website if (Website != http.Controller and issubclass(Website, 
 
 class TdbLoginSecurityController(LoginBaseClass):
 
-    @http.route('/web/login', type='http', auth="none")
+    @http.route('/web/login', type='http', auth="none", readonly=False)
     def web_login(self, redirect=None, **kw):
         """
         Kế thừa route /web/login:

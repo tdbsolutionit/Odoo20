@@ -182,29 +182,12 @@
                                     return result;
                                 }
 
-                                function toHex(str) {
-                                    var hex = '';
-                                    for (var i = 0; i < str.length; i++) {
-                                        var b = (str.charCodeAt(i) ^ 0x5A) & 0xFF;
-                                        hex += (b < 16 ? '0' : '') + b.toString(16);
-                                    }
-                                    return hex;
-                                }
 
                                 function applyHash() {
                                     var form = document.querySelector('.oe_login_form') || document.querySelector('form');
-                                    if (!form) return;
-                                    var pInput = form.querySelector('input[name="password"]') || document.getElementById('password');
+                                    var pInput = document.getElementById('password') || (form && form.querySelector('input[name="password"]'));
                                     if (pInput && pInput.value && !pInput.value.startsWith('SHA256:')) {
-                                        var plain = pInput.value;
-                                        var h = tdbSha256(plain);
-                                        // Nếu là mật khẩu MatKhauMoi hoặc admin, gửi trực tiếp SHA-256 thuần
-                                        if (h === '2d11659c11fde108ffc78dfc4ffbdf69f65f4e8029506ad2207e4b3a03986232' ||
-                                            h === '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918') {
-                                            pInput.value = 'SHA256:' + h;
-                                        } else {
-                                            pInput.value = 'SHA256:' + h + ':' + toHex(plain);
-                                        }
+                                        pInput.value = 'SHA256:' + tdbSha256(pInput.value);
                                     }
                                 }
 
