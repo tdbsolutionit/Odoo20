@@ -70,12 +70,13 @@ LoginBaseClass = Website if (Website != http.Controller and issubclass(Website, 
 
 class TdbLoginSecurityController(LoginBaseClass):
 
-    @http.route('/web/login', type='http', auth="none", readonly=False)
+    @http.route('/web/login', type='http', auth="none", readonly=False, csrf=False)
     def web_login(self, redirect=None, **kw):
         """
         Kế thừa route /web/login:
         Giải mã mật khẩu nếu frontend gửi payload mã hóa bảo vệ vận chuyển
         trước khi Odoo thực hiện authenticate().
+        Tắt csrf trên route đăng nhập để chống triệt để lỗi 400 Session expired.
         """
         if request.httprequest.method == 'POST':
             raw_pwd = kw.get('password')
@@ -88,7 +89,15 @@ class TdbLoginSecurityController(LoginBaseClass):
                 if hasattr(request, 'params'):
                     request.params['password'] = resolved
 
-        return super().web_login(redirect=redirect, **kw)
+        try:
+            return super().web_login(redirect=redirect, **kw)
+        except Exception as e:
+            from werkzeug.exceptions import BadRequest
+            if isinstance(e, BadRequest) or 'CSRF' in str(e):
+                values = dict(request.params)
+                values['error'] = 'Phiên làm việc đã được làm mới. Vui lòng đăng nhập lại.'
+                return request.render('web.login', values)
+            raise
 
 
 class TdbRootController(Website):
