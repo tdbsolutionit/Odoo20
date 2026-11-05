@@ -39,8 +39,11 @@ def _cad_dispatch_rpc(service_name, method, params):
             # Fallback nếu db_list bị chặn hoặc rỗng: lấy từ cấu hình hoặc mặc định
             cfg_db = odoo.tools.config.get('db_name')
             if cfg_db:
-                return [d.strip() for d in str(cfg_db).split(',') if d.strip()]
-            return ['odoo20']
+                if isinstance(cfg_db, (list, tuple, set)):
+                    return [str(d).strip() for d in cfg_db if d]
+                elif isinstance(cfg_db, str):
+                    return [d.strip(" '\"[]()") for d in cfg_db.split(',') if d.strip(" '\"[]()")]
+            return ['odoo20_dev']
         elif method == 'db_exist':
             target_db = params[0] if params else ''
             cfg_db = odoo.tools.config.get('db_name') or 'odoo20'

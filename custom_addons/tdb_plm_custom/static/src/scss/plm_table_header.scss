@@ -1,136 +1,124 @@
 // =============================================================================
-// TDB SOLUTION - PHÂN TẦNG SCSS 3: TABLE HEADER ALIGNMENT & COLUMN WIDTHS
-// Căn lề chuẩn hóa, đồng đều giao diện phân hệ PLM
+// TDB SOLUTION - PHÂN TẦNG SCSS 3: TABLE HEADER ALIGNMENT
+// Căn lề chuẩn hóa, đồng đều giao diện phân hệ PLM (100% không bị cắt chữ)
+// Để Odoo MagicColumnWidths tự động phân bổ tỷ lệ vừa khít màn hình
 // =============================================================================
 
-table.o_list_table.tdb_plm_list_view,
-table.tdb_plm_list_view,
 .tdb_plm_list_view table.o_list_table,
-.tdb_plm_list_view table {
+div.o_view_controller.tdb_plm_list_view table.o_list_table {
     thead {
-        th {
-            vertical-align: middle !important;
-            padding: 9px 12px !important;
-            border-bottom: 2px solid $plm-header-border !important;
-            border-right: 1px solid rgba(0, 0, 0, 0.04);
-            position: relative;
+        // Cấu hình chung cho sortable header
+        th.o_column_sortable {
+            cursor: pointer;
             user-select: none;
-            text-align: center !important;
-
-            &:last-child {
-                border-right: none;
-            }
-
-            // Căn giữa nội dung và icon sắp xếp
-            .o_column_sortable {
-                display: flex !important;
-                flex-direction: row !important;
-                justify-content: center !important;
-                align-items: center !important;
-                gap: 4px;
-                width: 100% !important;
-            }
-
-            span,
-            .text-truncate,
-            .d-block {
-                white-space: nowrap !important;
-                overflow: hidden !important;
-                text-overflow: ellipsis !important;
-                text-align: center !important;
-                line-height: 1.3 !important;
-                display: block !important;
-            }
         }
 
-        // 0. Ô chọn checkbox
+        // =====================================================================
+        // NHÓM 1: CÁC CỘT CĂN GIỮA (CENTER ALIGNED HEADERS)
+        // =====================================================================
+
+        // 0. Checkbox chọn dòng
         th.o_list_record_selector {
-            width: $col-w-selector !important;
-            min-width: $col-w-selector !important;
-            max-width: $col-w-selector !important;
             text-align: center !important;
         }
 
-        // 1. Hình ảnh: Image
+        // 1. Cột Hình ảnh (Image)
         th[data-name="image_1920"],
         th[data-name="preview"],
         th[data-name="preview_related"] {
-            width: $col-w-image !important;
-            min-width: $col-w-image !important;
             text-align: center !important;
+
+            .o_column_sortable,
+            .d-flex {
+                justify-content: center !important;
+                text-align: center !important;
+            }
+
+            span,
+            .o_column_title,
+            .text-truncate {
+                text-align: center !important;
+            }
         }
 
-        // 2. Tên linh kiện: Name
-        th[data-name="name"] {
-            min-width: 160px !important;
-            text-align: center !important;
-        }
-
-        // Cột cấu hình: Configuration Name
-        th[data-name="configuration_name"] {
-            min-width: 150px !important;
-            text-align: center !important;
-        }
-
-        // 3. Mã kỹ thuật: Engineering Code
-        th[data-name="engineering_code"] {
-            min-width: 150px !important;
-            text-align: center !important;
-        }
-
-        // 4. Tham chiếu nội bộ: Internal Reference
-        th[data-name="default_code"] {
-            min-width: 150px !important;
-            text-align: center !important;
-        }
-
-        // 5. Phiên bản: Engineering Revision
+        // 5. Cột Phiên bản (Revision)
         th[data-name="engineering_revision"] {
-            min-width: 130px !important;
             text-align: center !important;
+
+            .o_column_sortable,
+            .d-flex {
+                justify-content: center !important;
+                text-align: center !important;
+            }
+
+            span,
+            .o_column_title,
+            .text-truncate {
+                text-align: center !important;
+            }
         }
 
-        // 6. Trạng thái: Engineering Status
+        // 6. Cột Trạng thái kỹ thuật (Engineering Status)
         th[data-name="engineering_state"] {
-            min-width: 140px !important;
             text-align: center !important;
+
+            .o_column_sortable,
+            .d-flex {
+                justify-content: center !important;
+                text-align: center !important;
+            }
+
+            span,
+            .o_column_title,
+            .text-truncate {
+                text-align: center !important;
+            }
         }
 
-        // 7. Mô tả: Description
-        th[data-name="description"] {
-            min-width: 150px !important;
-            text-align: center !important;
-        }
-
-        // 8. Quyền ghi: Writable
+        // 8. Cột Có thể chỉnh sửa (Writable)
         th[data-name="engineering_writable"] {
-            min-width: 130px !important;
             text-align: center !important;
+
+            .o_column_sortable,
+            .d-flex {
+                justify-content: center !important;
+                text-align: center !important;
+            }
+
+            span,
+            .o_column_title,
+            .text-truncate {
+                text-align: center !important;
+            }
         }
 
-        // 9. Vật liệu thô: CAD Raw Material
-        th[data-name="engineering_material"] {
-            min-width: 150px !important;
-            text-align: center !important;
-        }
+        // =====================================================================
+        // NHÓM 2: CÁC CỘT CĂN TRÁI (LEFT ALIGNED HEADERS)
+        // =====================================================================
 
-        // 10. Hoàn thiện bề mặt: CAD Surface Finishing
-        th[data-name="engineering_surface"] {
-            min-width: 160px !important;
-            text-align: center !important;
-        }
-
-        // 11. Tài liệu liên kết: Linked Documents
-        th[data-name="linkeddocuments"] {
-            min-width: 150px !important;
-            text-align: center !important;
-        }
-
-        // 12. Kiểm xuất: Checked-Out By
+        th[data-name="name"],
+        th[data-name="configuration_name"],
+        th[data-name="engineering_code"],
+        th[data-name="default_code"],
+        th[data-name="description"],
+        th[data-name="engineering_material"],
+        th[data-name="engineering_surface"],
+        th[data-name="linkeddocuments"],
         th[data-name="document_checkout_user_ids"],
         th[data-name="checkout_user"] {
-            min-width: 160px !important;
-            text-align: center !important;
+            text-align: left !important;
+
+            .o_column_sortable,
+            .d-flex {
+                justify-content: flex-start !important;
+                text-align: left !important;
+            }
+
+            span,
+            .o_column_title,
+            .text-truncate {
+                text-align: left !important;
+            }
         }
     }
 }

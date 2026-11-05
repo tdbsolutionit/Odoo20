@@ -102,6 +102,8 @@ def main():
             return
 
     config_candidates = [
+        '/etc/odoo/odoo.conf',
+        os.path.join(odoo_dir, 'config', 'odoo.conf'),
         os.path.join(odoo_dir, 'odoo.conf'),
         os.path.join(odoo_dir, 'config', 'odoo.conf'),
         r'C:\Program Files\Odoo 20.0.20260927\server\odoo.conf',
@@ -120,8 +122,12 @@ def main():
         config.parse_config(['-c', config_path])
 
     # Thiết lập đường dẫn addons_path đầy đủ cho toàn bộ hệ thống
-    custom_addons_path = os.path.join(odoo_dir, 'custom_addons')
-    base_addons_path = os.path.join(odoo_dir, 'addons')
+    if os.path.exists('/mnt/custom_addons') and os.path.exists('/mnt/extra-addons'):
+        custom_addons_path = '/mnt/custom_addons'
+        base_addons_path = '/mnt/extra-addons'
+    else:
+        custom_addons_path = os.path.join(odoo_dir, 'custom_addons')
+        base_addons_path = os.path.join(odoo_dir, 'addons')
     raw_addons = config.get('addons_path') or ''
     if isinstance(raw_addons, list):
         current_paths = [p for p in raw_addons if p]
@@ -169,6 +175,8 @@ def main():
         pass
 
     db_name = config.get('db_name') or 'odoo20'
+    if isinstance(db_name, (list, tuple)):
+        db_name = db_name[0]
     registry = Registry(db_name)
 
     with registry.cursor() as cr:
@@ -176,7 +184,7 @@ def main():
 
         # Bước 2: Thiết lập cấu hình Video Server
         print("\n[2/6] Thiết lập cấu hình Video Server D:\\KhoaHoc...")
-        target_video_dir = r"D:\KhoaHoc"
+        target_video_dir = '/mnt/videos' if os.path.exists('/mnt/videos') else r"D:\KhoaHoc"
         safe_set_param(env, 'tdb.video.local_path', target_video_dir)
         safe_set_param(env, 'tdb.video.server_mode', 'local')
         safe_set_param(env, 'tdb_slides.video_local_path', target_video_dir)
@@ -315,43 +323,91 @@ def main():
         <attribute name="string">Engineering Parts</attribute>
     </xpath>
     <xpath expr="//field[@name='image_1920']" position="attributes">
+        <attribute name="string">Image</attribute>
         <attribute name="class">text-center</attribute>
+        <attribute name="width">65px</attribute>
         <attribute name="optional">show</attribute>
+    </xpath>
+    <xpath expr="//field[@name='name']" position="attributes">
+        <attribute name="string">Name</attribute>
+        <attribute name="width">[120,240]</attribute>
+    </xpath>
+    <xpath expr="//field[@name='configuration_name']" position="attributes">
+        <attribute name="string">Configuration Name</attribute>
+        <attribute name="optional">hide</attribute>
+        <attribute name="width">[100,150]</attribute>
+    </xpath>
+    <xpath expr="//field[@name='engineering_code']" position="attributes">
+        <attribute name="string">Engineering Code</attribute>
+        <attribute name="width">[95,130]</attribute>
+    </xpath>
+    <xpath expr="//field[@name='default_code']" position="attributes">
+        <attribute name="string">Internal Reference</attribute>
+        <attribute name="width">[110,150]</attribute>
     </xpath>
     <xpath expr="//field[@name='engineering_revision']" position="attributes">
+        <attribute name="string">Revision</attribute>
         <attribute name="class">text-center</attribute>
+        <attribute name="width">70px</attribute>
     </xpath>
     <xpath expr="//field[@name='engineering_state']" position="attributes">
+        <attribute name="string">Engineering Status</attribute>
         <attribute name="class">text-center</attribute>
+        <attribute name="width">115px</attribute>
     </xpath>
     <xpath expr="//field[@name='description']" position="attributes">
+        <attribute name="string">Description</attribute>
         <attribute name="invisible">0</attribute>
         <attribute name="optional">show</attribute>
+        <attribute name="width">[85,160]</attribute>
     </xpath>
     <xpath expr="//field[@name='engineering_writable']" position="attributes">
+        <attribute name="string">Writable</attribute>
         <attribute name="invisible">0</attribute>
         <attribute name="optional">show</attribute>
         <attribute name="class">text-center</attribute>
+        <attribute name="width">115px</attribute>
     </xpath>
     <xpath expr="//field[@name='engineering_material']" position="attributes">
+        <attribute name="string">CAD Raw Material</attribute>
         <attribute name="optional">show</attribute>
+        <attribute name="width">[95,135]</attribute>
     </xpath>
     <xpath expr="//field[@name='engineering_surface']" position="attributes">
+        <attribute name="string">CAD Surface Finishing</attribute>
         <attribute name="optional">show</attribute>
+        <attribute name="width">[95,135]</attribute>
     </xpath>
     <xpath expr="//field[@name='linkeddocuments']" position="attributes">
+        <attribute name="string">Linked Documents</attribute>
         <attribute name="invisible">0</attribute>
         <attribute name="optional">show</attribute>
         <attribute name="widget">many2many_tags</attribute>
+        <attribute name="width">[105,150]</attribute>
     </xpath>
     <xpath expr="//field[@name='document_checkout_user_ids']" position="attributes">
+        <attribute name="string">Checked-Out By</attribute>
         <attribute name="optional">show</attribute>
         <attribute name="widget">many2many_tags</attribute>
+        <attribute name="width">[115,160]</attribute>
     </xpath>
 </data>"""
 
             plm_view_terms = {
                 'Engineering Parts': 'Linh kiện kỹ thuật',
+                'Image': 'Hình ảnh',
+                'Name': 'Tên',
+                'Configuration Name': 'Tên cấu hình',
+                'Engineering Code': 'Mã kỹ thuật',
+                'Internal Reference': 'Tham chiếu nội bộ',
+                'Revision': 'Phiên bản',
+                'Engineering Status': 'Trạng thái kỹ thuật',
+                'Description': 'Mô tả',
+                'Writable': 'Có thể chỉnh sửa',
+                'CAD Raw Material': 'Vật liệu CAD',
+                'CAD Surface Finishing': 'Bề mặt CAD',
+                'Linked Documents': 'Tài liệu liên kết',
+                'Checked-Out By': 'Được kiểm xuất bởi',
             }
 
             v_plm = env.ref('tdb_plm_custom.plm_component_base_tree_inherit_tdb', raise_if_not_found=False)
@@ -364,6 +420,20 @@ def main():
                     print("  [OK] Đã nạp thành công view song ngữ PLM Components (VI <-> EN).")
                 except Exception as e:
                     print(f"  [Lưu ý ghi view PLM]: {e}")
+
+            v_search = env.ref('tdb_plm_custom.plm_component_base_search_inherit_tdb', raise_if_not_found=False)
+            if v_search:
+                search_terms = {
+                    'Latest': 'Mới nhất',
+                    'Checked Out': 'Đang kiểm xuất',
+                    'Confirmed': 'Đã xác nhận',
+                    'Released': 'Đã ban hành',
+                    'Obsoleted': 'Đã lỗi thời',
+                }
+                try:
+                    v_search.update_field_translations('arch_db', {'vi_VN': search_terms})
+                except Exception:
+                    pass
 
             base_plm = env.ref('plm.plm_component_base_tree', raise_if_not_found=False)
             if base_plm:
@@ -385,16 +455,16 @@ def main():
             # 5. Cập nhật nhãn field cho product.product và ir.attachment cho CẢ TIẾNG ANH (en_US) VÀ TIẾNG VIỆT (vi_VN)
             plm_field_labels = {
                 'image_1920': ('Image', 'Hình ảnh'),
-                'name': ('Name', 'Tên linh kiện'),
+                'name': ('Name', 'Tên'),
                 'configuration_name': ('Configuration Name', 'Tên cấu hình'),
                 'engineering_code': ('Engineering Code', 'Mã kỹ thuật'),
                 'default_code': ('Internal Reference', 'Tham chiếu nội bộ'),
-                'engineering_revision': ('Engineering Revision', 'Phiên bản kỹ thuật'),
+                'engineering_revision': ('Revision', 'Phiên bản'),
                 'engineering_state': ('Engineering Status', 'Trạng thái kỹ thuật'),
                 'description': ('Description', 'Mô tả'),
                 'engineering_writable': ('Writable', 'Có thể chỉnh sửa'),
-                'engineering_material': ('CAD Raw Material', 'Vật liệu thô CAD'),
-                'engineering_surface': ('CAD Surface Finishing', 'Hoàn thiện bề mặt CAD'),
+                'engineering_material': ('CAD Raw Material', 'Vật liệu CAD'),
+                'engineering_surface': ('CAD Surface Finishing', 'Bề mặt CAD'),
                 'linkeddocuments': ('Linked Documents', 'Tài liệu liên kết'),
                 'document_checkout_user_ids': ('Checked-Out By', 'Được kiểm xuất bởi'),
             }
@@ -1846,7 +1916,10 @@ button[value*="become"],
         print(f"\n  -------------------------------------------------------------------------")
         print("\n[7/7] Làm sạch bộ nhớ đệm Asset Bundles & QWeb cache...")
         try:
-            env.registry.clear_cache()
+            if hasattr(env.registry, 'clear_caches'):
+                env.registry.clear_caches()
+            elif hasattr(env.registry, 'clear_cache'):
+                env.registry.clear_cache()
             cached_assets = env['ir.attachment'].search([
                 '|', '|',
                 ('url', '=like', '/web/assets/%'),

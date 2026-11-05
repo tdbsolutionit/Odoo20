@@ -3,25 +3,14 @@
 // Căn lề đồng bộ cho các ô dữ liệu trong bảng danh sách linh kiện PLM
 // =============================================================================
 
-table.o_list_table.tdb_plm_list_view,
-table.tdb_plm_list_view,
 .tdb_plm_list_view table.o_list_table,
-.tdb_plm_list_view table {
+div.o_view_controller.tdb_plm_list_view table.o_list_table {
     tbody {
-        td {
-            vertical-align: middle !important;
-            padding: 8px 12px !important;
-            border-bottom: 1px solid $plm-cell-border !important;
-            border-right: 1px solid rgba(0, 0, 0, 0.03);
+        // =====================================================================
+        // NHÓM 1: CÁC CỘT CĂN GIỮA (CENTER ALIGNED CELLS)
+        // =====================================================================
 
-            &:last-child {
-                border-right: none;
-            }
-        }
-
-        // 0. Ô checkbox chọn dòng
         td.o_list_record_selector {
-            width: $col-w-selector !important;
             text-align: center !important;
             vertical-align: middle !important;
         }
@@ -30,87 +19,119 @@ table.tdb_plm_list_view,
         td[data-name="image_1920"],
         td[data-name="preview"],
         td[data-name="preview_related"] {
-            width: $col-w-image !important;
             text-align: center !important;
+            vertical-align: middle !important;
 
             img {
-                max-width: 50px !important;
-                max-height: 50px !important;
+                max-width: 38px !important;
+                max-height: 38px !important;
                 object-fit: contain;
-                border-radius: 6px;
+                border-radius: 4px;
                 border: 1px solid #e2e8f0;
                 background-color: #ffffff;
-                padding: 2px;
+                padding: 1px;
                 box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+                display: block;
+                margin: 0 auto;
             }
         }
 
-        // 2. Tên linh kiện
-        td[data-name="name"] {
-            font-weight: 500;
-            color: #0f172a;
-        }
-
-        // 3. Mã kỹ thuật
-        td[data-name="engineering_code"] {
-            font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 0.8125rem;
-            color: #1e293b;
-        }
-
-        // 4. Mã tham chiếu nội bộ
-        td[data-name="default_code"] {
-            font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-            font-size: 0.8125rem;
-            color: #475569;
-        }
-
-        // 5. Phiên bản kỹ thuật: Căn giữa
+        // 5. Phiên bản: Căn giữa
         td[data-name="engineering_revision"] {
             text-align: center !important;
             font-weight: 600;
             color: #2563eb;
+            vertical-align: middle !important;
         }
 
-        // 6. Trạng thái kỹ thuật: Căn giữa dạng badge gọn
+        // 6. Trạng thái kỹ thuật: Căn giữa
         td[data-name="engineering_state"] {
             text-align: center !important;
             font-weight: 500;
-        }
-
-        // 7. Mô tả
-        td[data-name="description"] {
-            color: #64748b;
+            vertical-align: middle !important;
         }
 
         // 8. Quyền chỉnh sửa: Căn giữa
         td[data-name="engineering_writable"] {
             text-align: center !important;
+            vertical-align: middle !important;
         }
 
-        // 9. Vật liệu thô CAD
+        // =====================================================================
+        // NHÓM 2: CÁC CỘT CĂN TRÁI (LEFT ALIGNED CELLS)
+        // =====================================================================
+
+        td[data-name="name"] {
+            text-align: left !important;
+            font-weight: 500;
+            color: #0f172a;
+            vertical-align: middle !important;
+        }
+
+        td[data-name="configuration_name"] {
+            text-align: left !important;
+            vertical-align: middle !important;
+        }
+
+        td[data-name="engineering_code"] {
+            text-align: left !important;
+            font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+            font-size: 0.8125rem;
+            color: #1e293b;
+            vertical-align: middle !important;
+        }
+
+        td[data-name="default_code"] {
+            text-align: left !important;
+            color: #475569;
+            vertical-align: middle !important;
+        }
+
+        td[data-name="description"] {
+            text-align: left !important;
+            color: #64748b;
+            vertical-align: middle !important;
+        }
+
         td[data-name="engineering_material"] {
+            text-align: left !important;
             color: #334155;
+            vertical-align: middle !important;
         }
 
-        // 10. Hoàn thiện bề mặt CAD
         td[data-name="engineering_surface"] {
+            text-align: left !important;
             color: #334155;
+            vertical-align: middle !important;
         }
 
-        // 11. Tài liệu đính kèm
         td[data-name="linkeddocuments"] {
-            .badge {
-                font-size: 0.75rem;
-                padding: 3px 6px;
+            text-align: left !important;
+            vertical-align: middle !important;
+
+            .o_tag {
+                background: #f1f5f9 !important;
+                border: 1px solid #cbd5e1 !important;
+                color: #334155 !important;
                 border-radius: 4px;
+                font-size: 0.75rem;
+                padding: 1px 6px;
             }
         }
 
-        // 12. Người kiểm xuất
         td[data-name="document_checkout_user_ids"],
         td[data-name="checkout_user"] {
-            color: #475569;
+            text-align: left !important;
+            vertical-align: middle !important;
+
+            .o_tag {
+                background: #e0f2fe !important;
+                border: 1px solid #bae6fd !important;
+                color: #0369a1 !important;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                padding: 1px 6px;
+            }
         }
     }
 }

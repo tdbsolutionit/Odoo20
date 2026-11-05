@@ -20,17 +20,23 @@
 
             <!-- Preview -->
             <xpath expr="//field[@name='preview']" position="attributes">
+                <attribute name="string">Preview</attribute>
                 <attribute name="class">text-center</attribute>
+                <attribute name="width">75px</attribute>
             </xpath>
 
             <!-- Engineering Revision -->
             <xpath expr="//field[@name='engineering_revision']" position="attributes">
+                <attribute name="string">Revision</attribute>
                 <attribute name="class">text-center</attribute>
+                <attribute name="width">95px</attribute>
             </xpath>
 
             <!-- Engineering Status -->
             <xpath expr="//field[@name='engineering_state']" position="attributes">
+                <attribute name="string">Engineering Status</attribute>
                 <attribute name="class">text-center</attribute>
+                <attribute name="width">140px</attribute>
             </xpath>
         </field>
     </record>

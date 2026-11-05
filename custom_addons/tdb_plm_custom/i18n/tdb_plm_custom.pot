@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 20.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-03 10:00+0000\n"
-"PO-Revision-Date: 2026-11-03 10:00+0000\n"
+"POT-Creation-Date: 2026-11-05 06:25+0000\n"
+"PO-Revision-Date: 2026-11-05 06:25+0000\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "MIME-Version: 1.0\n"
@@ -16,106 +16,154 @@ msgstr ""
 "Plural-Forms: \n"
 
 #. module: tdb_plm_custom
+#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_product__engineering_material
+#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_template__engineering_material
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Engineering Parts (Linh kiện kỹ thuật)"
+msgid "CAD Raw Material"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_product__engineering_surface
+#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_template__engineering_surface
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "CAD Surface Finishing"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_search_inherit_tdb
+msgid "Checked Out"
 msgstr ""
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Image\n(Hình ảnh)"
+msgid "Checked-Out By"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_search_inherit_tdb
+msgid "Confirmed"
 msgstr ""
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Name\n(Tên)"
+msgid "Description"
 msgstr ""
 
 #. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Engineering Code\n(Mã kỹ thuật)"
-msgstr ""
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Internal Reference\n(Tham chiếu nội bộ)"
-msgstr ""
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Engineering Revision\n(Phiên bản kỹ thuật)"
-msgstr ""
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Engineering Status\n(Trạng thái kỹ thuật)"
-msgstr ""
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Description\n(Mô tả)"
-msgstr ""
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Writable\n(Có thể chỉnh sửa)"
-msgstr ""
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "CAD Raw Material\n(Vật liệu thô CAD)"
-msgstr ""
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "CAD Surface Finishing\n(Hoàn thiện bề mặt CAD)"
-msgstr ""
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Linked Documents\n(Tài liệu liên kết)"
-msgstr ""
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Checked-Out By\n(Được kiểm xuất bởi)"
-msgstr ""
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Configuration Name\n(Tên cấu hình)"
+#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_product__display_name
+#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_template__display_name
+msgid "Display Name"
 msgstr ""
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Documents (Tài liệu kỹ thuật)"
+msgid "Documents"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Engineering Code"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Engineering Parts"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
+msgid "Engineering Status"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_product__id
+#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_template__id
+msgid "ID"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Image"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Internal Reference"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_search_inherit_tdb
+msgid "Latest"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Linked Documents"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Name"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_search_inherit_tdb
+msgid "Obsoleted"
 msgstr ""
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Preview\n(Xem trước)"
+msgid "Preview"
 msgstr ""
 
 #. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Document Name\n(Tên tài liệu)"
+#: model:ir.model,name:tdb_plm_custom.model_product_product
+msgid "Product Product"
 msgstr ""
 
 #. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Created By\n(Người tạo)"
+#: model:ir.model,name:tdb_plm_custom.model_product_template
+msgid "Product Template"
 msgstr ""
 
 #. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Created Date\n(Ngày tạo)"
+#: model:ir.model.fields,help:tdb_plm_custom.field_product_template__engineering_material
+msgid "Raw material for current product, only description for titleblock."
 msgstr ""
 
 #. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Modified By\n(Người sửa)"
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_search_inherit_tdb
+msgid "Released"
 msgstr ""
 
 #. module: tdb_plm_custom
+#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_product__engineering_revision
+#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_template__engineering_revision
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Modified Date\n(Ngày sửa)"
+msgid "Revision"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model:ir.model.fields,help:tdb_plm_custom.field_product_template__engineering_surface
+msgid ""
+"Surface finishing for current product, only description for titleblock."
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model:ir.module.module,shortdesc:base.module_tdb_plm_custom
+msgid "TDB PLM Customization - Giao diện & Tiêu đề Song ngữ PLM"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model:ir.module.module,summary:base.module_tdb_plm_custom
+msgid ""
+"Tùy biến chuẩn hóa giao diện danh sách linh kiện PLM, tiêu đề song ngữ Anh -"
+" Việt và căn lề đồng đều"
+msgstr ""
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Writable"
 msgstr ""

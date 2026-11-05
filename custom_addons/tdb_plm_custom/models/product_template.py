@@ -13,10 +13,10 @@ _logger = logging.getLogger(__name__)
 class ProductTemplate(models.Model):
     """
     Kế thừa product.template để hỗ trợ phân hệ PLM và đồng bộ nhãn song ngữ.
+    Chuẩn hóa nhãn chuỗi gốc tiếng Anh (Revision, CAD Raw Material, CAD Surface Finishing).
     """
     _inherit = "product.template"
 
-    # === Ghi chú & Logic nghiệp vụ ===
-    # Các trường đặc thù PLM đã được khai báo qua plm_mixin / product_template của plm.
-    # Model này sẵn sàng nhận mở rộng nghiệp vụ kỹ thuật tương lai mà không sửa core.
-
+    engineering_revision = fields.Integer(string="Revision")
+    engineering_material = fields.Char(string="CAD Raw Material")
+    engineering_surface = fields.Char(string="CAD Surface Finishing")

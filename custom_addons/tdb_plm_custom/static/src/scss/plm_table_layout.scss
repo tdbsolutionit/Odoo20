@@ -1,19 +1,19 @@
 // =============================================================================
-// TDB SOLUTION - PHÂN TẦNG SCSS 2: TABLE LAYOUT & TYPOGRAPHY
-// Bố cục khung bảng, thanh cuộn ngang mượt mà và font chữ chuẩn Odoo PLM
-// Phân vùng cô lập nghiêm ngặt trong .tdb_plm_list_view
+// TDB SOLUTION - PHÂN TẦNG SCSS 2: TABLE LAYOUT & CONTAINER
+// Bố cục khung bảng chuẩn Odoo, vừa vặn toàn màn hình, không tràn thanh cuộn
 // =============================================================================
 
-// Khung cuộn ngoài (nếu là div bao ngoài)
-div.tdb_plm_list_view,
-.o_list_renderer.tdb_plm_list_view {
-    overflow-x: auto !important;
+.tdb_plm_list_view .o_list_renderer,
+.o_list_renderer.tdb_plm_list_view,
+div.o_view_controller.tdb_plm_list_view .o_list_renderer {
+    width: 100%;
+    overflow-x: auto;
     overflow-y: hidden;
     scrollbar-width: thin;
     scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
 
     &::-webkit-scrollbar {
-        height: 6px;
+        height: 5px;
     }
     &::-webkit-scrollbar-thumb {
         background: rgba(0, 0, 0, 0.2);
@@ -21,12 +21,9 @@ div.tdb_plm_list_view,
     }
 }
 
-// Bảng danh sách linh kiện PLM
-table.o_list_table.tdb_plm_list_view,
-table.tdb_plm_list_view,
 .tdb_plm_list_view table.o_list_table,
-.tdb_plm_list_view table {
-    min-width: 100%;
+div.o_view_controller.tdb_plm_list_view table.o_list_table {
+    width: 100% !important;
     border-collapse: separate !important;
     border-spacing: 0;
     border-bottom: 1px solid $plm-header-border;
@@ -39,35 +36,37 @@ table.tdb_plm_list_view,
         }
 
         th {
-            font-size: 0.815rem !important;
+            font-size: 0.78125rem !important;
             font-weight: 600 !important;
             letter-spacing: 0.01em;
-            line-height: 1.3 !important;
+            line-height: 1.35 !important;
             color: $plm-header-text !important;
-            white-space: nowrap !important;
-            text-align: center !important;
             vertical-align: middle !important;
+            border-bottom: 2px solid $plm-header-border !important;
+            border-right: 1px solid rgba(0, 0, 0, 0.04);
+            padding: 6px 5px !important;
 
-            .o_column_sortable {
-                display: flex !important;
-                flex-direction: row !important;
-                justify-content: center !important;
+            &:last-child {
+                border-right: none;
+            }
+
+            .d-flex {
+                min-width: 0;
                 align-items: center !important;
-                gap: 4px;
-                width: 100% !important;
+                width: 100%;
             }
 
             span,
             .o_column_title,
-            .text-truncate,
-            .d-block {
-                white-space: nowrap !important;
-                overflow: hidden !important;
-                text-overflow: ellipsis !important;
-                line-height: 1.3 !important;
-                display: block !important;
-                text-align: center !important;
+            .text-truncate {
+                white-space: normal !important;
+                word-break: normal !important;
+                word-wrap: break-word !important;
+                overflow-wrap: break-word !important;
+                text-overflow: unset !important;
+                overflow: visible !important;
                 font-weight: 600 !important;
+                line-height: 1.25 !important;
                 max-width: 100% !important;
             }
         }
@@ -84,9 +83,17 @@ table.tdb_plm_list_view,
         }
 
         td {
-            font-size: 0.825rem !important;
+            font-size: 0.8125rem !important;
             line-height: 1.4 !important;
             color: #334155;
+            vertical-align: middle !important;
+            padding: 5px 6px !important;
+            border-bottom: 1px solid $plm-cell-border !important;
+            border-right: 1px solid rgba(0, 0, 0, 0.03);
+
+            &:last-child {
+                border-right: none;
+            }
         }
     }
 }
