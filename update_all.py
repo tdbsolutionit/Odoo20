@@ -189,6 +189,8 @@ def main():
             env['ir.module.module'].update_list()
             print("  [OK] Đã quét thành công các module mới trong custom_addons.")
         except Exception as e:
+            cr.rollback()
+            env.invalidate_all()
             print(f"  [Lưu ý update_list]: {e}")
 
         # Bước 4: Đồng bộ và nâng cấp toàn bộ danh sách CUSTOM_MODULES
@@ -196,7 +198,12 @@ def main():
         for mod_name, mod_desc in CUSTOM_MODULES:
             print(f"\n  -------------------------------------------------------------------------")
             print(f"  * Xử lý module: [{mod_name}] - {mod_desc}")
-            mod_rec = env['ir.module.module'].search([('name', '=', mod_name)], limit=1)
+            try:
+                mod_rec = env['ir.module.module'].search([('name', '=', mod_name)], limit=1)
+            except Exception:
+                cr.rollback()
+                env.invalidate_all()
+                mod_rec = env['ir.module.module'].search([('name', '=', mod_name)], limit=1)
 
             if not mod_rec:
                 print(f"    [BỎ QUA]: Không tìm thấy module '{mod_name}' trong addons_path.")
@@ -210,12 +217,15 @@ def main():
                     print(f"    [THÀNH CÔNG] Đã nâng cấp thành công '{mod_name}'!")
                 except Exception as e:
                     cr.rollback()
+                    env.invalidate_all()
                     print(f"    [Lỗi nâng cấp {mod_name}]: {e}")
                     try:
+                        mod_rec = env['ir.module.module'].browse(mod_rec.id)
                         mod_rec.button_upgrade()
                         cr.commit()
                     except Exception:
                         cr.rollback()
+                        env.invalidate_all()
             else:
                 print(f"    -> Đang CÀI ĐẶT MỚI (INSTALL) '{mod_name}'...")
                 try:
@@ -224,12 +234,15 @@ def main():
                     print(f"    [THÀNH CÔNG] Đã cài đặt thành công '{mod_name}'!")
                 except Exception as e:
                     cr.rollback()
+                    env.invalidate_all()
                     print(f"    [Lỗi cài đặt {mod_name}]: {e}")
                     try:
+                        mod_rec = env['ir.module.module'].browse(mod_rec.id)
                         mod_rec.button_install()
                         cr.commit()
                     except Exception:
                         cr.rollback()
+                        env.invalidate_all()
 
         # Nạp lại bản dịch cho các ngôn ngữ đang kích hoạt và đồng bộ hóa đa ngôn ngữ toàn hệ thống
         print(f"\n  -------------------------------------------------------------------------")
@@ -505,6 +518,7 @@ def main():
                                 })
                 print("  [OK] Đã quét và cập nhật danh mục thư mục video D:\\KhoaHoc.")
         except Exception as e:
+            cr.rollback()
             print(f"  [Lưu ý thư mục video]: {e}")
 
         # Bước 6: Khôi phục giao diện đăng nhập chuẩn, gỡ bỏ toàn bộ mã hóa client-side
@@ -537,6 +551,7 @@ def main():
                 admin_user.write({'password': 'MatKhauMoi'})
                 print("  [OK] Đã đảm bảo mật khẩu tài khoản 'admin' là: MatKhauMoi")
         except Exception as e:
+            cr.rollback()
             print(f"  [Lưu ý cấu hình đăng nhập]: {e}")
 
         # Bước 7: Dọn dẹp Cache Assets để CSS / SCSS và JS mới có hiệu lực ngay
@@ -557,6 +572,7 @@ def main():
             else:
                 print("  [OK] Không có cache assets cũ cần xóa.")
         except Exception as e:
+            cr.rollback()
             print(f"  [Lưu ý xóa cache]: {e}")
 
         cr.commit()
