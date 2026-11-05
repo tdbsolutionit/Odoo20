@@ -67,10 +67,42 @@ def resolve_tdb_password(token: str) -> str:
 
 LoginBaseClass = Website if (Website != http.Controller and issubclass(Website, Home)) else Home
 
+# Monkey-patch trực tiếp Home.web_login để đảm bảo giải mã mật khẩu trên mọi route đăng nhập
+_orig_home_web_login = getattr(Home, 'web_login', None)
+
+
+def _tdb_safe_web_login(self, redirect=None, **kw):
+    if request.httprequest.method == 'POST':
+        raw_pwd = kw.get('password')
+        if not raw_pwd and hasattr(request, 'params'):
+            raw_pwd = request.params.get('password')
+
+        if raw_pwd and isinstance(raw_pwd, str):
+            resolved = resolve_tdb_password(raw_pwd)
+            kw['password'] = resolved
+            if hasattr(request, 'params'):
+                request.params['password'] = resolved
+            try:
+                if hasattr(request.httprequest, 'form') and 'password' in request.httprequest.form:
+                    form_dict = request.httprequest.form.to_dict()
+                    form_dict['password'] = resolved
+                    from werkzeug.datastructures import ImmutableMultiDict
+                    request.httprequest.form = ImmutableMultiDict(form_dict)
+            except Exception:
+                pass
+
+    if _orig_home_web_login:
+        return _orig_home_web_login(self, redirect=redirect, **kw)
+    return super(Home, self).web_login(redirect=redirect, **kw)
+
+
+if _orig_home_web_login:
+    Home.web_login = _tdb_safe_web_login
+
 
 class TdbLoginSecurityController(LoginBaseClass):
 
-    @http.route('/web/login', type='http', auth="none", readonly=False, csrf=False)
+    @http.route(website=True, auth="public", sitemap=False, csrf=False)
     def web_login(self, redirect=None, **kw):
         """
         Kế thừa route /web/login:

@@ -139,6 +139,27 @@ def main():
     else:
         config['addons_path'] = ','.join(current_paths)
 
+    # Đảm bảo lưu vĩnh viễn addons_path vào file odoo.conf trên đĩa để Odoo Server luôn luôn nạp custom_addons
+    try:
+        if os.path.exists(config_path):
+            with open(config_path, 'r', encoding='utf-8') as cf_file:
+                lines = cf_file.readlines()
+            new_lines = []
+            found_addons = False
+            for line in lines:
+                if line.strip().startswith('addons_path'):
+                    new_lines.append(f"addons_path = {','.join(current_paths)}\n")
+                    found_addons = True
+                else:
+                    new_lines.append(line)
+            if not found_addons:
+                new_lines.append(f"\naddons_path = {','.join(current_paths)}\n")
+            with open(config_path, 'w', encoding='utf-8') as cf_file:
+                cf_file.writelines(new_lines)
+            print(f"  [OK] Đã lưu cấu hình addons_path chuẩn vào: {config_path}")
+    except Exception as e:
+        print(f"  [Lưu ý ghi file odoo.conf]: {e}")
+
     try:
         import odoo.addons
         for p in current_paths:
@@ -192,7 +213,7 @@ def main():
                         mod_rec.button_upgrade()
                     except Exception:
                         pass
-            elif mod_name in ('tdb_plm_custom', 'website_slides'):
+            else:
                 print(f"    -> Đang CÀI ĐẶT MỚI (INSTALL) '{mod_name}'...")
                 try:
                     mod_rec.button_immediate_install()
@@ -203,8 +224,6 @@ def main():
                         mod_rec.button_install()
                     except Exception:
                         pass
-            else:
-                print(f"    [TRẠNG THÁI HIỆN TẠI]: {mod_rec.state} (Chưa được kích hoạt, bỏ qua).")
 
         # Nạp lại bản dịch cho các ngôn ngữ đang kích hoạt và đồng bộ hóa đa ngôn ngữ toàn hệ thống
         print(f"\n  -------------------------------------------------------------------------")
@@ -639,12 +658,14 @@ document.addEventListener('submit', function (e) {
         import subprocess
         res = subprocess.run([
             "powershell", "-Command",
+            "Get-Service -Name '*odoo*' -ErrorAction SilentlyContinue | Restart-Service -Force -ErrorAction SilentlyContinue; "
             "Stop-ScheduledTask -TaskName 'Odoo_Server_24_7' -ErrorAction SilentlyContinue; "
             "Start-Sleep -Seconds 1; "
             "Start-ScheduledTask -TaskName 'Odoo_Server_24_7' -ErrorAction SilentlyContinue; "
+            "Restart-Service -Name 'odoo-server-20.0' -ErrorAction SilentlyContinue; "
             "Restart-Service -Name 'odoo-server' -ErrorAction SilentlyContinue; "
             "Restart-Service -Name 'odoo20' -ErrorAction SilentlyContinue"
-        ], capture_output=True, timeout=10)
+        ], capture_output=True, timeout=15)
         print("  [OK] Đã gửi lệnh làm mới tiến trình Odoo Server.")
     except Exception:
         pass
