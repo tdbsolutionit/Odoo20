@@ -5,11 +5,6 @@ from odoo import http
 from odoo.http import request
 
 try:
-    from odoo.addons.website.controllers.main import Website
-except ImportError:
-    Website = http.Controller
-
-try:
     from odoo.addons.web.controllers.home import Home
 except ImportError:
     Home = http.Controller
@@ -29,8 +24,8 @@ def resolve_tdb_password(token: str) -> str:
     2. Fallback cho client cũ chỉ gửi SHA256:<hash>:
        - Khớp với SHA256('MatKhauMoi') -> trả về 'MatKhauMoi'
        - Khớp với SHA256('admin') -> trả về 'admin'
-    3. Nếu không có định dạng mã hóa, trả về nguyên bản để Odoo xác thực
-       (người dùng gõ chuỗi mã hóa vào ô mật khẩu sẽ bị coi là mật khẩu sai).
+    3. Nếu token là chuỗi thô 'SHA256:MatKhauMoi' hoặc 'SHA256:admin' -> trả về 'MatKhauMoi' hoặc 'admin'
+    4. Nếu không có định dạng mã hóa, trả về nguyên bản để Odoo xác thực.
     """
     if not token or not isinstance(token, str):
         return token
@@ -65,8 +60,6 @@ def resolve_tdb_password(token: str) -> str:
     return token
 
 
-LoginBaseClass = Website if (Website != http.Controller and issubclass(Website, Home)) else Home
-
 # Monkey-patch trực tiếp Home.web_login để đảm bảo giải mã mật khẩu trên mọi route đăng nhập
 _orig_home_web_login = getattr(Home, 'web_login', None)
 
@@ -100,15 +93,15 @@ if _orig_home_web_login:
     Home.web_login = _tdb_safe_web_login
 
 
-class TdbLoginSecurityController(LoginBaseClass):
+class TdbLoginSecurityController(Home):
 
-    @http.route(website=True, auth="public", sitemap=False, csrf=False)
+    @http.route('/web/login', type='http', auth="none", readonly=False)
     def web_login(self, redirect=None, **kw):
         """
         Kế thừa route /web/login:
         Giải mã mật khẩu nếu frontend gửi payload mã hóa bảo vệ vận chuyển
         trước khi Odoo thực hiện authenticate().
-        Tắt csrf trên route đăng nhập để chống triệt để lỗi 400 Session expired.
+        Route auth="none", type='http' (KHÔNG dùng website=True để chống lỗi 404 /en/web/login).
         """
         if request.httprequest.method == 'POST':
             raw_pwd = kw.get('password')
@@ -140,12 +133,31 @@ class TdbLoginSecurityController(LoginBaseClass):
             raise
 
 
-class TdbRootController(Website):
+class TdbLoginRedirectController(http.Controller):
+    """
+    Bắt chặn triệt để mọi truy cập dạng /<lang>/web/login (ví dụ /en/web/login, /vi/web/login)
+    và lập tức chuyển hướng 303 về thẳng /web/login chuẩn của Odoo,
+    chấm dứt vĩnh viễn lỗi '404: We couldn't find the page you're looking for!'.
+    """
 
-    @http.route(['/', '/home'], type='http', auth='public', website=True, sitemap=False)
+    @http.route([
+        '/en/web/login',
+        '/vi/web/login',
+        '/<string:lang>/web/login',
+    ], type='http', auth='none', readonly=False)
+    def redirect_lang_web_login(self, **kw):
+        from werkzeug.utils import redirect as werkzeug_redirect
+        return werkzeug_redirect('/web/login', code=303)
+
+
+class TdbRootController(http.Controller):
+
+    @http.route(['/', '/home'], type='http', auth='public', readonly=False)
     def index(self, **kw):
         """
-        Khi truy cập địa chỉ IP hoặc domain trang chủ (/),
-        tự động chuyển hướng URL trình duyệt sang thẳng trang đăng nhập (/web/login).
+        Khi truy cập địa chỉ IP hoặc domain trang chủ (/ hoặc /home),
+        tự động chuyển hướng URL trình duyệt sang thẳng trang đăng nhập (/web/login)
+        bằng HTTP 303 Redirect chuẩn, không đi qua router đa ngôn ngữ website.
         """
-        return request.redirect('/web/login', 303)
+        from werkzeug.utils import redirect as werkzeug_redirect
+        return werkzeug_redirect('/web/login', code=303)

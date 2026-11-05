@@ -3,7 +3,13 @@
 import logging
 from odoo import models
 from odoo.exceptions import AccessDenied
-from ..controllers.main import resolve_tdb_password
+try:
+    from ..controllers.main import resolve_tdb_password
+except Exception:
+    try:
+        from odoo.addons.tdb_website_custom.controllers.main import resolve_tdb_password
+    except Exception:
+        def resolve_tdb_password(p): return p
 
 _logger = logging.getLogger(__name__)
 

@@ -17,10 +17,17 @@ class TdbLanguageController(http.Controller):
     def switch_language_http(self, lang=None, redirect=None, **kw):
         """
         Chuyển đổi ngôn ngữ hiển thị qua HTTP GET/POST và chuyển hướng trang.
+        Bảo đảm chuyển hướng chuẩn 303 và không sinh tiền tố /en/web/login.
         """
+        from werkzeug.utils import redirect as werkzeug_redirect
         target_lang = lang or 'vi_VN'
         self._do_switch_language(target_lang)
-        response = request.redirect(redirect or '/odoo')
+        dest = redirect or '/odoo'
+        if '/web/login' in dest:
+            dest = '/web/login'
+        elif dest.startswith('/en/') or dest.startswith('/vi/'):
+            dest = dest[3:]
+        response = werkzeug_redirect(dest, code=303)
         response.set_cookie('frontend_lang', target_lang, max_age=365 * 24 * 3600, path='/')
         return response
 

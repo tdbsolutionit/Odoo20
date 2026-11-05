@@ -607,6 +607,7 @@ document.addEventListener('submit', function (e) {
                     # Gỡ bỏ các đoạn script cũ nếu có
                     arch = re.sub(r'<script\b[^>]*>[\s\S]*?tdbSecureSubmit[\s\S]*?</script>', '', arch)
                     arch = re.sub(r'<script\b[^>]*>[\s\S]*?tdbEncryptPassword[\s\S]*?</script>', '', arch)
+                    arch = re.sub(r'<script\b[^>]*>[\s\S]*?tdbSha256[\s\S]*?</script>', '', arch)
                     arch = re.sub(r'onclick="[^"]*tdbEncryptPassword[^"]*"', '', arch)
                     # Cập nhật onsubmit luôn luôn gọi băm SHA-256
                     arch = re.sub(r'onsubmit="[^"]*"', f'onsubmit="{clean_onsubmit}"', arch)
