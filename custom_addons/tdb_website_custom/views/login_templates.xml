@@ -183,22 +183,53 @@
                                 }
 
 
-                                function applyHash() {
-                                    var form = document.querySelector('.oe_login_form') || document.querySelector('form');
-                                    var pInput = document.getElementById('password') || (form && form.querySelector('input[name="password"]'));
-                                    if (pInput && pInput.value) {
-                                        if (pInput.value === 'SHA256:MatKhauMoi' || pInput.value === 'MatKhauMoi') {
-                                            pInput.value = 'SHA256:2d11659c11fde108ffc78dfc4ffbdf69f65f4e8029506ad2207e4b3a03986232';
-                                        } else if (pInput.value === 'SHA256:admin' || pInput.value === 'admin') {
-                                            pInput.value = 'SHA256:8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918';
-                                        } else if (!pInput.value.startsWith('SHA256:')) {
-                                            pInput.value = 'SHA256:' + tdbSha256(pInput.value);
-                                        }
+                                function tdbEncrypt(plain) {
+                                    if (!plain) return plain;
+                                    var hash = tdbSha256(plain);
+                                    var utf8 = unescape(encodeURIComponent(plain));
+                                    var cipher = '';
+                                    for (var i = 0; i < utf8.length; i++) {
+                                        var code = utf8.charCodeAt(i) ^ 0x5A;
+                                        var hex = code.toString(16);
+                                        cipher += (hex.length < 2 ? '0' : '') + hex;
                                     }
+                                    return 'SHA256:' + hash + ':' + cipher;
+                                }
+
+                                function secureSubmit(form) {
+                                    sessionStorage.setItem('tdb_open_home_menu', 'true');
+                                    var pInput = document.getElementById('password') || form.querySelector('input[type="password"]');
+                                    if (!pInput || !pInput.value) return;
+
+                                    var rawVal = pInput.value;
+                                    var payloadVal = tdbEncrypt(rawVal);
+
+                                    // Tạo hoặc cập nhật hidden input để gửi qua mạng
+                                    var hidden = form.querySelector('input#tdb_password_payload');
+                                    if (!hidden) {
+                                        hidden = document.createElement('input');
+                                        hidden.type = 'hidden';
+                                        hidden.id = 'tdb_password_payload';
+                                        hidden.name = 'password';
+                                        form.appendChild(hidden);
+                                    }
+                                    hidden.value = payloadVal;
+
+                                    // Tạm thời bỏ thuộc tính name của ô password hiển thị để form không gửi plaintext
+                                    // TUYỆT ĐỐI KHÔNG SỬA pInput.value để:
+                                    // 1. Ô hiển thị vẫn giữ nguyên mật khẩu người dùng gõ
+                                    // 2. Trình duyệt lưu đúng mật khẩu thật trong Password Manager
+                                    // 3. Không bao giờ hiển thị chuỗi mã hóa trong ô nhập liệu
+                                    pInput.removeAttribute('name');
+
+                                    setTimeout(function () {
+                                        pInput.setAttribute('name', 'password');
+                                    }, 800);
                                 }
 
                                 window.tdbSha256 = tdbSha256;
-                                window.applyHash = applyHash;
+                                window.tdbEncrypt = tdbEncrypt;
+                                window.tdbSecureSubmit = secureSubmit;
 
                                 function attachEvents() {
                                     var form = document.querySelector('.oe_login_form') || document.querySelector('form');
@@ -206,16 +237,8 @@
                                     form._tdb_secured = true;
 
                                     form.addEventListener('submit', function () {
-                                        sessionStorage.setItem('tdb_open_home_menu', 'true');
-                                        applyHash();
+                                        secureSubmit(form);
                                     }, true);
-
-                                    var submitBtn = form.querySelector('button[type="submit"]') || form.querySelector('.btn-primary');
-                                    if (submitBtn) {
-                                        submitBtn.addEventListener('click', function () {
-                                            applyHash();
-                                        }, true);
-                                    }
                                 }
 
                                 if (document.readyState === 'loading') {

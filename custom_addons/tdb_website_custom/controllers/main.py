@@ -22,90 +22,46 @@ SHA256_ADMIN = hashlib.sha256(b'admin').hexdigest().lower()
 def resolve_tdb_password(token: str) -> str:
     """
     Xử lý mật khẩu gửi từ client:
-    1. Khớp chính xác MatKhauMoi hoặc admin dưới mọi định dạng:
-       - 'MatKhauMoi'
-       - 'SHA256:MatKhauMoi'
-       - 'SHA256:2d11659c11fde108ffc78dfc4ffbdf69f65f4e8029506ad2207e4b3a03986232'
-       - '2d11659c11fde108ffc78dfc4ffbdf69f65f4e8029506ad2207e4b3a03986232'
-       - 'admin'
-       - 'SHA256:admin'
-       - 'SHA256:8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
-       - '8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'
-    2. Nếu có token cipher phụ trợ (SHA256:<hash>:<cipher>) -> giải mã cipher
-    3. Trả về mật khẩu gốc để Odoo authenticate bình thường.
+    1. Giải mã token mã hóa bảo vệ vận chuyển: SHA256:<hash>:<cipher>
+       - Giải mã cipher bằng keystream XOR 0x5A
+       - Kiểm tra hash SHA-256 của chuỗi sau giải mã có khớp với <hash> không
+       - Nếu khớp chính xác, trả về mật khẩu gốc ban đầu để Odoo xác thực
+    2. Fallback cho client cũ chỉ gửi SHA256:<hash>:
+       - Khớp với SHA256('MatKhauMoi') -> trả về 'MatKhauMoi'
+       - Khớp với SHA256('admin') -> trả về 'admin'
+    3. Nếu không có định dạng mã hóa, trả về nguyên bản để Odoo xác thực
+       (người dùng gõ chuỗi mã hóa vào ô mật khẩu sẽ bị coi là mật khẩu sai).
     """
     if not token or not isinstance(token, str):
         return token
 
     token_clean = token.strip()
-    token_lower = token_clean.lower()
-
-    # Khớp chuỗi trực tiếp MatKhauMoi hoặc admin
-    if token_lower in ('matkhaumoi', 'sha256:matkhaumoi'):
-        return 'MatKhauMoi'
-    if token_lower in ('admin', 'sha256:admin'):
-        return 'admin'
 
     # Xử lý định dạng SHA256:
     if token_clean.startswith('SHA256:'):
         parts = token_clean.split(':')
-        hash_val = parts[1].strip().lower()
-        if hash_val in (SHA256_MATKHAUMOI, 'matkhaumoi'):
-            return 'MatKhauMoi'
-        elif hash_val in (SHA256_ADMIN, 'admin'):
-            return 'admin'
 
-        # Nếu có token cipher phụ trợ (SHA256:<hash>:<cipher>)
+        # 1. Ưu tiên giải mã cipher kèm theo (SHA256:<hash>:<cipher>)
         if len(parts) >= 3 and parts[2]:
             try:
                 cipher_hex = parts[2].strip()
                 cipher_bytes = bytes.fromhex(cipher_hex)
                 plain = bytes([b ^ 0x5A for b in cipher_bytes]).decode('utf-8')
-                if hashlib.sha256(plain.encode('utf-8')).hexdigest().lower() == hash_val:
+                if hashlib.sha256(plain.encode('utf-8')).hexdigest().lower() == parts[1].strip().lower():
                     return plain
             except Exception:
                 pass
-        return token_clean
 
-    # Nếu gửi trực tiếp 64 ký tự hex SHA-256
-    if len(token_lower) == 64 and all(c in '0123456789abcdef' for c in token_lower):
-        if token_lower == SHA256_MATKHAUMOI:
+        # 2. Fallback nếu chỉ gửi mã băm SHA256:<hash>
+        hash_val = parts[1].strip().lower()
+        if hash_val == SHA256_MATKHAUMOI:
             return 'MatKhauMoi'
-        elif token_lower == SHA256_ADMIN:
+        elif hash_val == SHA256_ADMIN:
             return 'admin'
 
-    # Hỗ trợ định dạng cũ TDB_ENC: nếu có
-    if token_clean.startswith('TDB_ENC:'):
-        return decrypt_tdb_password(token_clean)
+        return token_clean
 
     return token
-
-
-SECURITY_KEY = 'TDB_SOLUTION_2026_SECURITY_SALT'
-
-
-def decrypt_tdb_password(token: str, key: str = SECURITY_KEY) -> str:
-    """
-    Giải mã token mật khẩu gửi từ frontend (định dạng TDB_ENC:<salt>:<xor_hex>).
-    """
-    if not token or not isinstance(token, str) or not token.startswith('TDB_ENC:'):
-        return token
-    try:
-        parts = token.split(':')
-        if len(parts) != 3:
-            return token
-        salt, xor_hex = parts[1], parts[2]
-        xor_bytes = bytes.fromhex(xor_hex)
-        out = bytearray()
-        counter = 0
-        while len(out) < len(xor_bytes):
-            block = hashlib.sha256(f'{key}:{salt}:{counter}'.encode('utf-8')).digest()
-            out.extend(block)
-            counter += 1
-        plain_bytes = bytes([b ^ out[i] for i, b in enumerate(xor_bytes)])
-        return plain_bytes.decode('utf-8')
-    except Exception:
-        return token
 
 
 LoginBaseClass = Website if (Website != http.Controller and issubclass(Website, Home)) else Home
@@ -117,7 +73,7 @@ class TdbLoginSecurityController(LoginBaseClass):
     def web_login(self, redirect=None, **kw):
         """
         Kế thừa route /web/login:
-        Giải mã mật khẩu nếu frontend gửi dạng SHA256: hoặc TDB_ENC:
+        Giải mã mật khẩu nếu frontend gửi payload mã hóa bảo vệ vận chuyển
         trước khi Odoo thực hiện authenticate().
         """
         if request.httprequest.method == 'POST':

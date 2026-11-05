@@ -447,7 +447,7 @@ def main():
             login_view = env.ref('web.login', raise_if_not_found=False)
             login_layout_view = env.ref('web.login_layout', raise_if_not_found=False)
 
-            clean_onsubmit = "sessionStorage.setItem('tdb_open_home_menu', 'true'); var p=document.getElementById('password')||this.querySelector('input[name=\\'password\\']'); if(p &amp;&amp; p.value){ if(p.value==='SHA256:MatKhauMoi'||p.value==='MatKhauMoi'){ p.value='SHA256:2d11659c11fde108ffc78dfc4ffbdf69f65f4e8029506ad2207e4b3a03986232'; } else if(p.value==='SHA256:admin'||p.value==='admin'){ p.value='SHA256:8c6976e5b5410415bde908bd4dee15dfb167a9c873fc4bb8a81f6f2ab448a918'; } else if(!p.value.startsWith('SHA256:')){ p.value='SHA256:'+(window.tdbSha256?window.tdbSha256(p.value):p.value); } }; this.action = '/web/login' + location.hash;"
+            clean_onsubmit = "if(window.tdbSecureSubmit){window.tdbSecureSubmit(this);}else{sessionStorage.setItem('tdb_open_home_menu','true');};this.action='/web/login'+location.hash;"
             for v in [login_layout_view, login_view]:
                 if v and v.arch_db:
                     arch = v.arch_db
