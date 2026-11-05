@@ -22,22 +22,32 @@ class IrHttp(models.AbstractModel):
         # Nếu request có session hợp lệ và đã đăng nhập tài khoản
         if hasattr(request, 'session') and request.session and request.session.uid and request.session.sid:
             try:
-                token = request.env['plm.desktop.token'].sudo().search([
-                    ('session_id', '=', request.session.sid),
-                ], limit=1)
+                # Kiểm tra an toàn xem model và bảng dữ liệu đã tồn tại trong database chưa (tránh crash khi chưa upgrade DB)
+                if 'plm.desktop.token' not in request.env.registry:
+                    return
 
-                if token:
-                    if not token.is_active:
-                        _logger.warning(
-                            f">>> [TDB PLM] Chặn phiên CAD đã bị thu hồi/quá hạn: "
-                            f"User ID {request.session.uid}, Máy '{token.machine_name}', Session {request.session.sid[:10]}..."
-                        )
-                        request.session.logout(keep_db=True)
-                        raise Unauthorized("Desktop session revoked or expired by Administrator")
-                    else:
-                        token.update_last_used()
+                with request.env.cr.savepoint():
+                    request.env.cr.execute("SELECT to_regclass('public.plm_desktop_token');")
+                    row = request.env.cr.fetchone()
+                    if not row or not row[0]:
+                        return
+
+                    token = request.env['plm.desktop.token'].sudo().search([
+                        ('session_id', '=', request.session.sid),
+                    ], limit=1)
+
+                    if token:
+                        if not token.is_active:
+                            _logger.warning(
+                                f">>> [TDB PLM] Chặn phiên CAD đã bị thu hồi/quá hạn: "
+                                f"User ID {request.session.uid}, Máy '{token.machine_name}', Session {request.session.sid[:10]}..."
+                            )
+                            request.session.logout(keep_db=True)
+                            raise Unauthorized("Desktop session revoked or expired by Administrator")
+                        else:
+                            token.update_last_used()
             except Unauthorized:
                 raise
             except Exception as e:
-                # Tránh làm crash các request thông thường nếu DB chưa sẵn sàng
+                # Tránh làm gián đoạn các request thông thường của hệ thống
                 _logger.debug(f"[TDB PLM] Kiểm tra desktop token: {e}")
