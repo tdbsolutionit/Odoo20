@@ -9,6 +9,16 @@ try:
 except ImportError:
     Home = http.Controller
 
+# Nạp controller Website (nếu module website được cài trên server).
+# Website kế thừa Home và gắn website=True vào /web/login,
+# gây ra redirect tự động sang /en/web/login.
+# Để triệt tiêu lỗi redirect loop, ta PHẢI kế thừa từ Website
+# và ghi đè website=False.
+try:
+    from odoo.addons.website.controllers.main import Website as WebsiteHome
+except ImportError:
+    WebsiteHome = None
+
 # Hash SHA-256 định danh cho các mật khẩu hệ thống
 SHA256_MATKHAUMOI = hashlib.sha256(b'MatKhauMoi').hexdigest().lower()
 SHA256_ADMIN = hashlib.sha256(b'admin').hexdigest().lower()
@@ -24,7 +34,7 @@ def resolve_tdb_password(token: str) -> str:
     2. Fallback cho client cũ chỉ gửi SHA256:<hash>:
        - Khớp với SHA256('MatKhauMoi') -> trả về 'MatKhauMoi'
        - Khớp với SHA256('admin') -> trả về 'admin'
-    3. Nếu token là chuỗi thô 'SHA256:MatKhauMoi' hoặc 'SHA256:admin' -> trả về 'MatKhauMoi' hoặc 'admin'
+    3. Nếu token là chuỗi thô 'SHA256:MatKhauMoi' hoặc 'SHA256:admin' -> trả về mật khẩu tương ứng
     4. Nếu không có định dạng mã hóa, trả về nguyên bản để Odoo xác thực.
     """
     if not token or not isinstance(token, str):
@@ -60,30 +70,37 @@ def resolve_tdb_password(token: str) -> str:
     return token
 
 
-# Monkey-patch trực tiếp Home.web_login để đảm bảo giải mã mật khẩu trên mọi route đăng nhập
+def _resolve_password_in_request(kw):
+    """Helper: giải mã mật khẩu SHA256 trong request params & form data."""
+    raw_pwd = kw.get('password')
+    if not raw_pwd and hasattr(request, 'params'):
+        raw_pwd = request.params.get('password')
+
+    if raw_pwd and isinstance(raw_pwd, str):
+        resolved = resolve_tdb_password(raw_pwd)
+        kw['password'] = resolved
+        if hasattr(request, 'params'):
+            request.params['password'] = resolved
+        try:
+            if hasattr(request.httprequest, 'form') and 'password' in request.httprequest.form:
+                form_dict = request.httprequest.form.to_dict()
+                form_dict['password'] = resolved
+                from werkzeug.datastructures import ImmutableMultiDict
+                request.httprequest.form = ImmutableMultiDict(form_dict)
+        except Exception:
+            pass
+
+
+# ─────────────────────────────────────────────────────────────
+# Monkey-patch Home.web_login — lớp bảo vệ nền tảng
+# Đảm bảo giải mã mật khẩu SHA256 bất kể route nào gọi Home.web_login
+# ─────────────────────────────────────────────────────────────
 _orig_home_web_login = getattr(Home, 'web_login', None)
 
 
 def _tdb_safe_web_login(self, redirect=None, **kw):
     if request.httprequest.method == 'POST':
-        raw_pwd = kw.get('password')
-        if not raw_pwd and hasattr(request, 'params'):
-            raw_pwd = request.params.get('password')
-
-        if raw_pwd and isinstance(raw_pwd, str):
-            resolved = resolve_tdb_password(raw_pwd)
-            kw['password'] = resolved
-            if hasattr(request, 'params'):
-                request.params['password'] = resolved
-            try:
-                if hasattr(request.httprequest, 'form') and 'password' in request.httprequest.form:
-                    form_dict = request.httprequest.form.to_dict()
-                    form_dict['password'] = resolved
-                    from werkzeug.datastructures import ImmutableMultiDict
-                    request.httprequest.form = ImmutableMultiDict(form_dict)
-            except Exception:
-                pass
-
+        _resolve_password_in_request(kw)
     if _orig_home_web_login:
         return _orig_home_web_login(self, redirect=redirect, **kw)
     return super(Home, self).web_login(redirect=redirect, **kw)
@@ -93,34 +110,30 @@ if _orig_home_web_login:
     Home.web_login = _tdb_safe_web_login
 
 
-class TdbLoginSecurityController(Home):
+# ─────────────────────────────────────────────────────────────
+# Controller chính: kế thừa route /web/login
+# ─────────────────────────────────────────────────────────────
+# Chọn lớp cha cao nhất trong chuỗi kế thừa:
+#   Nếu website module đã cài → kế thừa WebsiteHome (Website → Home)
+#   Nếu chưa cài → kế thừa Home
+# Điều này ĐẢM BẢO route /web/login của ta ghi đè route của
+# website module (nếu có), triệt tiêu website=True → không còn
+# redirect vô hạn /web/login ↔ /en/web/login.
+LoginBaseClass = WebsiteHome if WebsiteHome is not None else Home
 
-    @http.route('/web/login', type='http', auth="none", readonly=False)
+
+class TdbLoginSecurityController(LoginBaseClass):
+
+    @http.route('/web/login', type='http', auth="none", readonly=False, website=False, sitemap=False)
     def web_login(self, redirect=None, **kw):
         """
         Kế thừa route /web/login:
-        Giải mã mật khẩu nếu frontend gửi payload mã hóa bảo vệ vận chuyển
-        trước khi Odoo thực hiện authenticate().
-        Route auth="none", type='http' (KHÔNG dùng website=True để chống lỗi 404 /en/web/login).
+        - Giải mã mật khẩu SHA256 nếu frontend gửi payload mã hóa.
+        - Ghi đè website=False để CHẶN TRIỆT ĐỂ redirect sang /en/web/login.
+        - auth="none" giống hệt Odoo core, không phải auth="public".
         """
         if request.httprequest.method == 'POST':
-            raw_pwd = kw.get('password')
-            if not raw_pwd and hasattr(request, 'params'):
-                raw_pwd = request.params.get('password')
-
-            if raw_pwd and isinstance(raw_pwd, str):
-                resolved = resolve_tdb_password(raw_pwd)
-                kw['password'] = resolved
-                if hasattr(request, 'params'):
-                    request.params['password'] = resolved
-                try:
-                    if hasattr(request.httprequest, 'form') and 'password' in request.httprequest.form:
-                        form_dict = request.httprequest.form.to_dict()
-                        form_dict['password'] = resolved
-                        from werkzeug.datastructures import ImmutableMultiDict
-                        request.httprequest.form = ImmutableMultiDict(form_dict)
-                except Exception:
-                    pass
+            _resolve_password_in_request(kw)
 
         try:
             return super().web_login(redirect=redirect, **kw)
@@ -133,31 +146,17 @@ class TdbLoginSecurityController(Home):
             raise
 
 
-class TdbLoginRedirectController(http.Controller):
-    """
-    Bắt chặn triệt để mọi truy cập dạng /<lang>/web/login (ví dụ /en/web/login, /vi/web/login)
-    và lập tức chuyển hướng 303 về thẳng /web/login chuẩn của Odoo,
-    chấm dứt vĩnh viễn lỗi '404: We couldn't find the page you're looking for!'.
-    """
+# ─────────────────────────────────────────────────────────────
+# Controller gốc: chuyển hướng / và /home về /web/login
+# ─────────────────────────────────────────────────────────────
+class TdbRootController(LoginBaseClass):
 
-    @http.route([
-        '/en/web/login',
-        '/vi/web/login',
-        '/<string:lang>/web/login',
-    ], type='http', auth='none', readonly=False)
-    def redirect_lang_web_login(self, **kw):
-        from werkzeug.utils import redirect as werkzeug_redirect
-        return werkzeug_redirect('/web/login', code=303)
-
-
-class TdbRootController(http.Controller):
-
-    @http.route(['/', '/home'], type='http', auth='public', readonly=False)
+    @http.route(['/', '/home'], type='http', auth='public', website=False, sitemap=False, readonly=False)
     def index(self, **kw):
         """
         Khi truy cập địa chỉ IP hoặc domain trang chủ (/ hoặc /home),
-        tự động chuyển hướng URL trình duyệt sang thẳng trang đăng nhập (/web/login)
-        bằng HTTP 303 Redirect chuẩn, không đi qua router đa ngôn ngữ website.
+        chuyển hướng trực tiếp sang /web/login bằng werkzeug redirect chuẩn.
+        website=False ngăn Odoo thêm tiền tố ngôn ngữ (/en/, /vi/).
         """
         from werkzeug.utils import redirect as werkzeug_redirect
         return werkzeug_redirect('/web/login', code=303)
