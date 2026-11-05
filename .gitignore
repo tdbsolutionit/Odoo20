@@ -39,13 +39,12 @@ Picture/
 check_header.py
 inspect_live.py
 live_*.html
-Odoo20_Vietnam_VAS_Reports_ManhNguyen.md
 huong_dan_lay_module.md
 PLM Learn.md
 image.png
 
 # Configuration files with local credentials
-config/odoo.conf
+!config/odoo.conf
 !config/odoo.conf.example
 
 # Old directories
