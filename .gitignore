@@ -1,37 +1,64 @@
+# ================================================================================
+# GITIGNORE - Odoo 20 Dockerized Project
+# ================================================================================
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
 
-# IDE and Editor files
+# IDE, Editor & Agent files
 .vscode/
 .idea/
 .agents/
+.gemini/
 .stubs/
 jsconfig.json
 pyrightconfig.json
 *.swp
 *.swo
 
-# Docker and local development environment files
-Dockerfile
-compose.yaml
-config/
-image.png
-huong_dan_lay_module.md
-PLM Learn.md
+# Environment variables & Sensitive credentials (CRITICAL)
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+*.pfx
+
+# Local data directories & volumes
 postgres-data/
 odoo-data/
 videos/
+scratch/
+Picture/
+
+# Temporary / Debug dumps & scripts
+*.log
+check_header.py
+inspect_live.py
+live_*.html
+Odoo20_Vietnam_VAS_Reports_ManhNguyen.md
+huong_dan_lay_module.md
+PLM Learn.md
+image.png
+
+# Configuration files with local credentials
+config/odoo.conf
+!config/odoo.conf.example
 
 # Old directories
 shared-addons/
 shared_addons/
 
-# Trong thư mục addons: Bỏ qua toàn bộ module gốc có sẵn của Odoo
+# ================================================================================
+# ADDONS DIRECTORY FILTER
+# Bo qua cac module goc Odoo de giu repository gon nhe va bao mat
+# ================================================================================
 addons/*
 
-# NHƯNG GIỮ LẠI các module bạn đã tải về (dms, plm)
+# Whitelist các module cộng đồng & VAS Việt Nam trong addons/:
 !addons/dms/
 !addons/plm/
 !addons/vn_core/
@@ -40,7 +67,6 @@ addons/*
 !addons/l10n_vn_mrp_reports/
 !addons/README.md
 
-# Logs and OS files
-*.log
+# OS files
 .DS_Store
 Thumbs.db
