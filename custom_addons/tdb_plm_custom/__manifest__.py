@@ -1,34 +1,20 @@
 # -*- coding: utf-8 -*-
 # Copyright 2026 TDB Solution Co., Ltd.
 {
-    "name": "TDB PLM Customization - Giao diện & Tiêu đề Song ngữ PLM",
-    "version": "20.0.1.0.0",
+    "name": "TDB PLM Customization - Giao diện & Access Token 180 Ngày SolidWorks",
+    "version": "20.0.1.1.0",
     "category": "Manufacturing/Product Lifecycle Management (PLM)",
-    "summary": "Tùy biến chuẩn hóa giao diện danh sách linh kiện PLM, tiêu đề song ngữ Anh - Việt và căn lề đồng đều",
+    "summary": "Tùy biến chuẩn hóa PLM, Access Token 180 ngày cho SolidWorks 2022 Add-in và giao diện thu hồi từ xa",
     "description": """
 TDB Solution - Module tùy biến phân hệ PLM (Product Lifecycle Management)
 ========================================================================
 Tính năng chính:
-1. Chuẩn hóa 100% tiêu đề cột trên danh sách linh kiện kỹ thuật (Engineering Parts):
-   - Image (Hình ảnh)
-   - Name (Tên)
-   - Engineering Code (Mã kỹ thuật)
-   - Internal Reference (Tham chiếu nội bộ)
-   - Engineering Revision (Phiên bản kỹ thuật)
-   - Engineering Status (Trạng thái kỹ thuật)
-   - Description (Mô tả)
-   - Writable (Có thể chỉnh sửa)
-   - CAD Raw Material (Vật liệu thô CAD)
-   - CAD Surface Finishing (Hoàn thiện bề mặt CAD)
-   - Linked Documents (Tài liệu liên kết)
-   - Checked-Out By (Được kiểm xuất bởi)
-2. Căn lề chuẩn hóa, đồng đều cho cả tiêu đề cột và ô dữ liệu.
-3. Thiết lập độ rộng cột tối thiểu và thanh cuộn ngang mượt mà, khắc phục triệt để tình trạng cắt chữ.
-4. Kiến trúc phân tầng SCSS chuẩn Odoo:
-   - plm_variables.scss
-   - plm_table_layout.scss
-   - plm_table_header.scss
-   - plm_table_cells.scss
+1. Chuẩn hóa 100% tiêu đề cột trên danh sách linh kiện kỹ thuật (Engineering Parts) song ngữ Anh - Việt.
+2. Tự động cấp Access Token & Session Cookie 180 ngày (15,552,000s) cho Add-in CAD SolidWorks 2022 (PLM Omi).
+3. Model plm.desktop.token quản lý đa thiết bị, lưu IP, tên máy trạm CAD, thời hạn 180 ngày và lần truy cập cuối.
+4. Giao diện Backend quản trị: Menu PLM -> Cấu hình -> Desktop Access Tokens, tích hợp nút bấm đỏ 'Thu hồi quyền (Revoke)' từ xa.
+5. Cơ chế bảo vệ thời gian thực: Tự động ngắt kết nối và trả về 401 Unauthorized khi token bị thu hồi hoặc hết hạn.
+6. Căn lề chuẩn hóa SCSS và thanh cuộn ngang mượt mà cho bảng linh kiện.
     """,
     "author": "TDB Solution",
     "website": "https://tdbsolution.com",
@@ -38,8 +24,10 @@ Tính năng chính:
         "product",
     ],
     "data": [
+        "security/ir.access.csv",
         "views/plm_component_views.xml",
         "views/plm_document_views.xml",
+        "views/plm_desktop_token_views.xml",
     ],
     "assets": {
         "web.assets_backend": [

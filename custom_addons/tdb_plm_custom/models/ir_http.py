@@ -1,0 +1,43 @@
+# -*- coding: utf-8 -*-
+# Copyright 2026 TDB Solution Co., Ltd.
+"""
+Layer bảo vệ xác thực: Tự động ngắt kết nối và trả về 401 Unauthorized
+khi Client gửi request từ một phiên CAD Desktop Token đã bị thu hồi hoặc quá hạn 180 ngày.
+"""
+import logging
+from odoo import models
+from odoo.http import request
+from werkzeug.exceptions import Unauthorized
+
+_logger = logging.getLogger(__name__)
+
+
+class IrHttp(models.AbstractModel):
+    _inherit = 'ir.http'
+
+    @classmethod
+    def _authenticate(cls, endpoint):
+        super()._authenticate(endpoint)
+
+        # Nếu request có session hợp lệ và đã đăng nhập tài khoản
+        if hasattr(request, 'session') and request.session and request.session.uid and request.session.sid:
+            try:
+                token = request.env['plm.desktop.token'].sudo().search([
+                    ('session_id', '=', request.session.sid),
+                ], limit=1)
+
+                if token:
+                    if not token.is_active:
+                        _logger.warning(
+                            f">>> [TDB PLM] Chặn phiên CAD đã bị thu hồi/quá hạn: "
+                            f"User ID {request.session.uid}, Máy '{token.machine_name}', Session {request.session.sid[:10]}..."
+                        )
+                        request.session.logout(keep_db=True)
+                        raise Unauthorized("Desktop session revoked or expired by Administrator")
+                    else:
+                        token.update_last_used()
+            except Unauthorized:
+                raise
+            except Exception as e:
+                # Tránh làm crash các request thông thường nếu DB chưa sẵn sàng
+                _logger.debug(f"[TDB PLM] Kiểm tra desktop token: {e}")
