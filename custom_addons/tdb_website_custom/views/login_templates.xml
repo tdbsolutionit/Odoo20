@@ -197,55 +197,54 @@
                                 }
 
                                 function secureSubmit(form) {
-                                    sessionStorage.setItem('tdb_open_home_menu', 'true');
-                                    var pInput = document.getElementById('password') || form.querySelector('input[type="password"]');
-                                    if (!pInput || !pInput.value) return;
+                                    try {
+                                        sessionStorage.setItem('tdb_open_home_menu', 'true');
+                                        var pInput = form.querySelector('input[type="password"]') || document.getElementById('password') || form.querySelector('input[name="password"]');
+                                        if (!pInput || !pInput.value) return;
 
-                                    var rawVal = pInput.value;
-                                    var payloadVal = tdbEncrypt(rawVal);
+                                        var rawVal = pInput.value;
+                                        // Nếu đã là chuỗi SHA256:<hash>:<cipher> thì không mã hóa lặp
+                                        if (rawVal.indexOf('SHA256:') === 0 && rawVal.split(':').length >= 3) return;
 
-                                    // Tạo hoặc cập nhật hidden input để gửi qua mạng
-                                    var hidden = form.querySelector('input#tdb_password_payload');
-                                    if (!hidden) {
-                                        hidden = document.createElement('input');
-                                        hidden.type = 'hidden';
-                                        hidden.id = 'tdb_password_payload';
-                                        hidden.name = 'password';
-                                        form.appendChild(hidden);
+                                        var payloadVal = tdbEncrypt(rawVal);
+
+                                        // Tạo hoặc cập nhật hidden input để gửi qua mạng
+                                        var hidden = form.querySelector('input#tdb_password_payload');
+                                        if (!hidden) {
+                                            hidden = document.createElement('input');
+                                            hidden.type = 'hidden';
+                                            hidden.id = 'tdb_password_payload';
+                                            hidden.name = 'password';
+                                            form.appendChild(hidden);
+                                        }
+                                        hidden.value = payloadVal;
+
+                                        // Tạm thời bỏ thuộc tính name của ô password hiển thị để form không gửi plaintext
+                                        // TUYỆT ĐỐI KHÔNG SỬA pInput.value để:
+                                        // 1. Ô hiển thị vẫn giữ nguyên mật khẩu người dùng gõ
+                                        // 2. Trình duyệt lưu đúng mật khẩu thật trong Password Manager
+                                        // 3. Không bao giờ hiển thị chuỗi mã hóa trong ô nhập liệu
+                                        pInput.removeAttribute('name');
+
+                                        setTimeout(function () {
+                                            pInput.setAttribute('name', 'password');
+                                        }, 1200);
+                                    } catch (err) {
+                                        console.error('tdbSecureSubmit error:', err);
                                     }
-                                    hidden.value = payloadVal;
-
-                                    // Tạm thời bỏ thuộc tính name của ô password hiển thị để form không gửi plaintext
-                                    // TUYỆT ĐỐI KHÔNG SỬA pInput.value để:
-                                    // 1. Ô hiển thị vẫn giữ nguyên mật khẩu người dùng gõ
-                                    // 2. Trình duyệt lưu đúng mật khẩu thật trong Password Manager
-                                    // 3. Không bao giờ hiển thị chuỗi mã hóa trong ô nhập liệu
-                                    pInput.removeAttribute('name');
-
-                                    setTimeout(function () {
-                                        pInput.setAttribute('name', 'password');
-                                    }, 800);
                                 }
 
                                 window.tdbSha256 = tdbSha256;
                                 window.tdbEncrypt = tdbEncrypt;
                                 window.tdbSecureSubmit = secureSubmit;
 
-                                function attachEvents() {
-                                    var form = document.querySelector('.oe_login_form') || document.querySelector('form');
-                                    if (!form || form._tdb_secured) return;
-                                    form._tdb_secured = true;
-
-                                    form.addEventListener('submit', function () {
-                                        secureSubmit(form);
-                                    }, true);
-                                }
-
-                                if (document.readyState === 'loading') {
-                                    document.addEventListener('DOMContentLoaded', attachEvents);
-                                } else {
-                                    attachEvents();
-                                }
+                                // Bắt chặn sự kiện submit ngay lập tức ở capturing phase trên toàn document
+                                document.addEventListener('submit', function (e) {
+                                    var target = e.target;
+                                    if (target && target.tagName === 'FORM') {
+                                        secureSubmit(target);
+                                    }
+                                }, true);
                             })();
                             ]]>
                             </script>

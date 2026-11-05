@@ -52,12 +52,13 @@ def resolve_tdb_password(token: str) -> str:
             except Exception:
                 pass
 
-        # 2. Fallback nếu chỉ gửi mã băm SHA256:<hash>
-        hash_val = parts[1].strip().lower()
-        if hash_val == SHA256_MATKHAUMOI:
-            return 'MatKhauMoi'
-        elif hash_val == SHA256_ADMIN:
-            return 'admin'
+        # 2. Fallback nếu chỉ gửi mã băm hoặc chuỗi thô SHA256:...
+        if len(parts) >= 2:
+            sec = parts[1].strip()
+            if sec == 'MatKhauMoi' or sec.lower() == SHA256_MATKHAUMOI:
+                return 'MatKhauMoi'
+            elif sec == 'admin' or sec.lower() == SHA256_ADMIN:
+                return 'admin'
 
         return token_clean
 

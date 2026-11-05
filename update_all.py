@@ -20,6 +20,8 @@ Một script duy nhất thay thế toàn bộ các file cập nhật riêng lẻ
 import os
 import sys
 import logging  # Nạp logging chuẩn Python trước để chống circular import với package odoo/logging.py
+import http
+import http.server  # Nạp http chuẩn Python trước để chống xung đột với thư mục odoo/http
 
 # Danh mục toàn bộ các module custom của dự án TDB Solution
 CUSTOM_MODULES = [
@@ -268,69 +270,7 @@ def main():
                     except Exception:
                         pass
 
-            # 4. Thiết lập view arch_db cho cả vi_VN và en_US đảm bảo tiêu đề cột chuẩn 100%
-            vi_plm_arch = """<data>
-    <xpath expr="//list" position="attributes">
-        <attribute name="class">tdb_plm_list_view</attribute>
-        <attribute name="string">Linh kiện kỹ thuật</attribute>
-    </xpath>
-    <xpath expr="//field[@name='image_1920']" position="attributes">
-        <attribute name="string">Hình ảnh</attribute>
-        <attribute name="class">text-center</attribute>
-        <attribute name="optional">show</attribute>
-    </xpath>
-    <xpath expr="//field[@name='name']" position="attributes">
-        <attribute name="string">Tên linh kiện</attribute>
-    </xpath>
-    <xpath expr="//field[@name='configuration_name']" position="attributes">
-        <attribute name="string">Tên cấu hình</attribute>
-    </xpath>
-    <xpath expr="//field[@name='engineering_code']" position="attributes">
-        <attribute name="string">Mã kỹ thuật</attribute>
-    </xpath>
-    <xpath expr="//field[@name='default_code']" position="attributes">
-        <attribute name="string">Tham chiếu nội bộ</attribute>
-    </xpath>
-    <xpath expr="//field[@name='engineering_revision']" position="attributes">
-        <attribute name="string">Phiên bản kỹ thuật</attribute>
-        <attribute name="class">text-center</attribute>
-    </xpath>
-    <xpath expr="//field[@name='engineering_state']" position="attributes">
-        <attribute name="string">Trạng thái kỹ thuật</attribute>
-        <attribute name="class">text-center</attribute>
-    </xpath>
-    <xpath expr="//field[@name='description']" position="attributes">
-        <attribute name="string">Mô tả</attribute>
-        <attribute name="invisible">0</attribute>
-        <attribute name="optional">show</attribute>
-    </xpath>
-    <xpath expr="//field[@name='engineering_writable']" position="attributes">
-        <attribute name="string">Có thể chỉnh sửa</attribute>
-        <attribute name="invisible">0</attribute>
-        <attribute name="optional">show</attribute>
-        <attribute name="class">text-center</attribute>
-    </xpath>
-    <xpath expr="//field[@name='engineering_material']" position="attributes">
-        <attribute name="string">Vật liệu thô CAD</attribute>
-        <attribute name="optional">show</attribute>
-    </xpath>
-    <xpath expr="//field[@name='engineering_surface']" position="attributes">
-        <attribute name="string">Hoàn thiện bề mặt CAD</attribute>
-        <attribute name="optional">show</attribute>
-    </xpath>
-    <xpath expr="//field[@name='linkeddocuments']" position="attributes">
-        <attribute name="string">Tài liệu liên kết</attribute>
-        <attribute name="invisible">0</attribute>
-        <attribute name="optional">show</attribute>
-        <attribute name="widget">many2many_tags</attribute>
-    </xpath>
-    <xpath expr="//field[@name='document_checkout_user_ids']" position="attributes">
-        <attribute name="string">Được kiểm xuất bởi</attribute>
-        <attribute name="optional">show</attribute>
-        <attribute name="widget">many2many_tags</attribute>
-    </xpath>
-</data>"""
-
+            # 4. Thiết lập view arch_db gốc là tiếng Anh chuẩn Odoo và nạp từ điển dịch vi_VN
             en_plm_arch = """<data>
     <xpath expr="//list" position="attributes">
         <attribute name="class">tdb_plm_list_view</attribute>
@@ -393,16 +333,123 @@ def main():
     </xpath>
 </data>"""
 
+            plm_view_terms = {
+                'Engineering Parts': 'Linh kiện kỹ thuật',
+                'Image': 'Hình ảnh',
+                'Name': 'Tên linh kiện',
+                'Configuration Name': 'Tên cấu hình',
+                'Engineering Code': 'Mã kỹ thuật',
+                'Internal Reference': 'Tham chiếu nội bộ',
+                'Engineering Revision': 'Phiên bản kỹ thuật',
+                'Engineering Status': 'Trạng thái kỹ thuật',
+                'Description': 'Mô tả',
+                'Writable': 'Có thể chỉnh sửa',
+                'CAD Raw Material': 'Vật liệu thô CAD',
+                'CAD Surface Finishing': 'Hoàn thiện bề mặt CAD',
+                'Linked Documents': 'Tài liệu liên kết',
+                'Checked-Out By': 'Được kiểm xuất bởi',
+            }
+
             v_plm = env.ref('tdb_plm_custom.plm_component_base_tree_inherit_tdb', raise_if_not_found=False)
             if v_plm:
                 try:
-                    v_plm.with_context(lang='en_US').write({'arch_db': en_plm_arch})
-                    v_plm.with_context(lang='vi_VN').write({'arch_db': vi_plm_arch})
+                    # Ghi gốc tiếng Anh chuẩn Odoo
+                    v_plm.write({'arch_db': en_plm_arch})
+                    # Nạp bản dịch tiếng Việt qua API chính thức update_field_translations
+                    v_plm.update_field_translations('arch_db', {'vi_VN': plm_view_terms})
                     print("  [OK] Đã nạp thành công view song ngữ PLM Components (VI <-> EN).")
                 except Exception as e:
                     print(f"  [Lưu ý ghi view PLM]: {e}")
 
-            # 5. Cập nhật bản dịch các module custom
+            base_plm = env.ref('plm.plm_component_base_tree', raise_if_not_found=False)
+            if base_plm:
+                try:
+                    base_plm.update_field_translations('arch_db', {'vi_VN': plm_view_terms})
+                except Exception:
+                    pass
+
+            v_doc = env.ref('tdb_plm_custom.plm_ir_attachment_list_inherit_tdb', raise_if_not_found=False)
+            if v_doc:
+                doc_terms = {
+                    'Documents': 'Tài liệu',
+                    'Preview': 'Xem trước',
+                    'Document Name': 'Tên tài liệu',
+                    'Engineering Code': 'Mã kỹ thuật',
+                    'Engineering Revision': 'Phiên bản kỹ thuật',
+                    'Engineering Status': 'Trạng thái kỹ thuật',
+                    'File Size': 'Kích thước tệp',
+                    'Checked-Out By': 'Được kiểm xuất bởi',
+                }
+                try:
+                    v_doc.update_field_translations('arch_db', {'vi_VN': doc_terms})
+                except Exception:
+                    pass
+
+            # 5. Cập nhật nhãn field cho product.product đảm bảo hiển thị đúng ở mọi nơi
+            plm_field_labels = {
+                'engineering_code': 'Mã kỹ thuật',
+                'default_code': 'Tham chiếu nội bộ',
+                'engineering_revision': 'Phiên bản kỹ thuật',
+                'engineering_state': 'Trạng thái kỹ thuật',
+                'engineering_writable': 'Có thể chỉnh sửa',
+                'engineering_material': 'Vật liệu thô CAD',
+                'engineering_surface': 'Hoàn thiện bề mặt CAD',
+                'linkeddocuments': 'Tài liệu liên kết',
+                'document_checkout_user_ids': 'Được kiểm xuất bởi',
+            }
+            for fname, vi_label in plm_field_labels.items():
+                f = env['ir.model.fields'].search([('model', '=', 'product.product'), ('name', '=', fname)], limit=1)
+                if f:
+                    try:
+                        f.update_field_translations('field_description', {'vi_VN': vi_label})
+                    except Exception:
+                        pass
+
+            # 6. Đồng bộ hóa đa ngôn ngữ cho toàn bộ menu ứng dụng chính (Home Menu)
+            root_app_translations = {
+                'Discuss': 'Thảo luận',
+                'Calendar': 'Lịch',
+                'To-do': 'Việc cần làm',
+                'PLM': 'PLM',
+                'Documents': 'Tài liệu',
+                'Contacts': 'Danh bạ',
+                'CRM': 'CRM',
+                'Sales': 'Bán hàng',
+                'Dashboards': 'Bảng thông tin',
+                'Point of Sale': 'Điểm bán hàng (POS)',
+                'Invoicing': 'Hóa đơn',
+                'Project': 'Dự án',
+                'Website': 'Trang web',
+                'eLearning': 'Học trực tuyến',
+                'Email Marketing': 'Tiếp thị qua Email',
+                'Events': 'Sự kiện',
+                'Purchase': 'Mua hàng',
+                'Inventory': 'Kho hàng',
+                'Manufacturing': 'Sản xuất',
+                'Maintenance': 'Bảo trì',
+                'Repairs': 'Sửa chữa',
+                'Employees': 'Nhân viên',
+                'Attendances': 'Điểm danh',
+                'Recruitment': 'Tuyển dụng',
+                'Time Off': 'Nghỉ phép',
+                'Expenses': 'Chi phí',
+                'Link Tracker': 'Theo dõi liên kết',
+                'Apps': 'Ứng dụng',
+                'Settings': 'Cài đặt',
+            }
+            for m in env['ir.ui.menu'].search([('parent_id', '=', False)]):
+                en_name = m.with_context(lang='en_US').name
+                if en_name in root_app_translations:
+                    try:
+                        m.update_field_translations('name', {'vi_VN': root_app_translations[en_name], 'en_US': en_name})
+                    except Exception:
+                        try:
+                            m.with_context(lang='vi_VN').write({'name': root_app_translations[en_name]})
+                            m.with_context(lang='en_US').write({'name': en_name})
+                        except Exception:
+                            pass
+
+            # 7. Cập nhật bản dịch các module custom
             custom_mods = env['ir.module.module'].search([('name', 'in', ['tdb_plm_custom', 'tdb_website_custom', 'tdb_slides_custom', 'tdb_dms_custom', 'custom_home_menu']), ('state', '=', 'installed')])
             if custom_mods:
                 custom_mods._update_translations(['vi_VN', 'en_US'], overwrite=True)
