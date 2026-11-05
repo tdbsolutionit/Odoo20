@@ -66,7 +66,14 @@ class TdbLanguageController(http.Controller):
         if hasattr(request, 'future_response') and request.future_response:
             request.future_response.set_cookie('frontend_lang', lang, max_age=365 * 24 * 3600)
 
-        # 5. Flush và commit vào CSDL
+        # 5. Xóa cache ORM để bản dịch mới có hiệu lực ngay lập tức và commit CSDL
+        try:
+            request.env.registry.clear_cache()
+            from odoo.http.session import update_session_token
+            update_session_token(request.session, request.env)
+        except Exception:
+            pass
+
         try:
             request.env.cr.commit()
         except Exception:

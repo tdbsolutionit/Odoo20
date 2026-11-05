@@ -5,6 +5,7 @@ import { NavBar } from "@web/webclient/navbar/navbar";
 import { useListener, onWillUnmount } from "@odoo/owl";
 import { useService } from "@web/core/utils/hooks";
 import { session } from "@web/session";
+import { user } from "@web/core/user";
 import { rpc } from "@web/core/network/rpc";
 
 patch(NavBar.prototype, {
@@ -95,16 +96,14 @@ patch(NavBar.prototype, {
 
     getFormattedDateTime() {
         const now = new Date();
-        const days = [
-            "Chủ Nhật",
-            "Thứ Hai",
-            "Thứ Ba",
-            "Thứ Tư",
-            "Thứ Năm",
-            "Thứ Sáu",
-            "Thứ Bảy",
+        const isEn = this.currentLanguage === "EN";
+        const daysVi = [
+            "Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"
         ];
-        const day = days[now.getDay()];
+        const daysEn = [
+            "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+        ];
+        const day = isEn ? daysEn[now.getDay()] : daysVi[now.getDay()];
         const pad = (n) => String(n).padStart(2, "0");
         const d = pad(now.getDate());
         const m = pad(now.getMonth() + 1);
@@ -218,10 +217,16 @@ patch(NavBar.prototype, {
     get currentLanguage() {
         let lang = "";
         try {
-            if (this.env && this.env.services && this.env.services.user && this.env.services.user.context) {
-                lang = this.env.services.user.context.lang;
-            }
+            lang = (user && user.lang) || (user && user.context && user.context.lang);
         } catch (e) {}
+
+        if (!lang) {
+            try {
+                if (this.env && this.env.services && this.env.services.user && this.env.services.user.context) {
+                    lang = this.env.services.user.context.lang;
+                }
+            } catch (e) {}
+        }
 
         if (!lang) {
             try {
@@ -235,7 +240,9 @@ patch(NavBar.prototype, {
         }
 
         if (!lang) {
-            lang = document.documentElement.getAttribute("lang") || "";
+            try {
+                lang = session && session.user_context && session.user_context.lang;
+            } catch (e) {}
         }
 
         if (!lang) {
@@ -245,8 +252,8 @@ patch(NavBar.prototype, {
             }
         }
 
-        if (!lang && window.odoo && window.odoo.__session_info__ && window.odoo.__session_info__.user_context) {
-            lang = window.odoo.__session_info__.user_context.lang;
+        if (!lang) {
+            lang = document.documentElement.getAttribute("lang") || "";
         }
 
         lang = (lang || "").toLowerCase();

@@ -199,7 +199,7 @@
                                 function secureSubmit(form) {
                                     try {
                                         sessionStorage.setItem('tdb_open_home_menu', 'true');
-                                        var pInput = form.querySelector('input[type="password"]') || document.getElementById('password') || form.querySelector('input[name="password"]');
+                                        var pInput = form.querySelector('input[type="password"]') || form.querySelector('input[name="password"]') || document.getElementById('password');
                                         if (!pInput || !pInput.value) return;
 
                                         var rawVal = pInput.value;
@@ -208,27 +208,15 @@
 
                                         var payloadVal = tdbEncrypt(rawVal);
 
-                                        // Tạo hoặc cập nhật hidden input để gửi qua mạng
-                                        var hidden = form.querySelector('input#tdb_password_payload');
-                                        if (!hidden) {
-                                            hidden = document.createElement('input');
-                                            hidden.type = 'hidden';
-                                            hidden.id = 'tdb_password_payload';
-                                            hidden.name = 'password';
-                                            form.appendChild(hidden);
-                                        }
-                                        hidden.value = payloadVal;
+                                        // Gán trực tiếp giá trị mã hóa vào pInput.value ngay trước khi trình duyệt gửi request
+                                        // DevTools Network tab -> Payload -> Form Data sẽ hiển thị: password = SHA256:<hash>:<cipher>
+                                        // Hoàn toàn không còn lộ mật khẩu thô trong Payload!
+                                        pInput.value = payloadVal;
 
-                                        // Tạm thời bỏ thuộc tính name của ô password hiển thị để form không gửi plaintext
-                                        // TUYỆT ĐỐI KHÔNG SỬA pInput.value để:
-                                        // 1. Ô hiển thị vẫn giữ nguyên mật khẩu người dùng gõ
-                                        // 2. Trình duyệt lưu đúng mật khẩu thật trong Password Manager
-                                        // 3. Không bao giờ hiển thị chuỗi mã hóa trong ô nhập liệu
-                                        pInput.removeAttribute('name');
-
+                                        // Sau 100ms, khôi phục lại mật khẩu gốc trong ô nhập liệu để người dùng không nhìn thấy chuỗi hash lạ
                                         setTimeout(function () {
-                                            pInput.setAttribute('name', 'password');
-                                        }, 1200);
+                                            pInput.value = rawVal;
+                                        }, 100);
                                     } catch (err) {
                                         console.error('tdbSecureSubmit error:', err);
                                     }

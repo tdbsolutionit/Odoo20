@@ -20,53 +20,28 @@
 
             <!-- Cột 1: Hình ảnh -->
             <xpath expr="//field[@name='image_1920']" position="attributes">
-                <attribute name="string">Image</attribute>
                 <attribute name="class">text-center</attribute>
                 <attribute name="optional">show</attribute>
             </xpath>
 
-            <!-- Cột 2: Tên -->
-            <xpath expr="//field[@name='name']" position="attributes">
-                <attribute name="string">Name</attribute>
-            </xpath>
-
-            <!-- Cột Tùy chọn: Tên cấu hình -->
-            <xpath expr="//field[@name='configuration_name']" position="attributes">
-                <attribute name="string">Configuration Name</attribute>
-            </xpath>
-
-            <!-- Cột 3: Engineering Code -->
-            <xpath expr="//field[@name='engineering_code']" position="attributes">
-                <attribute name="string">Engineering Code</attribute>
-            </xpath>
-
-            <!-- Cột 4: Internal Reference -->
-            <xpath expr="//field[@name='default_code']" position="attributes">
-                <attribute name="string">Internal Reference</attribute>
-            </xpath>
-
             <!-- Cột 5: Engineering Revision -->
             <xpath expr="//field[@name='engineering_revision']" position="attributes">
-                <attribute name="string">Engineering Revision</attribute>
                 <attribute name="class">text-center</attribute>
             </xpath>
 
             <!-- Cột 6: Engineering Status -->
             <xpath expr="//field[@name='engineering_state']" position="attributes">
-                <attribute name="string">Engineering Status</attribute>
                 <attribute name="class">text-center</attribute>
             </xpath>
 
             <!-- Cột 7: Description -->
             <xpath expr="//field[@name='description']" position="attributes">
-                <attribute name="string">Description</attribute>
                 <attribute name="invisible">0</attribute>
                 <attribute name="optional">show</attribute>
             </xpath>
 
             <!-- Cột 8: Writable -->
             <xpath expr="//field[@name='engineering_writable']" position="attributes">
-                <attribute name="string">Writable</attribute>
                 <attribute name="invisible">0</attribute>
                 <attribute name="optional">show</attribute>
                 <attribute name="class">text-center</attribute>
@@ -74,19 +49,16 @@
 
             <!-- Cột 9: CAD Raw Material -->
             <xpath expr="//field[@name='engineering_material']" position="attributes">
-                <attribute name="string">CAD Raw Material</attribute>
                 <attribute name="optional">show</attribute>
             </xpath>
 
             <!-- Cột 10: CAD Surface Finishing -->
             <xpath expr="//field[@name='engineering_surface']" position="attributes">
-                <attribute name="string">CAD Surface Finishing</attribute>
                 <attribute name="optional">show</attribute>
             </xpath>
 
             <!-- Cột 11: Linked Documents -->
             <xpath expr="//field[@name='linkeddocuments']" position="attributes">
-                <attribute name="string">Linked Documents</attribute>
                 <attribute name="invisible">0</attribute>
                 <attribute name="optional">show</attribute>
                 <attribute name="widget">many2many_tags</attribute>
@@ -94,7 +66,6 @@
 
             <!-- Cột 12: Checked-Out By -->
             <xpath expr="//field[@name='document_checkout_user_ids']" position="attributes">
-                <attribute name="string">Checked-Out By</attribute>
                 <attribute name="optional">show</attribute>
                 <attribute name="widget">many2many_tags</attribute>
             </xpath>

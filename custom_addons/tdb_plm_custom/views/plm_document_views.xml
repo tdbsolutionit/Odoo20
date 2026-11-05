@@ -20,35 +20,17 @@
 
             <!-- Preview -->
             <xpath expr="//field[@name='preview']" position="attributes">
-                <attribute name="string">Preview</attribute>
                 <attribute name="class">text-center</attribute>
-            </xpath>
-
-            <!-- Document Name -->
-            <xpath expr="//field[@name='name']" position="attributes">
-                <attribute name="string">Document Name</attribute>
             </xpath>
 
             <!-- Engineering Revision -->
             <xpath expr="//field[@name='engineering_revision']" position="attributes">
-                <attribute name="string">Engineering Revision</attribute>
                 <attribute name="class">text-center</attribute>
             </xpath>
 
             <!-- Engineering Status -->
             <xpath expr="//field[@name='engineering_state']" position="attributes">
-                <attribute name="string">Engineering Status</attribute>
                 <attribute name="class">text-center</attribute>
-            </xpath>
-
-            <!-- Engineering Code -->
-            <xpath expr="//field[@name='engineering_code']" position="attributes">
-                <attribute name="string">Engineering Code</attribute>
-            </xpath>
-
-            <!-- Checked-Out By -->
-            <xpath expr="//field[@name='checkout_user']" position="attributes">
-                <attribute name="string">Checked-Out By</attribute>
             </xpath>
         </field>
     </record>

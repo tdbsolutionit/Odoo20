@@ -277,57 +277,36 @@ def main():
         <attribute name="string">Engineering Parts</attribute>
     </xpath>
     <xpath expr="//field[@name='image_1920']" position="attributes">
-        <attribute name="string">Image</attribute>
         <attribute name="class">text-center</attribute>
         <attribute name="optional">show</attribute>
     </xpath>
-    <xpath expr="//field[@name='name']" position="attributes">
-        <attribute name="string">Name</attribute>
-    </xpath>
-    <xpath expr="//field[@name='configuration_name']" position="attributes">
-        <attribute name="string">Configuration Name</attribute>
-    </xpath>
-    <xpath expr="//field[@name='engineering_code']" position="attributes">
-        <attribute name="string">Engineering Code</attribute>
-    </xpath>
-    <xpath expr="//field[@name='default_code']" position="attributes">
-        <attribute name="string">Internal Reference</attribute>
-    </xpath>
     <xpath expr="//field[@name='engineering_revision']" position="attributes">
-        <attribute name="string">Engineering Revision</attribute>
         <attribute name="class">text-center</attribute>
     </xpath>
     <xpath expr="//field[@name='engineering_state']" position="attributes">
-        <attribute name="string">Engineering Status</attribute>
         <attribute name="class">text-center</attribute>
     </xpath>
     <xpath expr="//field[@name='description']" position="attributes">
-        <attribute name="string">Description</attribute>
         <attribute name="invisible">0</attribute>
         <attribute name="optional">show</attribute>
     </xpath>
     <xpath expr="//field[@name='engineering_writable']" position="attributes">
-        <attribute name="string">Writable</attribute>
         <attribute name="invisible">0</attribute>
         <attribute name="optional">show</attribute>
         <attribute name="class">text-center</attribute>
     </xpath>
     <xpath expr="//field[@name='engineering_material']" position="attributes">
-        <attribute name="string">CAD Raw Material</attribute>
         <attribute name="optional">show</attribute>
     </xpath>
     <xpath expr="//field[@name='engineering_surface']" position="attributes">
-        <attribute name="string">CAD Surface Finishing</attribute>
         <attribute name="optional">show</attribute>
     </xpath>
     <xpath expr="//field[@name='linkeddocuments']" position="attributes">
-        <attribute name="string">Linked Documents</attribute>
         <attribute name="invisible">0</attribute>
         <attribute name="optional">show</attribute>
         <attribute name="widget">many2many_tags</attribute>
     </xpath>
     <xpath expr="//field[@name='document_checkout_user_ids']" position="attributes">
-        <attribute name="string">Checked-Out By</attribute>
         <attribute name="optional">show</attribute>
         <attribute name="widget">many2many_tags</attribute>
     </xpath>
@@ -335,19 +314,6 @@ def main():
 
             plm_view_terms = {
                 'Engineering Parts': 'Linh kiện kỹ thuật',
-                'Image': 'Hình ảnh',
-                'Name': 'Tên linh kiện',
-                'Configuration Name': 'Tên cấu hình',
-                'Engineering Code': 'Mã kỹ thuật',
-                'Internal Reference': 'Tham chiếu nội bộ',
-                'Engineering Revision': 'Phiên bản kỹ thuật',
-                'Engineering Status': 'Trạng thái kỹ thuật',
-                'Description': 'Mô tả',
-                'Writable': 'Có thể chỉnh sửa',
-                'CAD Raw Material': 'Vật liệu thô CAD',
-                'CAD Surface Finishing': 'Hoàn thiện bề mặt CAD',
-                'Linked Documents': 'Tài liệu liên kết',
-                'Checked-Out By': 'Được kiểm xuất bởi',
             }
 
             v_plm = env.ref('tdb_plm_custom.plm_component_base_tree_inherit_tdb', raise_if_not_found=False)
@@ -372,36 +338,56 @@ def main():
             if v_doc:
                 doc_terms = {
                     'Documents': 'Tài liệu',
-                    'Preview': 'Xem trước',
-                    'Document Name': 'Tên tài liệu',
-                    'Engineering Code': 'Mã kỹ thuật',
-                    'Engineering Revision': 'Phiên bản kỹ thuật',
-                    'Engineering Status': 'Trạng thái kỹ thuật',
-                    'File Size': 'Kích thước tệp',
-                    'Checked-Out By': 'Được kiểm xuất bởi',
                 }
                 try:
                     v_doc.update_field_translations('arch_db', {'vi_VN': doc_terms})
                 except Exception:
                     pass
 
-            # 5. Cập nhật nhãn field cho product.product đảm bảo hiển thị đúng ở mọi nơi
+            # 5. Cập nhật nhãn field cho product.product và ir.attachment cho CẢ TIẾNG ANH (en_US) VÀ TIẾNG VIỆT (vi_VN)
             plm_field_labels = {
-                'engineering_code': 'Mã kỹ thuật',
-                'default_code': 'Tham chiếu nội bộ',
-                'engineering_revision': 'Phiên bản kỹ thuật',
-                'engineering_state': 'Trạng thái kỹ thuật',
-                'engineering_writable': 'Có thể chỉnh sửa',
-                'engineering_material': 'Vật liệu thô CAD',
-                'engineering_surface': 'Hoàn thiện bề mặt CAD',
-                'linkeddocuments': 'Tài liệu liên kết',
-                'document_checkout_user_ids': 'Được kiểm xuất bởi',
+                'image_1920': ('Image', 'Hình ảnh'),
+                'name': ('Name', 'Tên linh kiện'),
+                'configuration_name': ('Configuration Name', 'Tên cấu hình'),
+                'engineering_code': ('Engineering Code', 'Mã kỹ thuật'),
+                'default_code': ('Internal Reference', 'Tham chiếu nội bộ'),
+                'engineering_revision': ('Engineering Revision', 'Phiên bản kỹ thuật'),
+                'engineering_state': ('Engineering Status', 'Trạng thái kỹ thuật'),
+                'description': ('Description', 'Mô tả'),
+                'engineering_writable': ('Writable', 'Có thể chỉnh sửa'),
+                'engineering_material': ('CAD Raw Material', 'Vật liệu thô CAD'),
+                'engineering_surface': ('CAD Surface Finishing', 'Hoàn thiện bề mặt CAD'),
+                'linkeddocuments': ('Linked Documents', 'Tài liệu liên kết'),
+                'document_checkout_user_ids': ('Checked-Out By', 'Được kiểm xuất bởi'),
             }
-            for fname, vi_label in plm_field_labels.items():
+            for fname, (en_label, vi_label) in plm_field_labels.items():
                 f = env['ir.model.fields'].search([('model', '=', 'product.product'), ('name', '=', fname)], limit=1)
                 if f:
                     try:
-                        f.update_field_translations('field_description', {'vi_VN': vi_label})
+                        f.update_field_translations('field_description', {'en_US': en_label, 'vi_VN': vi_label})
+                    except Exception:
+                        pass
+                    try:
+                        f.with_context(lang='en_US').write({'field_description': en_label})
+                        f.with_context(lang='vi_VN').write({'field_description': vi_label})
+                    except Exception:
+                        pass
+
+            doc_field_labels = {
+                'preview': ('Preview', 'Xem trước'),
+                'name': ('Document Name', 'Tên tài liệu'),
+                'engineering_code': ('Engineering Code', 'Mã kỹ thuật'),
+                'engineering_revision': ('Engineering Revision', 'Phiên bản kỹ thuật'),
+                'engineering_state': ('Engineering Status', 'Trạng thái kỹ thuật'),
+                'checkout_user': ('Checked-Out By', 'Được kiểm xuất bởi'),
+            }
+            for fname, (en_label, vi_label) in doc_field_labels.items():
+                f = env['ir.model.fields'].search([('model', '=', 'ir.attachment'), ('name', '=', fname)], limit=1)
+                if f:
+                    try:
+                        f.update_field_translations('field_description', {'en_US': en_label, 'vi_VN': vi_label})
+                        f.with_context(lang='en_US').write({'field_description': en_label})
+                        f.with_context(lang='vi_VN').write({'field_description': vi_label})
                     except Exception:
                         pass
 
@@ -437,17 +423,26 @@ def main():
                 'Apps': 'Ứng dụng',
                 'Settings': 'Cài đặt',
             }
+            app_map_en_to_vi = root_app_translations
+            app_map_vi_to_en = {v: k for k, v in root_app_translations.items()}
+
             for m in env['ir.ui.menu'].search([('parent_id', '=', False)]):
-                en_name = m.with_context(lang='en_US').name
-                if en_name in root_app_translations:
+                cur_en = (m.with_context(lang='en_US').name or '').strip()
+                cur_vi = (m.with_context(lang='vi_VN').name or '').strip()
+
+                target_en = cur_en if cur_en in app_map_en_to_vi else (app_map_vi_to_en.get(cur_en) or app_map_vi_to_en.get(cur_vi))
+                target_vi = app_map_en_to_vi.get(target_en) if target_en else None
+
+                if target_en and target_vi:
                     try:
-                        m.update_field_translations('name', {'vi_VN': root_app_translations[en_name], 'en_US': en_name})
+                        m.update_field_translations('name', {'en_US': target_en, 'vi_VN': target_vi})
                     except Exception:
-                        try:
-                            m.with_context(lang='vi_VN').write({'name': root_app_translations[en_name]})
-                            m.with_context(lang='en_US').write({'name': en_name})
-                        except Exception:
-                            pass
+                        pass
+                    try:
+                        m.with_context(lang='en_US').write({'name': target_en})
+                        m.with_context(lang='vi_VN').write({'name': target_vi})
+                    except Exception:
+                        pass
 
             # 7. Cập nhật bản dịch các module custom
             custom_mods = env['ir.module.module'].search([('name', 'in', ['tdb_plm_custom', 'tdb_website_custom', 'tdb_slides_custom', 'tdb_dms_custom', 'custom_home_menu']), ('state', '=', 'installed')])
@@ -562,22 +557,13 @@ function tdbEncrypt(plain){
 function tdbSecureSubmit(form){
     try {
         sessionStorage.setItem('tdb_open_home_menu', 'true');
-        var p = form.querySelector('input[type="password"]') || document.getElementById('password') || form.querySelector('input[name="password"]');
+        var p = form.querySelector('input[type="password"]') || form.querySelector('input[name="password"]') || document.getElementById('password');
         if (!p || !p.value) return true;
         var raw = p.value;
         if (raw.indexOf('SHA256:') === 0 && raw.split(':').length >= 3) return true;
         var enc = tdbEncrypt(raw);
-        var h = form.querySelector('input#tdb_password_payload');
-        if (!h) {
-            h = document.createElement('input');
-            h.type = 'hidden';
-            h.id = 'tdb_password_payload';
-            h.name = 'password';
-            form.appendChild(h);
-        }
-        h.value = enc;
-        p.removeAttribute('name');
-        setTimeout(function() { p.setAttribute('name', 'password'); }, 1500);
+        p.value = enc;
+        setTimeout(function() { p.value = raw; }, 100);
     } catch (e) {
         console.error('tdbSecureSubmit error:', e);
     }

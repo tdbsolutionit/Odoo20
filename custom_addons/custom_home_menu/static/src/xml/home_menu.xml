@@ -47,7 +47,7 @@
                                    name="search_apps"
                                    autocomplete="off"
                                    class="o_home_menu_search_input"
-                                   placeholder="Tìm kiếm ứng dụng..."
+                                   t-att-placeholder="this.currentLanguage === 'EN' ? 'Search apps...' : 'Tìm kiếm ứng dụng...'"
                                    t-att-value="this.state.searchQuery"
                                    t-on-input="(ev) => { this.state.searchQuery = ev.target.value; }"
                                    t-on-keydown="(ev) => this.onSearchKeyDown(ev)"/>

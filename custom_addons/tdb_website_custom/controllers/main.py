@@ -88,6 +88,14 @@ class TdbLoginSecurityController(LoginBaseClass):
                 kw['password'] = resolved
                 if hasattr(request, 'params'):
                     request.params['password'] = resolved
+                try:
+                    if hasattr(request.httprequest, 'form') and 'password' in request.httprequest.form:
+                        form_dict = request.httprequest.form.to_dict()
+                        form_dict['password'] = resolved
+                        from werkzeug.datastructures import ImmutableMultiDict
+                        request.httprequest.form = ImmutableMultiDict(form_dict)
+                except Exception:
+                    pass
 
         try:
             return super().web_login(redirect=redirect, **kw)
