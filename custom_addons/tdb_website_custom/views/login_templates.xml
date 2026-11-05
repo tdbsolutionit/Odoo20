@@ -2,7 +2,7 @@
 <odoo>
     <!-- Template web.login_layout: TDB Solution Giá Trị Cốt Lõi - Corporate Gold Theme -->
     <template id="tdb_login_layout" inherit_id="web.login_layout" priority="99">
-        <xpath expr="//t[@t-call='web.layout']" position="replace">
+        <xpath expr="//t[@t-call='web.frontend_layout'] | //t[@t-call='web.layout']" position="replace">
             <t t-call="web.layout">
                 <t t-set="html_data" t-value="{'style': 'height: 100%;'}"/>
                 <t t-set="body_classname" t-value="'tdb-login-body'"/>
