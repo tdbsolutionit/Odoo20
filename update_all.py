@@ -206,24 +206,30 @@ def main():
                 print(f"    -> Đang NÂNG CẤP (UPGRADE) và nạp lại views, SCSS, i18n...")
                 try:
                     mod_rec.button_immediate_upgrade()
+                    cr.commit()
                     print(f"    [THÀNH CÔNG] Đã nâng cấp thành công '{mod_name}'!")
                 except Exception as e:
+                    cr.rollback()
                     print(f"    [Lỗi nâng cấp {mod_name}]: {e}")
                     try:
                         mod_rec.button_upgrade()
+                        cr.commit()
                     except Exception:
-                        pass
+                        cr.rollback()
             else:
                 print(f"    -> Đang CÀI ĐẶT MỚI (INSTALL) '{mod_name}'...")
                 try:
                     mod_rec.button_immediate_install()
+                    cr.commit()
                     print(f"    [THÀNH CÔNG] Đã cài đặt thành công '{mod_name}'!")
                 except Exception as e:
+                    cr.rollback()
                     print(f"    [Lỗi cài đặt {mod_name}]: {e}")
                     try:
                         mod_rec.button_install()
+                        cr.commit()
                     except Exception:
-                        pass
+                        cr.rollback()
 
         # Nạp lại bản dịch cho các ngôn ngữ đang kích hoạt và đồng bộ hóa đa ngôn ngữ toàn hệ thống
         print(f"\n  -------------------------------------------------------------------------")
