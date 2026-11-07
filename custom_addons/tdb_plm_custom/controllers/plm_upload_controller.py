@@ -33,9 +33,9 @@ class TdbPlmUploadDocument(UploadDocument):
 
         machine_name = kw.get('hostname') or kw.get('host_name') or kw.get('machine_name') or request.httprequest.headers.get('X-Machine-Name')
         if not machine_name:
-            machine_name = f"CAD-WS ({client_ip})"
+            machine_name = f"CAD WS ({client_ip})"
 
-        machine_uuid = kw.get('machine_uuid') or request.httprequest.headers.get('X-Machine-UUID') or f"WS-{machine_name}"
+        machine_uuid = kw.get('machine_uuid') or request.httprequest.headers.get('X-Machine-UUID') or f"WS_{machine_name}"
         cad_version = kw.get('cad_version') or request.httprequest.headers.get('X-CAD-Version') or 'SolidWorks 2022'
 
         # 2. Kiểm tra xem thiết bị CAD này hoặc User này đã bị Quản trị viên THU HỒI quyền chưa
@@ -140,7 +140,7 @@ class TdbPlmUploadDocument(UploadDocument):
                     ('client_ip', '=', client_ip),
                 ], limit=1)
 
-                if token and token.machine_name.startswith("CAD-WS"):
+                if token and (token.machine_name.startswith("CAD-WS") or token.machine_name.startswith("CAD WS")):
                     token.write({'machine_name': f"{hostname} ({client_ip})"})
             except Exception as e:
                 _logger.debug(f"[TDB PLM] Không thể cập nhật tên máy: {e}")
