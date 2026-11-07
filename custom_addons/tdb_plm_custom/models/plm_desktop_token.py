@@ -6,6 +6,9 @@ Model Quản lý Access Token & Phiên làm việc Đa thiết bị 180 ngày ch
 - Mỗi máy trạm CAD đăng nhập sẽ được cấp/cập nhật một bản ghi token độc lập.
 - Không tự ý hủy phiên của các thiết bị khác thuộc cùng User.
 - Cho phép Quản trị viên (Admin) thu hồi quyền từ xa bất kỳ lúc nào.
+- Khi bị thu hồi: bản ghi vẫn hiển thị rõ ràng trên giao diện (Đã thu hồi - đỏ),
+  đồng thời ngắt kết nối và chặn hoàn toàn mọi tác vụ CAD từ máy trạm đó.
+- Cung cấp nút 'Khôi phục' để Admin cấp lại quyền truy cập khi cần.
 """
 import logging
 import secrets
@@ -52,6 +55,7 @@ class PlmDesktopToken(models.Model):
     )
     client_ip = fields.Char(
         string='IP LAN / Máy trạm',
+        index=True,
     )
     cad_version = fields.Char(
         string='Phiên bản CAD',
@@ -74,10 +78,22 @@ class PlmDesktopToken(models.Model):
     is_revoked = fields.Boolean(
         string='Bị thu hồi thủ công',
         default=False,
+        index=True,
     )
     is_active = fields.Boolean(
         string='Còn hiệu lực',
         compute='_compute_is_active',
+        store=True,
+        index=True,
+    )
+    state = fields.Selection(
+        [
+            ('active', 'Đang hoạt động'),
+            ('revoked', 'Đã thu hồi'),
+            ('expired', 'Hết hạn'),
+        ],
+        string='Trạng thái',
+        compute='_compute_state',
         store=True,
         index=True,
     )
@@ -88,21 +104,42 @@ class PlmDesktopToken(models.Model):
         for rec in self:
             rec.is_active = (not rec.is_revoked) and bool(rec.expires_at and rec.expires_at > now)
 
+    @api.depends('is_active', 'is_revoked', 'expires_at')
+    def _compute_state(self):
+        now = fields.Datetime.now()
+        for rec in self:
+            if rec.is_revoked:
+                rec.state = 'revoked'
+            elif rec.expires_at and rec.expires_at <= now:
+                rec.state = 'expired'
+            else:
+                rec.state = 'active'
+
     @api.model
     def register_session_token(self, user_id, session_id, machine_uuid, machine_name, client_ip, cad_version):
         """Cấp/Cập nhật token 180 ngày cho phiên SolidWorks Add-in."""
         now = fields.Datetime.now()
         expires_at = now + timedelta(days=180)
 
-        # Tìm token của cùng thiết bị (theo user_id và machine_uuid)
+        # 1. Tìm bản ghi token của cùng thiết bị (theo user_id và machine_uuid hoặc client_ip)
         token_rec = self.search([
             ('user_id', '=', user_id),
+            '|',
             ('machine_uuid', '=', machine_uuid),
-            ('is_revoked', '=', False),
+            ('client_ip', '=', client_ip),
         ], limit=1)
+
+        # 2. Nếu thiết bị này đã bị thu hồi trước đó: KHÔNG tự động kích hoạt lại
+        if token_rec and token_rec.is_revoked:
+            _logger.warning(
+                f">>> [TDB PLM] Thiết bị '{token_rec.machine_name}' (IP: {client_ip}) "
+                f"của User ID {user_id} đang ở trạng thái BỊ THU HỒI. Từ chối cấp phiên mới."
+            )
+            return False
 
         vals = {
             'session_id': session_id,
+            'machine_uuid': machine_uuid,
             'machine_name': machine_name,
             'client_ip': client_ip,
             'cad_version': cad_version,
@@ -117,7 +154,6 @@ class PlmDesktopToken(models.Model):
             vals.update({
                 'name': secrets.token_urlsafe(32),
                 'user_id': user_id,
-                'machine_uuid': machine_uuid,
                 'issued_at': now,
             })
             token_rec = self.create(vals)
@@ -139,18 +175,24 @@ class PlmDesktopToken(models.Model):
                         _logger.info(f">>> [TDB PLM] Đã hủy thành công Odoo session: {rec.session_id}")
                 except Exception as e:
                     _logger.warning(f"[TDB PLM] Không thể xóa Odoo session: {e}")
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
 
     def action_unrevoke(self):
-        """Khôi phục hiệu lực cho token nếu còn trong hạn 180 ngày."""
+        """Khôi phục hiệu lực cho token nếu bị thu hồi (cấp mới hạn 180 ngày)."""
         now = fields.Datetime.now()
         for rec in self:
-            if rec.expires_at and rec.expires_at > now:
-                rec.write({'is_revoked': False})
-            else:
-                rec.write({
-                    'is_revoked': False,
-                    'expires_at': now + timedelta(days=180),
-                })
+            rec.write({
+                'is_revoked': False,
+                'expires_at': now + timedelta(days=180),
+            })
+            _logger.info(f">>> [TDB PLM] Đã khôi phục quyền truy cập cho máy trạm '{rec.machine_name}' (IP: {rec.client_ip})")
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
 
     def update_last_used(self):
         """Cập nhật thời gian truy cập gần nhất với throttling tránh ghi CSDL liên tục."""

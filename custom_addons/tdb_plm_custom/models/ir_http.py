@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # Copyright 2026 TDB Solution Co., Ltd.
 """
-Layer bảo vệ xác thực: Tự động ngắt kết nối và trả về 401 Unauthorized
-khi Client gửi request từ một phiên CAD Desktop Token đã bị thu hồi hoặc quá hạn 180 ngày.
+Layer bảo vệ xác thực: Tự động ngắt kết nối và trả về 401/403
+khi Client gửi request từ một máy trạm CAD hoặc phiên Desktop Token đã bị thu hồi hoặc quá hạn 180 ngày.
 """
 import logging
 from odoo import models
@@ -20,7 +20,7 @@ class IrHttp(models.AbstractModel):
         super()._authenticate(endpoint)
 
         # Nếu request có session hợp lệ và đã đăng nhập tài khoản
-        if hasattr(request, 'session') and request.session and request.session.uid and request.session.sid:
+        if hasattr(request, 'session') and request.session and request.session.uid:
             try:
                 # Kiểm tra an toàn xem model và bảng dữ liệu đã tồn tại trong database chưa (tránh crash khi chưa upgrade DB)
                 if 'plm.desktop.token' not in request.env.registry:
@@ -32,18 +32,28 @@ class IrHttp(models.AbstractModel):
                     if not row or not row[0]:
                         return
 
-                    token = request.env['plm.desktop.token'].sudo().search([
+                    client_ip = request.httprequest.headers.get('X-Forwarded-For') or request.httprequest.remote_addr or '127.0.0.1'
+                    if client_ip and ',' in client_ip:
+                        client_ip = client_ip.split(',')[0].strip()
+
+                    token_model = request.env['plm.desktop.token'].sudo()
+
+                    # Tìm token tương ứng với session_id hoặc IP của user CAD
+                    token = token_model.search([
+                        ('user_id', '=', request.session.uid),
+                        '|',
                         ('session_id', '=', request.session.sid),
+                        ('client_ip', '=', client_ip),
                     ], limit=1)
 
                     if token:
-                        if not token.is_active:
+                        if token.is_revoked or not token.is_active:
                             _logger.warning(
                                 f">>> [TDB PLM] Chặn phiên CAD đã bị thu hồi/quá hạn: "
-                                f"User ID {request.session.uid}, Máy '{token.machine_name}', Session {request.session.sid[:10]}..."
+                                f"User ID {request.session.uid}, Máy '{token.machine_name}', IP {client_ip}, Session {str(request.session.sid)[:10]}..."
                             )
                             request.session.logout(keep_db=True)
-                            raise Unauthorized("Desktop session revoked or expired by Administrator")
+                            raise Unauthorized("CAD workstation access has been revoked or expired by Administrator.")
                         else:
                             token.update_last_used()
             except Unauthorized:

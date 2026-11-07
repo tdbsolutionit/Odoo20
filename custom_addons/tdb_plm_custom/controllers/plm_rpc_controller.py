@@ -7,9 +7,8 @@ Bối cảnh kỹ thuật:
 - Trên Odoo 20, dịch vụ 'db' đã bị loại bỏ khỏi hàm dispatch_rpc (chỉ còn 'common' và 'object').
 - Khi CAD Client (SolidWorks OdooPLM) kết nối, client thực hiện gọi RPC service 'db', method 'list'
   để lấy danh sách Database hiển thị lên combobox đăng nhập.
-- Khi Odoo 20 ném ngoại lệ ValueError("Invalid service name: db"), CAD Client hiểu nhầm là mất kết nối
-  và hiển thị "Could not connect to server !".
-- Controller này cung cấp bản vá (patch) hàm dispatch_rpc nhằm phục hồi khả năng phản hồi danh mục database cho CAD Client.
+- Controller này cung cấp bản vá (patch) hàm dispatch_rpc nhằm phục hồi khả năng phản hồi danh mục database cho CAD Client,
+  đồng thời chặn các thao tác PLM qua XML-RPC nếu thiết bị CAD của user đã bị Admin thu hồi quyền.
 """
 import sys
 import logging
@@ -26,7 +25,10 @@ if not _original_dispatch_rpc:
 
 
 def _cad_dispatch_rpc(service_name, method, params):
-    """Điều phối RPC tùy biến, hỗ trợ thêm service 'db' cho các ứng dụng CAD Client (SolidWorks/Inventor)."""
+    """Điều phối RPC tùy biến:
+    1. Phục hồi service 'db' cho các ứng dụng CAD Client (SolidWorks/Inventor).
+    2. Chặn các thao tác PLM qua XML-RPC nếu thiết bị CAD của user đã bị Admin thu hồi quyền.
+    """
     if service_name == 'db':
         if method in ('list', 'list_db'):
             try:
@@ -52,6 +54,40 @@ def _cad_dispatch_rpc(service_name, method, params):
             return odoo.release.version
         elif method == 'server_environment':
             return 'production'
+
+    elif service_name == 'object':
+        try:
+            db, uid, passwd, model, method_ = params[:5]
+            if str(model).startswith('plm.') or model in ('ir.attachment',):
+                client_ip = None
+                if hasattr(odoo.http, 'request') and odoo.http.request and hasattr(odoo.http.request, 'httprequest'):
+                    client_ip = odoo.http.request.httprequest.headers.get('X-Forwarded-For') or odoo.http.request.httprequest.remote_addr
+                    if client_ip and ',' in client_ip:
+                        client_ip = client_ip.split(',')[0].strip()
+
+                from odoo.modules.registry import Registry
+                from odoo import api
+                with Registry(db).cursor() as cr:
+                    env = api.Environment(cr, api.SUPERUSER_ID, {})
+                    if 'plm.desktop.token' in env.registry:
+                        cr.execute("SELECT to_regclass('public.plm_desktop_token');")
+                        row = cr.fetchone()
+                        if row and row[0]:
+                            domain = [('user_id', '=', int(uid)), ('is_revoked', '=', True)]
+                            if client_ip:
+                                domain.append(('client_ip', '=', client_ip))
+                            revoked = env['plm.desktop.token'].search(domain, limit=1)
+                            if revoked:
+                                _logger.warning(
+                                    f">>> [TDB PLM] CHẶN RPC: Thiết bị '{revoked.machine_name}' (IP: {client_ip}) "
+                                    f"của User ID {uid} đã bị thu hồi. Từ chối thực thi {model}.{method_}"
+                                )
+                                raise odoo.exceptions.AccessDenied("CAD Workstation access has been REVOKED by Administrator.")
+        except odoo.exceptions.AccessDenied:
+            raise
+        except Exception as e:
+            _logger.debug(f"[TDB PLM] Kiểm tra token trong RPC dispatch: {e}")
+
     return _original_dispatch_rpc(service_name, method, params)
 
 
@@ -63,4 +99,4 @@ for mod_path in ('odoo.addons.rpc.controllers.xmlrpc', 'odoo.addons.rpc.controll
     if mod_path in sys.modules:
         setattr(sys.modules[mod_path], 'dispatch_rpc', _cad_dispatch_rpc)
 
-_logger.info(">>> [TDB PLM] Đã kích hoạt bản vá tương thích CAD Client XML-RPC / JSON-RPC (service: db) cho Odoo 20.")
+_logger.info(">>> [TDB PLM] Đã kích hoạt bản vá tương thích CAD Client XML-RPC / JSON-RPC (service: db + Access Revoke Gate) cho Odoo 20.")
