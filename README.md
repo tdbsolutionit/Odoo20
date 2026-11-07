@@ -44,7 +44,12 @@ odoo20-docker/
 ├── .gitignore                # Chặn rò rỉ mã nguồn nhạy cảm, log, data và cache
 ├── compose.yaml              # Cấu hình Docker Compose đa dịch vụ (Odoo 20 + PostgreSQL 18)
 ├── Dockerfile                # Image Odoo 20 tích hợp LibreOffice headless và font chữ
-└── README.md                 # Tài liệu hướng dẫn sử dụng và triển khai
+├── docs/                     # TRUNG TÂM TÀI LIỆU KỸ THUẬT & NGHIỆP VỤ (PLM, CAD, VAS, GUIDES)
+│   ├── plm/                  # Tài liệu nghiệp vụ, lý thuyết & API phân hệ PLM/CAD
+│   ├── ke_toan_vas/          # Tài liệu nghiệp vụ Kế toán VAS Việt Nam
+│   ├── huong_dan_trien_khai/ # Hướng dẫn cài đặt, trích xuất module & vận hành
+│   └── README.md             # Mục lục tra cứu tài liệu toàn hệ thống
+└── README.md                 # Tài liệu hướng dẫn sử dụng và triển khai chung
 ```
 
 ---
