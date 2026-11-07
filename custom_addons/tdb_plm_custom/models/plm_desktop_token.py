@@ -252,6 +252,44 @@ class PlmDesktopToken(models.Model):
 
         return True
 
+    def action_set_expired_test(self):
+        """Chuyển token sang trạng thái hết hạn để kiểm thử tính năng chặn thiết bị khi hết 180 ngày."""
+        yesterday = fields.Datetime.now() - timedelta(days=1)
+        for rec in self:
+            domain = [('user_id', '=', rec.user_id.id)]
+            if rec.client_ip:
+                domain.append(('client_ip', '=', rec.client_ip))
+            elif rec.machine_uuid:
+                domain.append(('machine_uuid', '=', rec.machine_uuid))
+
+            related_tokens = self.search(domain)
+            for tok in related_tokens:
+                tok.write({
+                    'expires_at': yesterday,
+                    'session_id': False,
+                })
+                _logger.info(f">>> [TDB PLM] TEST: Đã chuyển token máy trạm '{tok.machine_name}' sang trạng thái HẾT HẠN.")
+        return True
+
+    def action_renew_180_days(self):
+        """Admin chủ động gia hạn thêm 180 ngày cho token đã hết hạn."""
+        now = fields.Datetime.now()
+        for rec in self:
+            domain = [('user_id', '=', rec.user_id.id)]
+            if rec.client_ip:
+                domain.append(('client_ip', '=', rec.client_ip))
+            elif rec.machine_uuid:
+                domain.append(('machine_uuid', '=', rec.machine_uuid))
+
+            related_tokens = self.search(domain)
+            for tok in related_tokens:
+                tok.write({
+                    'expires_at': now + timedelta(days=180),
+                    'is_revoked': False,
+                })
+                _logger.info(f">>> [TDB PLM] Đã gia hạn 180 ngày cho máy trạm '{tok.machine_name}'.")
+        return True
+
     def update_last_used(self):
         """Cập nhật thời gian truy cập gần nhất với throttling tránh ghi CSDL liên tục."""
         self.ensure_one()

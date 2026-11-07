@@ -125,10 +125,10 @@ class TdbPlmUploadDocument(UploadDocument):
         csrf=False,
     )
     def upload(self, mod_file=None, doc_id=False, filename="", **kw):
-        """Kế thừa Upload: Cập nhật tên máy thực tế nếu SolidWorks truyền hostname."""
-        hostname = kw.get('hostname')
-        if hostname and getattr(request, 'session', None) and request.session.uid:
+        """Kế thừa Upload: Kiểm tra thu hồi/hết hạn và cập nhật tên máy thực tế nếu SolidWorks truyền hostname."""
+        if getattr(request, 'session', None) and request.session.uid:
             try:
+                from odoo import fields
                 client_ip = request.httprequest.headers.get('X-Forwarded-For') or request.httprequest.remote_addr or '127.0.0.1'
                 if client_ip and ',' in client_ip:
                     client_ip = client_ip.split(',')[0].strip()
@@ -140,9 +140,17 @@ class TdbPlmUploadDocument(UploadDocument):
                     ('client_ip', '=', client_ip),
                 ], limit=1)
 
-                if token and (token.machine_name.startswith("CAD-WS") or token.machine_name.startswith("CAD WS")):
-                    token.write({'machine_name': f"{hostname} ({client_ip})"})
+                if token:
+                    now = fields.Datetime.now()
+                    if token.is_revoked:
+                        return Response("CAD Workstation access has been REVOKED by Administrator.", status=403)
+                    elif token.expires_at and token.expires_at <= now:
+                        return Response("CAD 180-day Session has EXPIRED. Please log in again to renew.", status=401)
+
+                    hostname = kw.get('hostname')
+                    if hostname and (token.machine_name.startswith("CAD-WS") or token.machine_name.startswith("CAD WS")):
+                        token.write({'machine_name': f"{hostname} ({client_ip})"})
             except Exception as e:
-                _logger.debug(f"[TDB PLM] Không thể cập nhật tên máy: {e}")
+                _logger.debug(f"[TDB PLM] Không thể kiểm tra token/cập nhật tên máy trong upload: {e}")
 
         return super().upload(mod_file=mod_file, doc_id=doc_id, filename=filename, **kw)

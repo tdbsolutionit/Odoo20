@@ -78,15 +78,37 @@ def _cad_dispatch_rpc(service_name, method, params):
                         cr.execute("SELECT to_regclass('public.plm_desktop_token');")
                         row = cr.fetchone()
                         if row and row[0]:
-                            domain = [('user_id', '=', int(uid))]
-                            token = env['plm.desktop.token'].search(domain, order='id desc', limit=1)
+                            req = odoo.http.request_var.get(None)
+                            client_ip = None
+                            if req and hasattr(req, 'httprequest'):
+                                client_ip = req.httprequest.headers.get('X-Forwarded-For') or req.httprequest.remote_addr
+                                if client_ip and ',' in client_ip:
+                                    client_ip = client_ip.split(',')[0].strip()
+
+                            token = False
+                            if client_ip:
+                                token = env['plm.desktop.token'].search([
+                                    ('user_id', '=', int(uid)),
+                                    ('client_ip', '=', client_ip),
+                                ], order='id desc', limit=1)
+                            if not token:
+                                token = env['plm.desktop.token'].search([('user_id', '=', int(uid))], order='id desc', limit=1)
+
                             if token:
+                                from odoo import fields
+                                now = fields.Datetime.now()
                                 if token.is_revoked:
                                     _logger.warning(
                                         f">>> [TDB PLM] CHẶN RPC: Thiết bị '{token.machine_name}' "
                                         f"của User ID {uid} ĐÃ BỊ THU HỒI. Từ chối thực thi {model}.{method_}"
                                     )
                                     raise odoo.exceptions.AccessDenied("CAD Workstation access has been REVOKED by Administrator.")
+                                elif token.expires_at and token.expires_at <= now:
+                                    _logger.warning(
+                                        f">>> [TDB PLM] CHẶN RPC: Thiết bị '{token.machine_name}' "
+                                        f"của User ID {uid} ĐÃ HẾT HẠN 180 NGÀY ({token.expires_at}). Từ chối thực thi {model}.{method_}"
+                                    )
+                                    raise odoo.exceptions.AccessDenied("CAD 180-day Session has EXPIRED. Please log in again from SolidWorks to renew.")
                                 elif not token.session_id:
                                     _logger.warning(
                                         f">>> [TDB PLM] YÊU CẦU ĐĂNG NHẬP LẠI: Thiết bị '{token.machine_name}' "

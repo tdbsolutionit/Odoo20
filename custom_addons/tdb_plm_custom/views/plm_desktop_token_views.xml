@@ -8,7 +8,7 @@
             <list string="Desktop Access Tokens"
                   decoration-success="state == 'active'"
                   decoration-danger="state == 'revoked'"
-                  decoration-muted="state == 'expired'">
+                  decoration-warning="state == 'expired'">
                 <field name="user_id" widget="many2one_avatar_user" string="Kỹ sư CAD"/>
                 <field name="machine_name" string="Tên máy trạm"/>
                 <field name="client_ip" string="Địa chỉ IP máy trạm"/>
@@ -19,7 +19,7 @@
                 <field name="state" widget="badge"
                        decoration-success="state == 'active'"
                        decoration-danger="state == 'revoked'"
-                       decoration-muted="state == 'expired'"
+                       decoration-warning="state == 'expired'"
                        string="Trạng thái"/>
                 <button name="action_revoke"
                         type="object"
@@ -27,11 +27,22 @@
                         class="btn-danger btn-sm"
                         invisible="state != 'active'"
                         confirm="Bạn có chắc chắn muốn thu hồi quyền truy cập của thiết bị CAD này? Máy trạm sẽ bị ngắt kết nối ngay lập tức!"/>
+                <button name="action_set_expired_test"
+                        type="object"
+                        string="Thử hết hạn"
+                        class="btn-warning btn-sm"
+                        invisible="state != 'active'"
+                        confirm="Chuyển token sang trạng thái HẾT HẠN để kiểm thử việc chặn SolidWorks khi hết hạn 180 ngày?"/>
                 <button name="action_unrevoke"
                         type="object"
                         string="Khôi phục"
                         class="btn-success btn-sm"
                         invisible="state != 'revoked'"/>
+                <button name="action_renew_180_days"
+                        type="object"
+                        string="Gia hạn 180 ngày"
+                        class="btn-primary btn-sm"
+                        invisible="state != 'expired'"/>
             </list>
         </field>
     </record>
@@ -49,15 +60,26 @@
                             class="btn-danger"
                             invisible="state != 'active'"
                             confirm="Bạn có chắc chắn muốn thu hồi và ngắt kết nối máy trạm CAD này?"/>
+                    <button name="action_set_expired_test"
+                            type="object"
+                            string="Thử hết hạn (Test)"
+                            class="btn-warning"
+                            invisible="state != 'active'"
+                            confirm="Chuyển token sang trạng thái HẾT HẠN để kiểm thử việc chặn SolidWorks khi hết hạn 180 ngày?"/>
                     <button name="action_unrevoke"
                             type="object"
                             string="Khôi phục quyền truy cập"
                             class="btn-success"
                             invisible="state != 'revoked'"/>
+                    <button name="action_renew_180_days"
+                            type="object"
+                            string="Gia hạn 180 ngày"
+                            class="btn-primary"
+                            invisible="state != 'expired'"/>
                     <field name="state" widget="badge"
                            decoration-success="state == 'active'"
                            decoration-danger="state == 'revoked'"
-                           decoration-muted="state == 'expired'"/>
+                           decoration-warning="state == 'expired'"/>
                 </header>
                 <sheet>
                     <div class="oe_title">
