@@ -45,13 +45,6 @@ HANDSHAKE_METHODS = (
     'clientCanIUpload',
     'clientCanCheckOut',
     'getErrorMissingDocument',
-    'read',
-    'search',
-    'search_read',
-    'name_get',
-    'name_search',
-    'fields_get',
-    'checkMany2oneClient',
 )
 
 

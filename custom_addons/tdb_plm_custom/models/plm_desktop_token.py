@@ -193,7 +193,7 @@ class PlmDesktopToken(models.Model):
         return token_rec
 
     def action_revoke(self):
-        """Thu hồi quyền kết nối của thiết bị và toàn bộ phiên của thiết bị này."""
+        """Thu hồi quyền kết nối của thiết bị (chặn đứng mọi thao tác kể cả đăng nhập lại)."""
         for rec in self:
             domain = [('user_id', '=', rec.user_id.id)]
             if rec.client_ip:
@@ -203,21 +203,10 @@ class PlmDesktopToken(models.Model):
 
             related_tokens = self.search(domain)
             for tok in related_tokens:
-                old_sid = tok.session_id
                 tok.write({
                     'is_revoked': True,
-                    'session_id': False,
                 })
-                if old_sid:
-                    try:
-                        from odoo.http.session import session_store
-                        store = session_store()
-                        sess = store.get(old_sid)
-                        if sess:
-                            store.delete(sess)
-                            _logger.info(f">>> [TDB PLM] Đã hủy Odoo session: {old_sid}")
-                    except Exception as e:
-                        _logger.warning(f"[TDB PLM] Lỗi hủy session: {e}")
+                _logger.info(f">>> [TDB PLM] Đã thu hồi quyền máy trạm '{tok.machine_name}' (IP: {tok.client_ip})")
 
             # Gộp các dòng trùng lặp thành 1 dòng duy nhất cho sạch giao diện
             if len(related_tokens) > 1:
@@ -227,7 +216,7 @@ class PlmDesktopToken(models.Model):
         return True
 
     def action_unrevoke(self):
-        """Khôi phục hiệu lực cho token nếu bị thu hồi (cấp mới hạn 180 ngày)."""
+        """Khôi phục quyền truy cập cho thiết bị (cho phép sử dụng tiếp ngay lập tức, không cần đăng nhập lại)."""
         now = fields.Datetime.now()
         for rec in self:
             domain = [('user_id', '=', rec.user_id.id)]
@@ -240,10 +229,9 @@ class PlmDesktopToken(models.Model):
             for tok in related_tokens:
                 tok.write({
                     'is_revoked': False,
-                    'session_id': False,
                     'expires_at': now + timedelta(days=180),
                 })
-                _logger.info(f">>> [TDB PLM] Đã khôi phục quyền truy cập cho máy trạm '{tok.machine_name}' (IP: {tok.client_ip})")
+                _logger.info(f">>> [TDB PLM] Đã khôi phục quyền cho máy trạm '{tok.machine_name}' (IP: {tok.client_ip}), cho phép dùng tiếp không cần đăng nhập lại.")
 
             # Gộp các dòng trùng lặp thành 1 dòng duy nhất
             if len(related_tokens) > 1:
