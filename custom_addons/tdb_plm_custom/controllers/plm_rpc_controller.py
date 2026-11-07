@@ -1,19 +1,27 @@
 # -*- coding: utf-8 -*-
 # Copyright 2026 TDB Solution Co., Ltd.
 """
-Layer 3: Tầng Controller điều phối & Khắc phục tương thích RPC cho OdooPLM Client (SolidWorks / Inventor)
-======================================================================================================
+Layer 3: Tầng Controller điều phối & Middleware RPC cho OdooPLM Client (SolidWorks / Inventor)
+=============================================================================================
 Bối cảnh kỹ thuật:
 - Trên Odoo 20, dịch vụ 'db' đã bị loại bỏ khỏi hàm dispatch_rpc (chỉ còn 'common' và 'object').
-- Khi CAD Client (SolidWorks OdooPLM) kết nối, client thực hiện gọi RPC service 'db', method 'list'
+- Khi CAD Client (SolidWorks OdooPLM) kết nối, client gọi RPC service 'db', method 'list'
   để lấy danh sách Database hiển thị lên combobox đăng nhập.
-- Controller này cung cấp bản vá (patch) hàm dispatch_rpc nhằm phục hồi khả năng phản hồi danh mục database cho CAD Client,
-  đồng thời chặn các thao tác PLM qua XML-RPC nếu thiết bị CAD của user đã bị Admin thu hồi quyền hoặc chưa đăng nhập lại.
+- Controller này cung cấp bản vá (patch) hàm dispatch_rpc:
+  1. Phục hồi service 'db' (list, list_db, db_exist) cho CAD Client.
+  2. Xác thực và gia hạn 180 ngày tự động khi kỹ sư đăng nhập thành công từ hộp thoại CAD (New Login).
+  3. Chặn đứng tuyệt đối (AccessDenied) mọi thao tác CAD (sửa linh kiện, bom, check-in, check-out, xem thuộc tính)
+     khi token 180 ngày đã HẾT HẠN hoặc thiết bị bị Quản trị viên THU HỒI.
+  4. Chặn đứng không cho mở hộp thoại CAD Editing khi đã hết hạn.
 """
 import sys
 import logging
+import secrets
+from datetime import timedelta
 import odoo
+from odoo import api, fields
 from odoo.http import router
+from odoo.exceptions import AccessDenied
 
 _logger = logging.getLogger(__name__)
 
@@ -22,26 +30,6 @@ _original_dispatch_rpc = getattr(router, '_tdb_original_dispatch_rpc', None)
 if not _original_dispatch_rpc:
     _original_dispatch_rpc = router.dispatch_rpc
     router._tdb_original_dispatch_rpc = _original_dispatch_rpc
-
-CAD_OPERATIONAL_MODELS = (
-    'product.product',
-    'product.template',
-    'ir.attachment',
-    'ir.attachment.relation',
-    'mrp.bom',
-    'mrp.bom.line',
-    'plm.checkout',
-    'plm.backup.document',
-    'plm.cad.open',
-    'plm.temporary',
-    'plm.client',
-    'plm.component',
-    'plm.description',
-    'plm.material',
-    'plm.finishing',
-    'plm.treatment',
-)
-
 
 HANDSHAKE_METHODS = (
     'getServerTime',
@@ -52,10 +40,12 @@ HANDSHAKE_METHODS = (
 
 
 def _cad_dispatch_rpc(service_name, method, params):
-    """Điều phối RPC tùy biến:
+    """Điều phối RPC tùy biến (Middleware XML-RPC & JSON-RPC):
     1. Phục hồi service 'db' cho các ứng dụng CAD Client (SolidWorks/Inventor).
-    2. Chặn các thao tác PLM qua XML-RPC (linh kiện product.product, bản vẽ, bom, checkin, checkout)
-       nếu thiết bị CAD của user đã bị Admin thu hồi quyền hoặc phiên đã bị hủy và yêu cầu đăng nhập lại.
+    2. Quản lý vòng đời Access Token 180 ngày:
+       - Khi 'Execute New Login' thành công: Mở khóa và gia hạn 180 ngày.
+       - Khi 'Thu hồi quyền' (Revoked): Chặn đứng mọi thao tác và từ chối đăng nhập mới.
+       - Khi 'Hết hạn' (Expired): Chặn đứng mọi thao tác CAD bằng AccessDenied để SolidWorks không mở form CAD Editing.
     """
     if service_name == 'db':
         if method in ('list', 'list_db'):
@@ -90,10 +80,6 @@ def _cad_dispatch_rpc(service_name, method, params):
         #    Tự động mở khóa và gia hạn 180 ngày cho token của thiết bị.
         db, login, password = params[:3]
         from odoo.modules.registry import Registry
-        from odoo import api, fields
-        from odoo.exceptions import UserError
-        from datetime import timedelta
-        import secrets
 
         # Kiểm tra trước: Nếu tài khoản/thiết bị đang bị Admin THU HỒI -> CHẶN ĐỨNG
         try:
@@ -111,8 +97,8 @@ def _cad_dispatch_rpc(service_name, method, params):
                                     f">>> [TDB PLM] TỪ CHỐI XML-RPC AUTHENTICATE: Thiết bị của user '{login}' "
                                     f"đang ở trạng thái BỊ THU HỒI bởi Quản trị viên."
                                 )
-                                raise UserError("Thiết bị CAD đã bị Quản trị viên thu hồi quyền truy cập. Vui lòng liên hệ Quản trị viên.")
-        except UserError:
+                                raise AccessDenied("Thiết bị CAD đã bị Quản trị viên thu hồi quyền truy cập. Vui lòng liên hệ Quản trị viên.")
+        except AccessDenied:
             raise
         except Exception as e:
             _logger.debug(f"[TDB PLM] Kiểm tra revoke trước authenticate: {e}")
@@ -169,13 +155,10 @@ def _cad_dispatch_rpc(service_name, method, params):
             db, uid, passwd, model, method_ = params[:5]
             # Bỏ qua không chặn nếu là model quản lý token hoặc hàm handshake cơ bản
             is_handshake = (method_ in HANDSHAKE_METHODS) or (model in ('plm.desktop.token', 'plm.access'))
-            is_cad_operational = (model in CAD_OPERATIONAL_MODELS) or str(model).startswith('plm.')
 
-            # Chỉ chặn các thao tác nghiệp vụ CAD thực tế (tránh làm crash tiến trình nạp cấu hình/người dùng lúc đăng nhập)
-            if is_cad_operational and not is_handshake:
+            # Chặn đứng mọi thao tác nghiệp vụ nếu token hết hạn hoặc bị thu hồi
+            if not is_handshake:
                 from odoo.modules.registry import Registry
-                from odoo import api, fields
-                from odoo.exceptions import UserError
                 with Registry(db).cursor() as cr:
                     env = api.Environment(cr, api.SUPERUSER_ID, {})
                     if 'plm.desktop.token' in env.registry:
@@ -190,7 +173,7 @@ def _cad_dispatch_rpc(service_name, method, params):
                                         f">>> [TDB PLM] CHẶN RPC: Thiết bị của User ID {uid} "
                                         f"ĐÃ BỊ THU HỒI. Từ chối thực thi {model}.{method_}"
                                     )
-                                    raise UserError("Thiết bị CAD đã bị Quản trị viên thu hồi quyền truy cập. Vui lòng liên hệ Quản trị viên.")
+                                    raise AccessDenied("Thiết bị CAD đã bị Quản trị viên thu hồi quyền truy cập. Vui lòng liên hệ Quản trị viên.")
 
                                 # 2. Với các thao tác CAD: Bắt buộc token còn trong thời hạn 180 ngày
                                 now = fields.Datetime.now()
@@ -200,10 +183,15 @@ def _cad_dispatch_rpc(service_name, method, params):
                                         f">>> [TDB PLM] CHẶN RPC: Thiết bị của User ID {uid} "
                                         f"ĐÃ HẾT HẠN 180 NGÀY. Từ chối thực thi {model}.{method_}"
                                     )
-                                    raise UserError("Phiên làm việc CAD 180 ngày đã hết hạn. Vui lòng bấm 'Execute New Login' từ SolidWorks để tiếp tục.")
+                                    raise AccessDenied("Phiên làm việc CAD 180 ngày đã hết hạn. Vui lòng bấm 'Execute New Login' từ SolidWorks để tiếp tục.")
                                 else:
                                     tokens[0].update_last_used()
-        except odoo.exceptions.UserError:
+                            else:
+                                _logger.warning(
+                                    f">>> [TDB PLM] CHẶN RPC: User ID {uid} chưa có token thiết bị CAD. Từ chối thực thi {model}.{method_}"
+                                )
+                                raise AccessDenied("Thiết bị CAD chưa được xác thực hoặc phiên đã hết hạn. Vui lòng bấm 'Execute New Login' từ SolidWorks.")
+        except AccessDenied:
             raise
         except Exception as e:
             _logger.error(f"[TDB PLM] Lỗi kiểm tra token trong RPC dispatch: {e}")
