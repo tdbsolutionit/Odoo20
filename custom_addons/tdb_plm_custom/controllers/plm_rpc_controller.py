@@ -10,9 +10,10 @@ Bối cảnh kỹ thuật:
 - Controller này cung cấp bản vá (patch) hàm dispatch_rpc:
   1. Phục hồi service 'db' (list, list_db, db_exist) cho CAD Client.
   2. Xác thực và gia hạn 180 ngày tự động khi kỹ sư đăng nhập thành công từ hộp thoại CAD (New Login).
-  3. Chặn đứng tuyệt đối (AccessDenied) mọi thao tác CAD (sửa linh kiện, bom, check-in, check-out, xem thuộc tính)
-     khi token 180 ngày đã HẾT HẠN hoặc thiết bị bị Quản trị viên THU HỒI.
-  4. Chặn đứng không cho mở hộp thoại CAD Editing khi đã hết hạn.
+  3. Cho phép các lệnh đọc người dùng/cấu hình và snapshot nền chạy trơn tru, loại bỏ triệt để
+     các cảnh báo lặp đi lặp lại và đảm bảo New Login luôn thành công.
+  4. Chặn đứng tuyệt đối (AccessDenied) mọi thao tác nghiệp vụ CAD (sửa linh kiện product.product,
+     bản vẽ ir.attachment, bom mrp.bom, check-in, check-out) khi token 180 ngày đã HẾT HẠN hoặc BỊ THU HỒI.
 """
 import sys
 import logging
@@ -31,11 +32,28 @@ if not _original_dispatch_rpc:
     _original_dispatch_rpc = router.dispatch_rpc
     router._tdb_original_dispatch_rpc = _original_dispatch_rpc
 
-HANDSHAKE_METHODS = (
+# Các model hệ thống phục vụ hiển thị UI, nạp thông tin người dùng và tiến trình đăng nhập
+# Tuyệt đối không chặn các model này để New Login luôn thành công và không bị crash COM client
+SYSTEM_SAFE_MODELS = (
+    'res.users',
+    'res.company',
+    'res.partner',
+    'plm.access',
+    'plm.desktop.token',
+    'ir.model.data',
+    'ir.config_parameter',
+)
+
+# Các phương thức handshake, đồng bộ trạng thái ngầm và đọc thông số môi trường
+# Cho phép chạy ngầm để SolidWorks không liên tục bật cảnh báo lặp đi lặp lại
+SYSTEM_SAFE_METHODS = (
     'getServerTime',
     'getUserSign',
     'getMacros',
     'getCustomProcedure',
+    'get_checkout_snapshot',
+    'koo_context_get',
+    'context_get',
 )
 
 
@@ -43,9 +61,10 @@ def _cad_dispatch_rpc(service_name, method, params):
     """Điều phối RPC tùy biến (Middleware XML-RPC & JSON-RPC):
     1. Phục hồi service 'db' cho các ứng dụng CAD Client (SolidWorks/Inventor).
     2. Quản lý vòng đời Access Token 180 ngày:
-       - Khi 'Execute New Login' thành công: Mở khóa và gia hạn 180 ngày.
+       - Khi 'Execute New Login' thành công: Mở khóa và gia hạn 180 ngày ngay lập tức.
        - Khi 'Thu hồi quyền' (Revoked): Chặn đứng mọi thao tác và từ chối đăng nhập mới.
-       - Khi 'Hết hạn' (Expired): Chặn đứng mọi thao tác CAD bằng AccessDenied để SolidWorks không mở form CAD Editing.
+       - Khi 'Hết hạn' (Expired): Chặn đứng các thao tác CAD (product.product, ir.attachment, mrp.bom, plm.client)
+         bằng AccessDenied để ngăn chặn mở form CAD Editing hoặc Check-in/Check-out.
     """
     if service_name == 'db':
         if method in ('list', 'list_db'):
@@ -56,7 +75,6 @@ def _cad_dispatch_rpc(service_name, method, params):
                     return dbs
             except Exception:
                 pass
-            # Fallback nếu db_list bị chặn hoặc rỗng: lấy từ cấu hình hoặc mặc định
             cfg_db = odoo.tools.config.get('db_name')
             if cfg_db:
                 if isinstance(cfg_db, (list, tuple, set)):
@@ -153,11 +171,12 @@ def _cad_dispatch_rpc(service_name, method, params):
     elif service_name == 'object':
         try:
             db, uid, passwd, model, method_ = params[:5]
-            # Bỏ qua không chặn nếu là model quản lý token hoặc hàm handshake cơ bản
-            is_handshake = (method_ in HANDSHAKE_METHODS) or (model in ('plm.desktop.token', 'plm.access'))
 
-            # Chặn đứng mọi thao tác nghiệp vụ nếu token hết hạn hoặc bị thu hồi
-            if not is_handshake:
+            # Bỏ qua không chặn nếu là model hệ thống, tiến trình đăng nhập hoặc hàm đọc nền
+            is_system_call = (model in SYSTEM_SAFE_MODELS) or (method_ in SYSTEM_SAFE_METHODS)
+
+            # Chặn đứng các thao tác nghiệp vụ CAD thực tế nếu token hết hạn hoặc bị thu hồi
+            if not is_system_call:
                 from odoo.modules.registry import Registry
                 with Registry(db).cursor() as cr:
                     env = api.Environment(cr, api.SUPERUSER_ID, {})
@@ -167,7 +186,7 @@ def _cad_dispatch_rpc(service_name, method, params):
                         if row and row[0]:
                             tokens = env['plm.desktop.token'].search([('user_id', '=', int(uid))], order='id desc')
                             if tokens:
-                                # 1. Nếu thiết bị đã bị Thu hồi: Chặn tuyệt đối mọi thao tác can thiệp dữ liệu
+                                # 1. Nếu thiết bị đã bị Thu hồi: Chặn tuyệt đối
                                 if any(t.is_revoked for t in tokens):
                                     _logger.warning(
                                         f">>> [TDB PLM] CHẶN RPC: Thiết bị của User ID {uid} "
