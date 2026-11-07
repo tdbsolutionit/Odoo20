@@ -29,11 +29,11 @@ class IrHttp(models.AbstractModel):
         if not path.startswith('/plm_document_upload/'):
             return
 
-        # Đường dẫn đăng nhập /plm_document_upload/login được xử lý riêng bởi controller để cấp token
-        if path == '/plm_document_upload/login':
+        # Các endpoint công khai hoặc handshake (login, isalive) không bị chặn tại middleware này
+        if path in ('/plm_document_upload/login', '/plm_document_upload/isalive'):
             return
 
-        # 2. Kiểm tra token cho các thao tác CAD (upload, download, isalive, etc.)
+        # 2. Kiểm tra token cho các thao tác CAD (upload, download, v.v.)
         if 'plm.desktop.token' not in request.env.registry:
             return
 
@@ -44,28 +44,22 @@ class IrHttp(models.AbstractModel):
         if not session_id or not uid:
             raise Unauthorized("CAD Session is invalid. Please log in again from SolidWorks.")
 
-        token = token_model.search([
+        tokens = token_model.search([
             ('user_id', '=', uid),
-            ('session_id', '=', session_id),
-        ], limit=1)
+        ], order='id desc')
 
-        if not token:
-            # Fallback theo user nếu session đã bị đổi
-            token = token_model.search([
-                ('user_id', '=', uid),
-            ], order='id desc', limit=1)
-
-        if token:
-            if token.is_revoked:
-                _logger.warning(f">>> [TDB PLM Middleware] Chặn CAD đã bị thu hồi: Máy '{token.machine_name}'")
+        if tokens:
+            if any(t.is_revoked for t in tokens):
+                _logger.warning(f">>> [TDB PLM Middleware] Chặn CAD đã bị thu hồi: User ID {uid}")
                 raise Forbidden("CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.")
 
             from odoo import fields
             now = fields.Datetime.now()
-            if token.expires_at and token.expires_at <= now:
-                _logger.warning(f">>> [TDB PLM Middleware] Chặn CAD đã hết hạn: Máy '{token.machine_name}'")
+            active_tokens = [t for t in tokens if (not t.is_revoked) and t.expires_at and (t.expires_at > now) and t.session_id]
+            if not active_tokens:
+                _logger.warning(f">>> [TDB PLM Middleware] Chặn CAD đã hết hạn: User ID {uid}")
                 raise Unauthorized("CAD 180-day Session has EXPIRED. Please use 'Execute New Login' from SolidWorks to renew.")
 
-            token.update_last_used()
+            tokens[0].update_last_used()
         else:
             raise Unauthorized("CAD workstation token not found. Please log in again from SolidWorks.")

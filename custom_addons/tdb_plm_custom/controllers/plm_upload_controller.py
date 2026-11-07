@@ -42,13 +42,7 @@ class TdbPlmUploadDocument(UploadDocument):
         try:
             if 'plm.desktop.token' in request.env.registry:
                 token_model = request.env['plm.desktop.token'].sudo()
-                domain = [('user_id.login', '=', login)]
-                if client_ip:
-                    domain.append(('client_ip', '=', client_ip))
-                tokens = token_model.search(domain, order='id desc')
-                if not tokens:
-                    tokens = token_model.search([('user_id.login', '=', login)], order='id desc')
-
+                tokens = token_model.search([('user_id.login', '=', login)], order='id desc')
                 if tokens and any(t.is_revoked for t in tokens):
                     _logger.warning(
                         f">>> [TDB PLM] CHẶN ĐĂNG NHẬP: Máy trạm '{machine_name}' (IP: {client_ip}) "
@@ -128,29 +122,24 @@ class TdbPlmUploadDocument(UploadDocument):
         if getattr(request, 'session', None) and request.session.uid:
             try:
                 from odoo import fields
-                client_ip = request.httprequest.headers.get('X-Forwarded-For') or request.httprequest.remote_addr or '127.0.0.1'
-                if client_ip and ',' in client_ip:
-                    client_ip = client_ip.split(',')[0].strip()
+                token_model = request.env['plm.desktop.token'].sudo()
+                tokens = token_model.search([('user_id', '=', request.session.uid)], order='id desc')
 
-                token = request.env['plm.desktop.token'].sudo().search([
-                    ('user_id', '=', request.session.uid),
-                    '|',
-                    ('session_id', '=', request.session.sid),
-                    ('client_ip', '=', client_ip),
-                ], limit=1)
-
-                if token:
-                    now = fields.Datetime.now()
-                    if token.is_revoked:
+                if tokens:
+                    if any(t.is_revoked for t in tokens):
                         return Response("CAD Workstation access has been REVOKED by Administrator.", status=403)
-                    elif token.expires_at and token.expires_at <= now:
-                        return Response("CAD 180-day Session has EXPIRED. Please log in again to renew.", status=401)
-                    elif not token.session_id:
-                        return Response("Session expired. Please log in again to renew.", status=401)
+
+                    now = fields.Datetime.now()
+                    active_tokens = [t for t in tokens if (not t.is_revoked) and t.expires_at and (t.expires_at > now) and t.session_id]
+                    if not active_tokens:
+                        return Response("CAD 180-day Session has EXPIRED. Please use 'Execute New Login' from SolidWorks to renew.", status=401)
 
                     hostname = kw.get('hostname')
-                    if hostname and (token.machine_name.startswith("CAD-WS") or token.machine_name.startswith("CAD WS")):
-                        token.write({'machine_name': f"{hostname} ({client_ip})"})
+                    client_ip = request.httprequest.headers.get('X-Forwarded-For') or request.httprequest.remote_addr or '127.0.0.1'
+                    if client_ip and ',' in client_ip:
+                        client_ip = client_ip.split(',')[0].strip()
+                    if hostname and (tokens[0].machine_name.startswith("CAD-WS") or tokens[0].machine_name.startswith("CAD WS")):
+                        tokens[0].write({'machine_name': f"{hostname} ({client_ip})"})
             except Exception as e:
                 _logger.debug(f"[TDB PLM] Không thể kiểm tra token/cập nhật tên máy trong upload: {e}")
 
