@@ -4,4 +4,3 @@
 from . import product_template
 from . import product_product
 from . import plm_desktop_token
-from . import ir_http
