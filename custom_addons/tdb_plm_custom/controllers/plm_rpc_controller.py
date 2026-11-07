@@ -34,6 +34,12 @@ CAD_OPERATIONAL_MODELS = (
     'plm.backup.document',
     'plm.cad.open',
     'plm.temporary',
+    'plm.client',
+    'plm.component',
+    'plm.description',
+    'plm.material',
+    'plm.finishing',
+    'plm.treatment',
 )
 
 
@@ -42,9 +48,6 @@ HANDSHAKE_METHODS = (
     'getUserSign',
     'getMacros',
     'getCustomProcedure',
-    'clientCanIUpload',
-    'clientCanCheckOut',
-    'getErrorMissingDocument',
 )
 
 
@@ -83,8 +86,8 @@ def _cad_dispatch_rpc(service_name, method, params):
     elif service_name == 'object':
         try:
             db, uid, passwd, model, method_ = params[:5]
-            # Bỏ qua không chặn các hàm handshake/đăng nhập của client CAD (getServerTime, getUserSign, plm.client...)
-            is_handshake = (method_ in HANDSHAKE_METHODS) or (model in ('plm.client', 'plm.desktop.token', 'plm.access'))
+            # Bỏ qua không chặn các hàm handshake/đăng nhập của client CAD (getServerTime, getUserSign, res.users...)
+            is_handshake = (method_ in HANDSHAKE_METHODS) or (model in ('plm.desktop.token', 'plm.access'))
             is_cad_operational = (model in CAD_OPERATIONAL_MODELS) or str(model).startswith('plm.')
 
             if is_cad_operational and not is_handshake:
@@ -96,32 +99,37 @@ def _cad_dispatch_rpc(service_name, method, params):
                         cr.execute("SELECT to_regclass('public.plm_desktop_token');")
                         row = cr.fetchone()
                         if row and row[0]:
-                            req = odoo.http.request_var.get(None)
                             client_ip = None
-                            if req and hasattr(req, 'httprequest'):
-                                client_ip = req.httprequest.headers.get('X-Forwarded-For') or req.httprequest.remote_addr
-                                if client_ip and ',' in client_ip:
-                                    client_ip = client_ip.split(',')[0].strip()
+                            try:
+                                from odoo.http import request
+                                if request and hasattr(request, 'httprequest'):
+                                    client_ip = request.httprequest.headers.get('X-Forwarded-For') or request.httprequest.remote_addr
+                                    if client_ip and ',' in client_ip:
+                                        client_ip = client_ip.split(',')[0].strip()
+                            except Exception:
+                                pass
 
-                            token = False
+                            domain = [('user_id', '=', int(uid))]
                             if client_ip:
-                                token = env['plm.desktop.token'].search([
-                                    ('user_id', '=', int(uid)),
-                                    ('client_ip', '=', client_ip),
-                                ], order='id desc', limit=1)
-                            if not token:
-                                token = env['plm.desktop.token'].search([('user_id', '=', int(uid))], order='id desc', limit=1)
+                                domain.append(('client_ip', '=', client_ip))
 
-                            if token:
-                                from odoo import fields
-                                now = fields.Datetime.now()
+                            tokens = env['plm.desktop.token'].search(domain, order='id desc')
+                            if not tokens:
+                                tokens = env['plm.desktop.token'].search([('user_id', '=', int(uid))], order='id desc')
+
+                            if tokens:
                                 # 1. Nếu thiết bị đã bị Thu hồi: Chặn tuyệt đối mọi thao tác can thiệp dữ liệu
-                                if token.is_revoked:
+                                revoked_tokens = tokens.filtered(lambda t: t.is_revoked)
+                                if revoked_tokens:
                                     _logger.warning(
-                                        f">>> [TDB PLM] CHẶN RPC: Thiết bị '{token.machine_name}' "
+                                        f">>> [TDB PLM] CHẶN RPC: Thiết bị '{revoked_tokens[0].machine_name}' "
                                         f"của User ID {uid} ĐÃ BỊ THU HỒI. Từ chối thực thi {model}.{method_}"
                                     )
                                     raise odoo.exceptions.AccessDenied("CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.")
+
+                                token = tokens[0]
+                                from odoo import fields
+                                now = fields.Datetime.now()
 
                                 # 2. Với các thao tác nghiệp vụ CAD (sửa linh kiện, bản vẽ, BOM, checkout): Bắt buộc còn hạn và có session
                                 if token.expires_at and token.expires_at <= now:

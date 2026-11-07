@@ -146,6 +146,8 @@ class TdbPlmUploadDocument(UploadDocument):
                         return Response("CAD Workstation access has been REVOKED by Administrator.", status=403)
                     elif token.expires_at and token.expires_at <= now:
                         return Response("CAD 180-day Session has EXPIRED. Please log in again to renew.", status=401)
+                    elif not token.session_id:
+                        return Response("Session expired. Please log in again to renew.", status=401)
 
                     hostname = kw.get('hostname')
                     if hostname and (token.machine_name.startswith("CAD-WS") or token.machine_name.startswith("CAD WS")):
