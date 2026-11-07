@@ -42,15 +42,14 @@ class TdbPlmUploadDocument(UploadDocument):
         try:
             if 'plm.desktop.token' in request.env.registry:
                 token_model = request.env['plm.desktop.token'].sudo()
-                revoked = token_model.search([
-                    ('user_id.login', '=', login),
-                    '|',
-                    ('machine_uuid', '=', machine_uuid),
-                    ('client_ip', '=', client_ip),
-                    ('is_revoked', '=', True),
-                ], limit=1)
+                domain = [('user_id.login', '=', login)]
+                if client_ip:
+                    domain.append(('client_ip', '=', client_ip))
+                tokens = token_model.search(domain, order='id desc')
+                if not tokens:
+                    tokens = token_model.search([('user_id.login', '=', login)], order='id desc')
 
-                if revoked:
+                if tokens and any(t.is_revoked for t in tokens):
                     _logger.warning(
                         f">>> [TDB PLM] CHẶN ĐĂNG NHẬP: Máy trạm '{machine_name}' (IP: {client_ip}) "
                         f"của tài khoản '{login}' ĐÃ BỊ THU HỒI quyền truy cập bởi Quản trị viên."
@@ -84,10 +83,10 @@ class TdbPlmUploadDocument(UploadDocument):
             )
 
             if not token:
-                # Nếu thiết bị đang bị thu hồi hoặc hết hạn (chặn tự động gia hạn qua session cũ)
+                # Nếu thiết bị đang bị thu hồi bởi Quản trị viên
                 request.session.clear()
                 return Response(
-                    response="CAD Workstation access has been REVOKED or EXPIRED. Please log in again via Execute New Login from SolidWorks.",
+                    response="CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.",
                     status=403,
                 )
 

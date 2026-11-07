@@ -164,15 +164,6 @@ class PlmDesktopToken(models.Model):
             )
             return False
 
-        # 3. Nếu thiết bị đang ở trạng thái HẾT HẠN: Chặn tuyệt đối tự động gia hạn ngầm (Use Current Session)
-        # Chỉ cho phép đăng nhập lại và mở khóa khi đã xác thực qua hộp thoại Execute New Login
-        if existing_tokens and existing_tokens[0].expires_at and existing_tokens[0].expires_at <= now:
-            _logger.warning(
-                f">>> [TDB PLM] CHẶN TỰ ĐỘNG GIA HẠN: Thiết bị '{machine_name}' (IP: {client_ip}) "
-                f"của User ID {user_id} ĐÃ HẾT HẠN. Từ chối tự động gia hạn qua session cũ (Use Current Session)."
-            )
-            return False
-
         vals = {
             'session_id': session_id,
             'machine_uuid': machine_uuid,
@@ -210,7 +201,7 @@ class PlmDesktopToken(models.Model):
             elif rec.machine_uuid:
                 domain.append(('machine_uuid', '=', rec.machine_uuid))
 
-            related_tokens = self.search(domain)
+            related_tokens = self.search(domain) | rec
             for tok in related_tokens:
                 tok.write({
                     'is_revoked': True,
@@ -234,12 +225,15 @@ class PlmDesktopToken(models.Model):
             elif rec.machine_uuid:
                 domain.append(('machine_uuid', '=', rec.machine_uuid))
 
-            related_tokens = self.search(domain)
+            related_tokens = self.search(domain) | rec
             for tok in related_tokens:
-                tok.write({
+                vals = {
                     'is_revoked': False,
                     'expires_at': now + timedelta(days=180),
-                })
+                }
+                if not tok.session_id:
+                    vals['session_id'] = f'unrevoked_{now.strftime("%Y%m%d%H%M%S")}'
+                tok.write(vals)
                 _logger.info(f">>> [TDB PLM] Đã khôi phục quyền cho máy trạm '{tok.machine_name}' (IP: {tok.client_ip}), cho phép dùng tiếp không cần đăng nhập lại.")
 
             # Gộp các dòng trùng lặp thành 1 dòng duy nhất
@@ -259,7 +253,7 @@ class PlmDesktopToken(models.Model):
             elif rec.machine_uuid:
                 domain.append(('machine_uuid', '=', rec.machine_uuid))
 
-            related_tokens = self.search(domain)
+            related_tokens = self.search(domain) | rec
             for tok in related_tokens:
                 tok.write({
                     'expires_at': yesterday,
@@ -279,13 +273,15 @@ class PlmDesktopToken(models.Model):
             elif rec.machine_uuid:
                 domain.append(('machine_uuid', '=', rec.machine_uuid))
 
-            related_tokens = self.search(domain)
+            related_tokens = self.search(domain) | rec
             for tok in related_tokens:
-                tok.write({
+                vals = {
                     'expires_at': now + timedelta(days=180),
                     'is_revoked': False,
-                    'session_id': False,
-                })
+                }
+                if not tok.session_id:
+                    vals['session_id'] = f'renewed_{now.strftime("%Y%m%d%H%M%S")}'
+                tok.write(vals)
                 _logger.info(f">>> [TDB PLM] Đã gia hạn 180 ngày cho máy trạm '{tok.machine_name}'.")
         return True
 
