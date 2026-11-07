@@ -9,8 +9,9 @@ Bối cảnh kỹ thuật:
   để lấy danh sách Database hiển thị lên combobox đăng nhập.
 - Controller này cung cấp bản vá (patch) hàm dispatch_rpc:
   1. Phục hồi service 'db' (list, list_db, db_exist) cho CAD Client.
-  2. Xác thực và gia hạn 180 ngày tự động khi kỹ sư đăng nhập thành công từ hộp thoại CAD (New Login).
-  3. Cho phép các lệnh đọc người dùng/cấu hình và snapshot nền chạy trơn tru, loại bỏ triệt để
+  2. Bắt cả 2 phương thức xác thực của CAD Client: common.authenticate và common.login để
+     luôn tự động mở khóa và gia hạn 180 ngày ngay lập tức khi đăng nhập từ SolidWorks.
+  3. Cho phép các lệnh đọc người dùng/cấu hình và snapshot/dọn dẹp nền chạy trơn tru, loại bỏ triệt để
      các cảnh báo lặp đi lặp lại và đảm bảo New Login luôn thành công.
   4. Chặn đứng tuyệt đối (AccessDenied) mọi thao tác nghiệp vụ CAD (sửa linh kiện product.product,
      bản vẽ ir.attachment, bom mrp.bom, check-in, check-out) khi token 180 ngày đã HẾT HẠN hoặc BỊ THU HỒI.
@@ -44,8 +45,8 @@ SYSTEM_SAFE_MODELS = (
     'ir.config_parameter',
 )
 
-# Các phương thức handshake, đồng bộ trạng thái ngầm và đọc thông số môi trường
-# Cho phép chạy ngầm để SolidWorks không liên tục bật cảnh báo lặp đi lặp lại
+# Các phương thức handshake, dọn dẹp phiên, đồng bộ trạng thái ngầm và đọc thông số môi trường
+# Cho phép chạy ngầm để SolidWorks không liên tục bật cảnh báo lặp đi lặp lại và hoàn tất complete_login_session
 SYSTEM_SAFE_METHODS = (
     'getServerTime',
     'getUserSign',
@@ -54,6 +55,10 @@ SYSTEM_SAFE_METHODS = (
     'get_checkout_snapshot',
     'koo_context_get',
     'context_get',
+    'checkUnlinkCadOpen',
+    'cleanZipArchives',
+    'CleanUp',
+    'cleanUp',
 )
 
 
@@ -61,7 +66,7 @@ def _cad_dispatch_rpc(service_name, method, params):
     """Điều phối RPC tùy biến (Middleware XML-RPC & JSON-RPC):
     1. Phục hồi service 'db' cho các ứng dụng CAD Client (SolidWorks/Inventor).
     2. Quản lý vòng đời Access Token 180 ngày:
-       - Khi 'Execute New Login' thành công: Mở khóa và gia hạn 180 ngày ngay lập tức.
+       - Khi 'Execute New Login' thành công (qua authenticate hoặc login): Mở khóa và gia hạn 180 ngày ngay lập tức.
        - Khi 'Thu hồi quyền' (Revoked): Chặn đứng mọi thao tác và từ chối đăng nhập mới.
        - Khi 'Hết hạn' (Expired): Chặn đứng các thao tác CAD (product.product, ir.attachment, mrp.bom, plm.client)
          bằng AccessDenied để ngăn chặn mở form CAD Editing hoặc Check-in/Check-out.
@@ -91,8 +96,8 @@ def _cad_dispatch_rpc(service_name, method, params):
         elif method == 'server_environment':
             return 'production'
 
-    elif service_name == 'common' and method == 'authenticate':
-        # Xác thực XML-RPC cho CAD Client:
+    elif service_name == 'common' and method in ('authenticate', 'login'):
+        # Xác thực XML-RPC cho CAD Client (hỗ trợ cả authenticate và login):
         # 1. Chặn đứng nếu thiết bị đang bị Admin THU HỒI quyền (kể cả có mật khẩu đúng).
         # 2. Khi kỹ sư bấm Login từ hộp thoại CAD (New Login) với mật khẩu đúng:
         #    Tự động mở khóa và gia hạn 180 ngày cho token của thiết bị.
@@ -112,14 +117,14 @@ def _cad_dispatch_rpc(service_name, method, params):
                             tokens = env['plm.desktop.token'].search([('user_id', '=', user.id)], order='id desc')
                             if tokens and any(t.is_revoked for t in tokens):
                                 _logger.warning(
-                                    f">>> [TDB PLM] TỪ CHỐI XML-RPC AUTHENTICATE: Thiết bị của user '{login}' "
+                                    f">>> [TDB PLM] TỪ CHỐI XML-RPC {method.upper()}: Thiết bị của user '{login}' "
                                     f"đang ở trạng thái BỊ THU HỒI bởi Quản trị viên."
                                 )
                                 raise AccessDenied("Thiết bị CAD đã bị Quản trị viên thu hồi quyền truy cập. Vui lòng liên hệ Quản trị viên.")
         except AccessDenied:
             raise
         except Exception as e:
-            _logger.debug(f"[TDB PLM] Kiểm tra revoke trước authenticate: {e}")
+            _logger.debug(f"[TDB PLM] Kiểm tra revoke trước {method}: {e}")
 
         # Cho phép Odoo xác thực tài khoản / mật khẩu
         uid = _original_dispatch_rpc(service_name, method, params)
@@ -160,11 +165,11 @@ def _cad_dispatch_rpc(service_name, method, params):
                                 })
                             cr.commit()
                             _logger.info(
-                                f">>> [TDB PLM] Kỹ sư '{login}' (UID {uid}) đã đăng nhập thành công từ hộp thoại CAD: "
+                                f">>> [TDB PLM] Kỹ sư '{login}' (UID {uid}) đã đăng nhập thành công từ hộp thoại CAD (qua {method}): "
                                 f"Đã mở khóa và gia hạn 180 ngày cho thiết bị."
                             )
             except Exception as e:
-                _logger.error(f"[TDB PLM] Lỗi gia hạn token trong common.authenticate: {e}")
+                _logger.error(f"[TDB PLM] Lỗi gia hạn token trong common.{method}: {e}")
 
         return uid
 
