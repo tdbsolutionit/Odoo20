@@ -164,6 +164,14 @@ class PlmDesktopToken(models.Model):
             )
             return False
 
+        # 3. Nếu thiết bị đang ở trạng thái HẾT HẠN: TỪ CHỐI TỰ ĐỘNG GIA HẠN (Cần Admin bấm Gia hạn trên Odoo Web)
+        if existing_tokens and any(t.expires_at and t.expires_at <= now for t in existing_tokens):
+            _logger.warning(
+                f">>> [TDB PLM] Thiết bị '{machine_name}' (IP: {client_ip}) "
+                f"của User ID {user_id} ĐÃ HẾT HẠN 180 NGÀY. Cần Admin bấm 'Gia hạn 180 ngày' trên Odoo Web."
+            )
+            return False
+
         vals = {
             'session_id': session_id,
             'machine_uuid': machine_uuid,
@@ -287,6 +295,7 @@ class PlmDesktopToken(models.Model):
                 tok.write({
                     'expires_at': now + timedelta(days=180),
                     'is_revoked': False,
+                    'session_id': False,
                 })
                 _logger.info(f">>> [TDB PLM] Đã gia hạn 180 ngày cho máy trạm '{tok.machine_name}'.")
         return True

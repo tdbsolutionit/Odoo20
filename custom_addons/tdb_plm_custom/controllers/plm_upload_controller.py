@@ -38,29 +38,40 @@ class TdbPlmUploadDocument(UploadDocument):
         machine_uuid = kw.get('machine_uuid') or request.httprequest.headers.get('X-Machine-UUID') or f"WS_{machine_name}"
         cad_version = kw.get('cad_version') or request.httprequest.headers.get('X-CAD-Version') or 'SolidWorks 2022'
 
-        # 2. Kiểm tra xem thiết bị CAD này hoặc User này đã bị Quản trị viên THU HỒI quyền chưa
+        # 2. Kiểm tra xem thiết bị CAD này hoặc User này đã bị Quản trị viên THU HỒI hoặc ĐÃ HẾT HẠN chưa
         try:
             if 'plm.desktop.token' in request.env.registry:
+                from odoo import fields
                 token_model = request.env['plm.desktop.token'].sudo()
-                revoked = token_model.search([
+                now = fields.Datetime.now()
+                existing = token_model.search([
                     ('user_id.login', '=', login),
                     '|',
                     ('machine_uuid', '=', machine_uuid),
                     ('client_ip', '=', client_ip),
-                    ('is_revoked', '=', True),
-                ], limit=1)
+                ], order='id desc', limit=1)
 
-                if revoked:
-                    _logger.warning(
-                        f">>> [TDB PLM] CHẶN ĐĂNG NHẬP: Máy trạm '{machine_name}' (IP: {client_ip}) "
-                        f"của tài khoản '{login}' ĐÃ BỊ THU HỒI quyền truy cập bởi Quản trị viên."
-                    )
-                    return Response(
-                        response="CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.",
-                        status=403,
-                    )
+                if existing:
+                    if existing.is_revoked:
+                        _logger.warning(
+                            f">>> [TDB PLM] CHẶN ĐĂNG NHẬP: Máy trạm '{machine_name}' (IP: {client_ip}) "
+                            f"của tài khoản '{login}' ĐÃ BỊ THU HỒI quyền truy cập bởi Quản trị viên."
+                        )
+                        return Response(
+                            response="CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.",
+                            status=403,
+                        )
+                    elif existing.expires_at and existing.expires_at <= now:
+                        _logger.warning(
+                            f">>> [TDB PLM] CHẶN ĐĂNG NHẬP: Máy trạm '{machine_name}' (IP: {client_ip}) "
+                            f"của tài khoản '{login}' ĐÃ HẾT HẠN 180 NGÀY ({existing.expires_at}). Cần Admin bấm 'Gia hạn 180 ngày' trên Odoo Web."
+                        )
+                        return Response(
+                            response="CAD 180-day Session has EXPIRED. Please ask Administrator to click 'Gia han 180 ngay' on Odoo Web to renew access.",
+                            status=401,
+                        )
         except Exception as e:
-            _logger.debug(f"[TDB PLM] Lỗi kiểm tra revoked token trước login: {e}")
+            _logger.debug(f"[TDB PLM] Lỗi kiểm tra revoked/expired token trước login: {e}")
 
         # 3. Gọi phương thức login gốc của UploadDocument để Odoo Core xác thực tài khoản
         res = super().login(login, password, db=db)
