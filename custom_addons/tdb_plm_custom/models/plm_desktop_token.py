@@ -267,6 +267,7 @@ class PlmDesktopToken(models.Model):
                 tok.write({
                     'expires_at': yesterday,
                     'session_id': False,
+                    'is_revoked': False,
                 })
                 _logger.info(f">>> [TDB PLM] TEST: Đã chuyển token máy trạm '{tok.machine_name}' sang trạng thái HẾT HẠN.")
         return True

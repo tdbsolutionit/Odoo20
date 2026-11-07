@@ -37,6 +37,24 @@ CAD_OPERATIONAL_MODELS = (
 )
 
 
+HANDSHAKE_METHODS = (
+    'getServerTime',
+    'getUserSign',
+    'getMacros',
+    'getCustomProcedure',
+    'clientCanIUpload',
+    'clientCanCheckOut',
+    'getErrorMissingDocument',
+    'read',
+    'search',
+    'search_read',
+    'name_get',
+    'name_search',
+    'fields_get',
+    'checkMany2oneClient',
+)
+
+
 def _cad_dispatch_rpc(service_name, method, params):
     """Điều phối RPC tùy biến:
     1. Phục hồi service 'db' cho các ứng dụng CAD Client (SolidWorks/Inventor).
@@ -72,10 +90,11 @@ def _cad_dispatch_rpc(service_name, method, params):
     elif service_name == 'object':
         try:
             db, uid, passwd, model, method_ = params[:5]
-            is_cad_operational = (model in CAD_OPERATIONAL_MODELS) or (str(model).startswith('plm.') and model not in ('plm.client', 'plm.desktop.token', 'plm.access'))
-            is_cad_handshake = (model == 'plm.client')
+            # Bỏ qua không chặn các hàm handshake/đăng nhập của client CAD (getServerTime, getUserSign, plm.client...)
+            is_handshake = (method_ in HANDSHAKE_METHODS) or (model in ('plm.client', 'plm.desktop.token', 'plm.access'))
+            is_cad_operational = (model in CAD_OPERATIONAL_MODELS) or str(model).startswith('plm.')
 
-            if is_cad_operational or is_cad_handshake:
+            if is_cad_operational and not is_handshake:
                 from odoo.modules.registry import Registry
                 from odoo import api
                 with Registry(db).cursor() as cr:
@@ -103,7 +122,7 @@ def _cad_dispatch_rpc(service_name, method, params):
                             if token:
                                 from odoo import fields
                                 now = fields.Datetime.now()
-                                # 1. Nếu thiết bị đã bị Thu hồi: Chặn tuyệt đối mọi thao tác (kể cả handshake đăng nhập)
+                                # 1. Nếu thiết bị đã bị Thu hồi: Chặn tuyệt đối mọi thao tác can thiệp dữ liệu
                                 if token.is_revoked:
                                     _logger.warning(
                                         f">>> [TDB PLM] CHẶN RPC: Thiết bị '{token.machine_name}' "
@@ -112,19 +131,18 @@ def _cad_dispatch_rpc(service_name, method, params):
                                     raise odoo.exceptions.AccessDenied("CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.")
 
                                 # 2. Với các thao tác nghiệp vụ CAD (sửa linh kiện, bản vẽ, BOM, checkout): Bắt buộc còn hạn và có session
-                                if is_cad_operational:
-                                    if token.expires_at and token.expires_at <= now:
-                                        _logger.warning(
-                                            f">>> [TDB PLM] CHẶN RPC: Thiết bị '{token.machine_name}' "
-                                            f"của User ID {uid} ĐÃ HẾT HẠN 180 NGÀY ({token.expires_at}). Từ chối thực thi {model}.{method_}"
-                                        )
-                                        raise odoo.exceptions.AccessDenied("CAD 180-day Session has EXPIRED. Please log in again from SolidWorks to renew.")
-                                    elif not token.session_id:
-                                        _logger.warning(
-                                            f">>> [TDB PLM] YÊU CẦU ĐĂNG NHẬP LẠI: Thiết bị '{token.machine_name}' "
-                                            f"của User ID {uid} chưa có phiên đăng nhập hợp lệ. Từ chối thực thi {model}.{method_}"
-                                        )
-                                        raise odoo.exceptions.AccessDenied("Session expired. Please log in to OdooPLM again from SolidWorks.")
+                                if token.expires_at and token.expires_at <= now:
+                                    _logger.warning(
+                                        f">>> [TDB PLM] CHẶN RPC: Thiết bị '{token.machine_name}' "
+                                        f"của User ID {uid} ĐÃ HẾT HẠN 180 NGÀY ({token.expires_at}). Từ chối thực thi {model}.{method_}"
+                                    )
+                                    raise odoo.exceptions.AccessDenied("CAD 180-day Session has EXPIRED. Please log in again from SolidWorks to renew.")
+                                elif not token.session_id:
+                                    _logger.warning(
+                                        f">>> [TDB PLM] YÊU CẦU ĐĂNG NHẬP LẠI: Thiết bị '{token.machine_name}' "
+                                        f"của User ID {uid} chưa có phiên đăng nhập hợp lệ. Từ chối thực thi {model}.{method_}"
+                                    )
+                                    raise odoo.exceptions.AccessDenied("Session expired. Please log in to OdooPLM again from SolidWorks.")
         except odoo.exceptions.AccessDenied:
             raise
         except Exception as e:
