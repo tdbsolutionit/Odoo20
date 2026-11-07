@@ -164,6 +164,15 @@ class PlmDesktopToken(models.Model):
             )
             return False
 
+        # 3. Nếu thiết bị đang ở trạng thái HẾT HẠN: Chặn tuyệt đối tự động gia hạn ngầm (Use Current Session)
+        # Chỉ cho phép đăng nhập lại và mở khóa khi đã xác thực qua hộp thoại Execute New Login
+        if existing_tokens and existing_tokens[0].expires_at and existing_tokens[0].expires_at <= now:
+            _logger.warning(
+                f">>> [TDB PLM] CHẶN TỰ ĐỘNG GIA HẠN: Thiết bị '{machine_name}' (IP: {client_ip}) "
+                f"của User ID {user_id} ĐÃ HẾT HẠN. Từ chối tự động gia hạn qua session cũ (Use Current Session)."
+            )
+            return False
+
         vals = {
             'session_id': session_id,
             'machine_uuid': machine_uuid,

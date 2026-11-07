@@ -84,10 +84,10 @@ class TdbPlmUploadDocument(UploadDocument):
             )
 
             if not token:
-                # Nếu thiết bị đang bị thu hồi
-                request.session.logout(keep_db=True)
+                # Nếu thiết bị đang bị thu hồi hoặc hết hạn (chặn tự động gia hạn qua session cũ)
+                request.session.clear()
                 return Response(
-                    response="CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.",
+                    response="CAD Workstation access has been REVOKED or EXPIRED. Please log in again via Execute New Login from SolidWorks.",
                     status=403,
                 )
 

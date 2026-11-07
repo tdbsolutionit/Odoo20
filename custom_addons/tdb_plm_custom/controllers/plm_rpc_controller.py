@@ -83,6 +83,76 @@ def _cad_dispatch_rpc(service_name, method, params):
         elif method == 'server_environment':
             return 'production'
 
+    elif service_name == 'common' and method == 'authenticate':
+        # Bắt sự kiện đăng nhập lại từ hộp thoại CAD (Execute New Login / Use new login)
+        db, login, password = params[:3]
+        from odoo.modules.registry import Registry
+        from odoo import api, fields
+        from datetime import timedelta
+
+        client_ip = None
+        try:
+            from odoo.http import request
+            if request and hasattr(request, 'httprequest'):
+                client_ip = request.httprequest.headers.get('X-Forwarded-For') or request.httprequest.remote_addr
+                if client_ip and ',' in client_ip:
+                    client_ip = client_ip.split(',')[0].strip()
+        except Exception:
+            pass
+
+        # 1. Kiểm tra trước: Nếu thiết bị đang bị Admin THU HỒI -> CHẶN ĐỨNG KHÔNG CHO ĐĂNG NHẬP
+        with Registry(db).cursor() as cr:
+            env = api.Environment(cr, api.SUPERUSER_ID, {})
+            if 'plm.desktop.token' in env.registry:
+                cr.execute("SELECT to_regclass('public.plm_desktop_token');")
+                row = cr.fetchone()
+                if row and row[0]:
+                    user = env['res.users'].search([('login', '=', login)], limit=1)
+                    if user:
+                        domain = [('user_id', '=', user.id)]
+                        if client_ip:
+                            domain.append(('client_ip', '=', client_ip))
+                        tokens = env['plm.desktop.token'].search(domain, order='id desc')
+                        if not tokens:
+                            tokens = env['plm.desktop.token'].search([('user_id', '=', user.id)], order='id desc')
+                        if tokens and any(t.is_revoked for t in tokens):
+                            _logger.warning(
+                                f">>> [TDB PLM] TỪ CHỐI ĐĂNG NHẬP: Thiết bị của user '{login}' (IP: {client_ip}) "
+                                f"đang ở trạng thái BỊ THU HỒI bởi Quản trị viên."
+                            )
+                            raise odoo.exceptions.AccessDenied("CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.")
+
+        # 2. Cho phép Odoo xác thực tài khoản / mật khẩu
+        uid = _original_dispatch_rpc(service_name, method, params)
+
+        # 3. Nếu đăng nhập thành công qua hộp thoại CAD: MỞ KHÓA VÀ GIA HẠN 180 NGÀY CHO THIẾT BỊ
+        if uid:
+            with Registry(db).cursor() as cr:
+                env = api.Environment(cr, api.SUPERUSER_ID, {})
+                if 'plm.desktop.token' in env.registry:
+                    cr.execute("SELECT to_regclass('public.plm_desktop_token');")
+                    row = cr.fetchone()
+                    if row and row[0]:
+                        domain = [('user_id', '=', int(uid))]
+                        if client_ip:
+                            domain.append(('client_ip', '=', client_ip))
+                        tokens = env['plm.desktop.token'].search(domain, order='id desc')
+                        if not tokens:
+                            tokens = env['plm.desktop.token'].search([('user_id', '=', int(uid))], order='id desc')
+                        if tokens:
+                            now = fields.Datetime.now()
+                            tokens[0].write({
+                                'expires_at': now + timedelta(days=180),
+                                'is_revoked': False,
+                                'last_used_date': now,
+                            })
+                            cr.commit()
+                            _logger.info(
+                                f">>> [TDB PLM] Kỹ sư '{login}' (UID {uid}) đã đăng nhập lại qua Execute New Login: "
+                                f"Đã gia hạn 180 ngày cho thiết bị '{tokens[0].machine_name}'."
+                            )
+        return uid
+
     elif service_name == 'object':
         try:
             db, uid, passwd, model, method_ = params[:5]

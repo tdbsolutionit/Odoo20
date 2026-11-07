@@ -52,7 +52,7 @@ class IrHttp(models.AbstractModel):
                                 f">>> [TDB PLM] Chặn phiên CAD đã bị thu hồi/quá hạn: "
                                 f"User ID {request.session.uid}, Máy '{token.machine_name}', IP {client_ip}, Session {str(request.session.sid)[:10]}..."
                             )
-                            request.session.logout(keep_db=True)
+                            request.session.clear()
                             raise Unauthorized("CAD workstation access has been revoked or expired by Administrator.")
                         else:
                             token.update_last_used()
