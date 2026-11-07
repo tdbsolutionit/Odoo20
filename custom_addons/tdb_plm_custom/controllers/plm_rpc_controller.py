@@ -3,18 +3,19 @@
 """
 Layer 3: Tầng Controller điều phối & Middleware RPC cho OdooPLM Client (SolidWorks / Inventor)
 =============================================================================================
-Bối cảnh kỹ thuật:
+Bối cảnh kỹ thuật & Kiến trúc Dual-Gate dứt điểm triệt để:
 - Trên Odoo 20, dịch vụ 'db' đã bị loại bỏ khỏi hàm dispatch_rpc (chỉ còn 'common' và 'object').
-- Khi CAD Client (SolidWorks OdooPLM) kết nối, client gọi RPC service 'db', method 'list'
-  để lấy danh sách Database hiển thị lên combobox đăng nhập.
-- Controller này cung cấp bản vá (patch) hàm dispatch_rpc:
+- Controller này cung cấp bản vá (patch) hàm dispatch_rpc giải quyết dứt điểm 2 mục tiêu:
   1. Phục hồi service 'db' (list, list_db, db_exist) cho CAD Client.
-  2. Bắt cả 2 phương thức xác thực của CAD Client: common.authenticate và common.login để
-     luôn tự động mở khóa và gia hạn 180 ngày ngay lập tức khi đăng nhập từ SolidWorks.
-  3. Cho phép các lệnh đọc người dùng/cấu hình và snapshot/dọn dẹp nền chạy trơn tru, loại bỏ triệt để
-     các cảnh báo lặp đi lặp lại và đảm bảo New Login luôn thành công.
-  4. Chặn đứng tuyệt đối (AccessDenied) mọi thao tác nghiệp vụ CAD (sửa linh kiện product.product,
-     bản vẽ ir.attachment, bom mrp.bom, check-in, check-out) khi token 180 ngày đã HẾT HẠN hoặc BỊ THU HỒI.
+  2. Cổng Đăng nhập (Authentication Gate): Bắt cả common.authenticate và common.login.
+     Khi kỹ sư bấm 'Execute New Login' từ SolidWorks với mật khẩu đúng, hệ thống tự động
+     mở khóa và gia hạn 180 ngày NGAY LẬP TỨC trong cùng transaction, đảm bảo toàn bộ tiến trình
+     khởi tạo phiên tiếp theo (complete_login_session) diễn ra 100% trơn tru, loại bỏ hoàn toàn
+     các cảnh báo lỗi COM / TypeError lặp đi lặp lại.
+  3. Cổng Chặn Nghiệp vụ CAD (CAD Business Gate): Khi token hết hạn hoặc bị thu hồi,
+     chặn đứng tuyệt đối (UserError / AccessDenied) mọi thao tác nghiệp vụ CAD (lưu/sửa linh kiện
+     product.product, bản vẽ ir.attachment, cấu trúc mrp.bom, check-in, check-out) mà vẫn hiển thị
+     thông báo chuẩn mực, rõ ràng, không làm crash COM client.
 """
 import sys
 import logging
@@ -23,7 +24,7 @@ from datetime import timedelta
 import odoo
 from odoo import api, fields
 from odoo.http import router
-from odoo.exceptions import AccessDenied
+from odoo.exceptions import UserError, AccessDenied
 
 _logger = logging.getLogger(__name__)
 
@@ -69,7 +70,7 @@ def _cad_dispatch_rpc(service_name, method, params):
        - Khi 'Execute New Login' thành công (qua authenticate hoặc login): Mở khóa và gia hạn 180 ngày ngay lập tức.
        - Khi 'Thu hồi quyền' (Revoked): Chặn đứng mọi thao tác và từ chối đăng nhập mới.
        - Khi 'Hết hạn' (Expired): Chặn đứng các thao tác CAD (product.product, ir.attachment, mrp.bom, plm.client)
-         bằng AccessDenied để ngăn chặn mở form CAD Editing hoặc Check-in/Check-out.
+         bằng UserError để hiển thị thông báo rõ ràng cho kỹ sư và ngăn chặn tuyệt đối việc lưu dữ liệu vào Odoo.
     """
     if service_name == 'db':
         if method in ('list', 'list_db'):
@@ -120,8 +121,8 @@ def _cad_dispatch_rpc(service_name, method, params):
                                     f">>> [TDB PLM] TỪ CHỐI XML-RPC {method.upper()}: Thiết bị của user '{login}' "
                                     f"đang ở trạng thái BỊ THU HỒI bởi Quản trị viên."
                                 )
-                                raise AccessDenied("Thiết bị CAD đã bị Quản trị viên thu hồi quyền truy cập. Vui lòng liên hệ Quản trị viên.")
-        except AccessDenied:
+                                raise UserError("Thiết bị CAD đã bị Quản trị viên thu hồi quyền truy cập. Vui lòng liên hệ Quản trị viên.")
+        except (UserError, AccessDenied):
             raise
         except Exception as e:
             _logger.debug(f"[TDB PLM] Kiểm tra revoke trước {method}: {e}")
@@ -197,7 +198,7 @@ def _cad_dispatch_rpc(service_name, method, params):
                                         f">>> [TDB PLM] CHẶN RPC: Thiết bị của User ID {uid} "
                                         f"ĐÃ BỊ THU HỒI. Từ chối thực thi {model}.{method_}"
                                     )
-                                    raise AccessDenied("Thiết bị CAD đã bị Quản trị viên thu hồi quyền truy cập. Vui lòng liên hệ Quản trị viên.")
+                                    raise UserError("Thiết bị CAD đã bị Quản trị viên thu hồi quyền truy cập. Vui lòng liên hệ Quản trị viên.")
 
                                 # 2. Với các thao tác CAD: Bắt buộc token còn trong thời hạn 180 ngày
                                 now = fields.Datetime.now()
@@ -207,15 +208,15 @@ def _cad_dispatch_rpc(service_name, method, params):
                                         f">>> [TDB PLM] CHẶN RPC: Thiết bị của User ID {uid} "
                                         f"ĐÃ HẾT HẠN 180 NGÀY. Từ chối thực thi {model}.{method_}"
                                     )
-                                    raise AccessDenied("Phiên làm việc CAD 180 ngày đã hết hạn. Vui lòng bấm 'Execute New Login' từ SolidWorks để tiếp tục.")
+                                    raise UserError("Phiên làm việc CAD 180 ngày đã hết hạn. Vui lòng bấm 'Execute New Login' từ SolidWorks để tiếp tục.")
                                 else:
                                     tokens[0].update_last_used()
                             else:
                                 _logger.warning(
                                     f">>> [TDB PLM] CHẶN RPC: User ID {uid} chưa có token thiết bị CAD. Từ chối thực thi {model}.{method_}"
                                 )
-                                raise AccessDenied("Thiết bị CAD chưa được xác thực hoặc phiên đã hết hạn. Vui lòng bấm 'Execute New Login' từ SolidWorks.")
-        except AccessDenied:
+                                raise UserError("Thiết bị CAD chưa được xác thực hoặc phiên đã hết hạn. Vui lòng bấm 'Execute New Login' từ SolidWorks.")
+        except (UserError, AccessDenied):
             raise
         except Exception as e:
             _logger.error(f"[TDB PLM] Lỗi kiểm tra token trong RPC dispatch: {e}")

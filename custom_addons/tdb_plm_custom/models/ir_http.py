@@ -20,13 +20,13 @@ class IrHttp(models.AbstractModel):
     def _authenticate(cls, endpoint=''):
         super()._authenticate(endpoint)
 
-        # 1. Chỉ áp dụng kiểm tra cho các endpoint của CAD Add-in (/plm_document_upload/*)
+        # 1. Chỉ áp dụng kiểm tra cho các endpoint của CAD Add-in (/plm_document_upload/* và /plm/*)
         # Các request của Web Browser (/web, /odoo, backend) hoàn toàn bỏ qua, không bị ảnh hưởng.
         if not hasattr(request, 'httprequest') or not request.httprequest:
             return
 
         path = request.httprequest.path or ''
-        if not path.startswith('/plm_document_upload/'):
+        if not (path.startswith('/plm_document_upload/') or path.startswith('/plm/')):
             return
 
         # Các endpoint công khai hoặc handshake (login, isalive) không bị chặn tại middleware này
