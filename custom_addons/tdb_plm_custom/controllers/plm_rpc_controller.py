@@ -30,6 +30,10 @@ CAD_OPERATIONAL_MODELS = (
     'ir.attachment.relation',
     'mrp.bom',
     'mrp.bom.line',
+    'plm.checkout',
+    'plm.backup.document',
+    'plm.cad.open',
+    'plm.temporary',
 )
 
 
@@ -68,8 +72,10 @@ def _cad_dispatch_rpc(service_name, method, params):
     elif service_name == 'object':
         try:
             db, uid, passwd, model, method_ = params[:5]
-            # Chặn trên mọi model liên quan đến CAD/PLM (bao gồm cả linh kiện kỹ thuật product.product)
-            if str(model).startswith('plm.') or model in CAD_OPERATIONAL_MODELS:
+            is_cad_operational = (model in CAD_OPERATIONAL_MODELS) or (str(model).startswith('plm.') and model not in ('plm.client', 'plm.desktop.token', 'plm.access'))
+            is_cad_handshake = (model == 'plm.client')
+
+            if is_cad_operational or is_cad_handshake:
                 from odoo.modules.registry import Registry
                 from odoo import api
                 with Registry(db).cursor() as cr:
@@ -97,24 +103,28 @@ def _cad_dispatch_rpc(service_name, method, params):
                             if token:
                                 from odoo import fields
                                 now = fields.Datetime.now()
+                                # 1. Nếu thiết bị đã bị Thu hồi: Chặn tuyệt đối mọi thao tác (kể cả handshake đăng nhập)
                                 if token.is_revoked:
                                     _logger.warning(
                                         f">>> [TDB PLM] CHẶN RPC: Thiết bị '{token.machine_name}' "
                                         f"của User ID {uid} ĐÃ BỊ THU HỒI. Từ chối thực thi {model}.{method_}"
                                     )
-                                    raise odoo.exceptions.AccessDenied("CAD Workstation access has been REVOKED by Administrator.")
-                                elif token.expires_at and token.expires_at <= now:
-                                    _logger.warning(
-                                        f">>> [TDB PLM] CHẶN RPC: Thiết bị '{token.machine_name}' "
-                                        f"của User ID {uid} ĐÃ HẾT HẠN 180 NGÀY ({token.expires_at}). Từ chối thực thi {model}.{method_}"
-                                    )
-                                    raise odoo.exceptions.AccessDenied("CAD 180-day Session has EXPIRED. Please log in again from SolidWorks to renew.")
-                                elif not token.session_id:
-                                    _logger.warning(
-                                        f">>> [TDB PLM] YÊU CẦU ĐĂNG NHẬP LẠI: Thiết bị '{token.machine_name}' "
-                                        f"của User ID {uid} chưa có phiên đăng nhập hợp lệ. Từ chối thực thi {model}.{method_}"
-                                    )
-                                    raise odoo.exceptions.AccessDenied("Session expired. Please log in to OdooPLM again from SolidWorks.")
+                                    raise odoo.exceptions.AccessDenied("CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.")
+
+                                # 2. Với các thao tác nghiệp vụ CAD (sửa linh kiện, bản vẽ, BOM, checkout): Bắt buộc còn hạn và có session
+                                if is_cad_operational:
+                                    if token.expires_at and token.expires_at <= now:
+                                        _logger.warning(
+                                            f">>> [TDB PLM] CHẶN RPC: Thiết bị '{token.machine_name}' "
+                                            f"của User ID {uid} ĐÃ HẾT HẠN 180 NGÀY ({token.expires_at}). Từ chối thực thi {model}.{method_}"
+                                        )
+                                        raise odoo.exceptions.AccessDenied("CAD 180-day Session has EXPIRED. Please log in again from SolidWorks to renew.")
+                                    elif not token.session_id:
+                                        _logger.warning(
+                                            f">>> [TDB PLM] YÊU CẦU ĐĂNG NHẬP LẠI: Thiết bị '{token.machine_name}' "
+                                            f"của User ID {uid} chưa có phiên đăng nhập hợp lệ. Từ chối thực thi {model}.{method_}"
+                                        )
+                                        raise odoo.exceptions.AccessDenied("Session expired. Please log in to OdooPLM again from SolidWorks.")
         except odoo.exceptions.AccessDenied:
             raise
         except Exception as e:
