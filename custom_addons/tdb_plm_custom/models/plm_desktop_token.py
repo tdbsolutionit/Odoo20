@@ -203,15 +203,19 @@ class PlmDesktopToken(models.Model):
 
             related_tokens = self.search(domain)
             for tok in related_tokens:
-                tok.write({'is_revoked': True})
-                if tok.session_id:
+                old_sid = tok.session_id
+                tok.write({
+                    'is_revoked': True,
+                    'session_id': False,
+                })
+                if old_sid:
                     try:
                         from odoo.http.session import session_store
                         store = session_store()
-                        sess = store.get(tok.session_id)
+                        sess = store.get(old_sid)
                         if sess:
                             store.delete(sess)
-                            _logger.info(f">>> [TDB PLM] Đã hủy Odoo session: {tok.session_id}")
+                            _logger.info(f">>> [TDB PLM] Đã hủy Odoo session: {old_sid}")
                     except Exception as e:
                         _logger.warning(f"[TDB PLM] Lỗi hủy session: {e}")
 
@@ -236,6 +240,7 @@ class PlmDesktopToken(models.Model):
             for tok in related_tokens:
                 tok.write({
                     'is_revoked': False,
+                    'session_id': False,
                     'expires_at': now + timedelta(days=180),
                 })
                 _logger.info(f">>> [TDB PLM] Đã khôi phục quyền truy cập cho máy trạm '{tok.machine_name}' (IP: {tok.client_ip})")

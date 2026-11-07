@@ -25,14 +25,12 @@
                         type="object"
                         string="Thu hồi quyền"
                         class="btn-danger btn-sm"
-                        icon="fa-ban"
                         invisible="state != 'active'"
                         confirm="Bạn có chắc chắn muốn thu hồi quyền truy cập của thiết bị CAD này? Máy trạm sẽ bị ngắt kết nối ngay lập tức!"/>
                 <button name="action_unrevoke"
                         type="object"
                         string="Khôi phục"
                         class="btn-success btn-sm"
-                        icon="fa-refresh"
                         invisible="state != 'revoked'"/>
             </list>
         </field>
@@ -49,14 +47,12 @@
                             type="object"
                             string="Thu hồi quyền"
                             class="btn-danger"
-                            icon="fa-ban"
                             invisible="state != 'active'"
                             confirm="Bạn có chắc chắn muốn thu hồi và ngắt kết nối máy trạm CAD này?"/>
                     <button name="action_unrevoke"
                             type="object"
                             string="Khôi phục quyền truy cập"
                             class="btn-success"
-                            icon="fa-refresh"
                             invisible="state != 'revoked'"/>
                     <field name="state" widget="badge"
                            decoration-success="state == 'active'"

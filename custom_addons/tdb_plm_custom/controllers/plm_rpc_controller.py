@@ -8,7 +8,7 @@ Bối cảnh kỹ thuật:
 - Khi CAD Client (SolidWorks OdooPLM) kết nối, client thực hiện gọi RPC service 'db', method 'list'
   để lấy danh sách Database hiển thị lên combobox đăng nhập.
 - Controller này cung cấp bản vá (patch) hàm dispatch_rpc nhằm phục hồi khả năng phản hồi danh mục database cho CAD Client,
-  đồng thời chặn các thao tác PLM qua XML-RPC nếu thiết bị CAD của user đã bị Admin thu hồi quyền.
+  đồng thời chặn các thao tác PLM qua XML-RPC nếu thiết bị CAD của user đã bị Admin thu hồi quyền hoặc chưa đăng nhập lại.
 """
 import sys
 import logging
@@ -27,7 +27,8 @@ if not _original_dispatch_rpc:
 def _cad_dispatch_rpc(service_name, method, params):
     """Điều phối RPC tùy biến:
     1. Phục hồi service 'db' cho các ứng dụng CAD Client (SolidWorks/Inventor).
-    2. Chặn các thao tác PLM qua XML-RPC nếu thiết bị CAD của user đã bị Admin thu hồi quyền.
+    2. Chặn các thao tác PLM qua XML-RPC nếu thiết bị CAD của user đã bị Admin thu hồi quyền
+       hoặc phiên đã bị hủy và yêu cầu bắt buộc phải đăng nhập lại từ SolidWorks.
     """
     if service_name == 'db':
         if method in ('list', 'list_db'):
@@ -59,9 +60,11 @@ def _cad_dispatch_rpc(service_name, method, params):
         try:
             db, uid, passwd, model, method_ = params[:5]
             if str(model).startswith('plm.') or model in ('ir.attachment',):
+                from odoo.http import request_var
+                req = request_var.get(None)
                 client_ip = None
-                if hasattr(odoo.http, 'request') and odoo.http.request and hasattr(odoo.http.request, 'httprequest'):
-                    client_ip = odoo.http.request.httprequest.headers.get('X-Forwarded-For') or odoo.http.request.httprequest.remote_addr
+                if req and hasattr(req, 'httprequest'):
+                    client_ip = req.httprequest.headers.get('X-Forwarded-For') or req.httprequest.remote_addr
                     if client_ip and ',' in client_ip:
                         client_ip = client_ip.split(',')[0].strip()
 
@@ -73,20 +76,28 @@ def _cad_dispatch_rpc(service_name, method, params):
                         cr.execute("SELECT to_regclass('public.plm_desktop_token');")
                         row = cr.fetchone()
                         if row and row[0]:
-                            domain = [('user_id', '=', int(uid)), ('is_revoked', '=', True)]
+                            domain = [('user_id', '=', int(uid))]
                             if client_ip:
-                                domain.append(('client_ip', '=', client_ip))
-                            revoked = env['plm.desktop.token'].search(domain, limit=1)
-                            if revoked:
-                                _logger.warning(
-                                    f">>> [TDB PLM] CHẶN RPC: Thiết bị '{revoked.machine_name}' (IP: {client_ip}) "
-                                    f"của User ID {uid} đã bị thu hồi. Từ chối thực thi {model}.{method_}"
-                                )
-                                raise odoo.exceptions.AccessDenied("CAD Workstation access has been REVOKED by Administrator.")
+                                domain.extend(['|', ('client_ip', '=', client_ip), ('client_ip', '=', False)])
+
+                            token = env['plm.desktop.token'].search(domain, order='id desc', limit=1)
+                            if token:
+                                if token.is_revoked:
+                                    _logger.warning(
+                                        f">>> [TDB PLM] CHẶN RPC: Thiết bị '{token.machine_name}' (IP: {client_ip}) "
+                                        f"của User ID {uid} ĐÃ BỊ THU HỒI. Từ chối thực thi {model}.{method_}"
+                                    )
+                                    raise odoo.exceptions.AccessDenied("CAD Workstation access has been REVOKED by Administrator.")
+                                elif not token.session_id:
+                                    _logger.warning(
+                                        f">>> [TDB PLM] YÊU CẦU ĐĂNG NHẬP LẠI: Thiết bị '{token.machine_name}' (IP: {client_ip}) "
+                                        f"của User ID {uid} chưa có phiên đăng nhập hợp lệ. Từ chối thực thi {model}.{method_}"
+                                    )
+                                    raise odoo.exceptions.AccessDenied("Session expired. Please log in to OdooPLM again from SolidWorks.")
         except odoo.exceptions.AccessDenied:
             raise
         except Exception as e:
-            _logger.debug(f"[TDB PLM] Kiểm tra token trong RPC dispatch: {e}")
+            _logger.error(f"[TDB PLM] Lỗi kiểm tra token trong RPC dispatch: {e}")
 
     return _original_dispatch_rpc(service_name, method, params)
 
