@@ -130,7 +130,7 @@ class TdbPlmUploadDocument(UploadDocument):
                         return Response("CAD Workstation access has been REVOKED by Administrator.", status=403)
 
                     now = fields.Datetime.now()
-                    active_tokens = [t for t in tokens if (not t.is_revoked) and t.expires_at and (t.expires_at > now) and t.session_id]
+                    active_tokens = [t for t in tokens if (not t.is_revoked) and t.expires_at and (t.expires_at > now)]
                     if not active_tokens:
                         return Response("CAD 180-day Session has EXPIRED. Please use 'Execute New Login' from SolidWorks to renew.", status=401)
 
