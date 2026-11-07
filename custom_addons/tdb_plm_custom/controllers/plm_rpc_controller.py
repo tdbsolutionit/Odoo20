@@ -23,12 +23,21 @@ if not _original_dispatch_rpc:
     _original_dispatch_rpc = router.dispatch_rpc
     router._tdb_original_dispatch_rpc = _original_dispatch_rpc
 
+CAD_OPERATIONAL_MODELS = (
+    'product.product',
+    'product.template',
+    'ir.attachment',
+    'ir.attachment.relation',
+    'mrp.bom',
+    'mrp.bom.line',
+)
+
 
 def _cad_dispatch_rpc(service_name, method, params):
     """Điều phối RPC tùy biến:
     1. Phục hồi service 'db' cho các ứng dụng CAD Client (SolidWorks/Inventor).
-    2. Chặn các thao tác PLM qua XML-RPC nếu thiết bị CAD của user đã bị Admin thu hồi quyền
-       hoặc phiên đã bị hủy và yêu cầu bắt buộc phải đăng nhập lại từ SolidWorks.
+    2. Chặn các thao tác PLM qua XML-RPC (linh kiện product.product, bản vẽ, bom, checkin, checkout)
+       nếu thiết bị CAD của user đã bị Admin thu hồi quyền hoặc phiên đã bị hủy và yêu cầu đăng nhập lại.
     """
     if service_name == 'db':
         if method in ('list', 'list_db'):
@@ -59,15 +68,8 @@ def _cad_dispatch_rpc(service_name, method, params):
     elif service_name == 'object':
         try:
             db, uid, passwd, model, method_ = params[:5]
-            if str(model).startswith('plm.') or model in ('ir.attachment',):
-                from odoo.http import request_var
-                req = request_var.get(None)
-                client_ip = None
-                if req and hasattr(req, 'httprequest'):
-                    client_ip = req.httprequest.headers.get('X-Forwarded-For') or req.httprequest.remote_addr
-                    if client_ip and ',' in client_ip:
-                        client_ip = client_ip.split(',')[0].strip()
-
+            # Chặn trên mọi model liên quan đến CAD/PLM (bao gồm cả linh kiện kỹ thuật product.product)
+            if str(model).startswith('plm.') or model in CAD_OPERATIONAL_MODELS:
                 from odoo.modules.registry import Registry
                 from odoo import api
                 with Registry(db).cursor() as cr:
@@ -77,20 +79,17 @@ def _cad_dispatch_rpc(service_name, method, params):
                         row = cr.fetchone()
                         if row and row[0]:
                             domain = [('user_id', '=', int(uid))]
-                            if client_ip:
-                                domain.extend(['|', ('client_ip', '=', client_ip), ('client_ip', '=', False)])
-
                             token = env['plm.desktop.token'].search(domain, order='id desc', limit=1)
                             if token:
                                 if token.is_revoked:
                                     _logger.warning(
-                                        f">>> [TDB PLM] CHẶN RPC: Thiết bị '{token.machine_name}' (IP: {client_ip}) "
+                                        f">>> [TDB PLM] CHẶN RPC: Thiết bị '{token.machine_name}' "
                                         f"của User ID {uid} ĐÃ BỊ THU HỒI. Từ chối thực thi {model}.{method_}"
                                     )
                                     raise odoo.exceptions.AccessDenied("CAD Workstation access has been REVOKED by Administrator.")
                                 elif not token.session_id:
                                     _logger.warning(
-                                        f">>> [TDB PLM] YÊU CẦU ĐĂNG NHẬP LẠI: Thiết bị '{token.machine_name}' (IP: {client_ip}) "
+                                        f">>> [TDB PLM] YÊU CẦU ĐĂNG NHẬP LẠI: Thiết bị '{token.machine_name}' "
                                         f"của User ID {uid} chưa có phiên đăng nhập hợp lệ. Từ chối thực thi {model}.{method_}"
                                     )
                                     raise odoo.exceptions.AccessDenied("Session expired. Please log in to OdooPLM again from SolidWorks.")
@@ -106,7 +105,12 @@ def _cad_dispatch_rpc(service_name, method, params):
 router.dispatch_rpc = _cad_dispatch_rpc
 
 # 2. Đồng bộ bản vá vào các controller rpc nếu đã nạp trước đó trong sys.modules
-for mod_path in ('odoo.addons.rpc.controllers.xmlrpc', 'odoo.addons.rpc.controllers.jsonrpc'):
+for mod_path in (
+    'odoo.addons.rpc.controllers.xmlrpc',
+    'odoo.addons.rpc.controllers.jsonrpc',
+    'addons.rpc.controllers.xmlrpc',
+    'addons.rpc.controllers.jsonrpc',
+):
     if mod_path in sys.modules:
         setattr(sys.modules[mod_path], 'dispatch_rpc', _cad_dispatch_rpc)
 
