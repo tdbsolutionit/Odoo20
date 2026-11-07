@@ -1,13 +1,14 @@
 # Translation of Odoo Server.
 # This file contains the translation of the following modules:
+# 	* plm
 # 	* tdb_plm_custom
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: Odoo Server 20.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-11-05 06:25+0000\n"
-"PO-Revision-Date: 2026-11-05 06:25+0000\n"
+"POT-Creation-Date: 2026-11-07 00:00+0000\n"
+"PO-Revision-Date: 2026-11-07 00:00+0000\n"
 "Last-Translator: TDB Solution <contact@tdbsolution.com>\n"
 "Language-Team: Vietnamese <vi@li.org>\n"
 "Language: vi_VN\n"
@@ -16,104 +17,178 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=1; plural=0;\n"
 
-#. module: tdb_plm_custom
-#: model:ir.module.module,description:base.module_tdb_plm_custom
-msgid ""
-"\n"
-"TDB Solution - Module tùy biến phân hệ PLM (Product Lifecycle Management)\n"
-"========================================================================\n"
-"Tính năng chính:\n"
-"1. Chuẩn hóa 100% tiêu đề cột trên danh sách linh kiện kỹ thuật (Engineering Parts):\n"
-"   - Image (Hình ảnh)\n"
-"   - Name (Tên)\n"
-"   - Engineering Code (Mã kỹ thuật)\n"
-"   - Internal Reference (Tham chiếu nội bộ)\n"
-"   - Engineering Revision (Phiên bản kỹ thuật)\n"
-"   - Engineering Status (Trạng thái kỹ thuật)\n"
-"   - Description (Mô tả)\n"
-"   - Writable (Có thể chỉnh sửa)\n"
-"   - CAD Raw Material (Vật liệu thô CAD)\n"
-"   - CAD Surface Finishing (Hoàn thiện bề mặt CAD)\n"
-"   - Linked Documents (Tài liệu liên kết)\n"
-"   - Checked-Out By (Được kiểm xuất bởi)\n"
-"2. Căn lề chuẩn hóa, đồng đều cho cả tiêu đề cột và ô dữ liệu.\n"
-"3. Thiết lập độ rộng cột tối thiểu và thanh cuộn ngang mượt mà, khắc phục triệt để tình trạng cắt chữ.\n"
-"4. Kiến trúc phân tầng SCSS chuẩn Odoo:\n"
-"   - plm_variables.scss\n"
-"   - plm_table_layout.scss\n"
-"   - plm_table_header.scss\n"
-"   - plm_table_cells.scss\n"
-msgstr ""
-"\n"
-"TDB Solution - Module tùy biến phân hệ PLM (Product Lifecycle Management)\n"
-"========================================================================\n"
+# =========================================================================
+# 1. PHÂN HỆ CHÍNH VÀ MENU ĐIỀU HƯỚNG PLM (MAIN APP & NAVIGATION MENUS)
+# =========================================================================
 
-#. module: tdb_plm_custom
-#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_product__engineering_material
-#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_template__engineering_material
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "CAD Raw Material"
-msgstr "Vật liệu CAD"
+#. module: plm
+#: model:ir.ui.menu,name:plm.plm_menu
+msgid "PLM"
+msgstr "PLM"
 
-#. module: tdb_plm_custom
-#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_product__engineering_surface
-#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_template__engineering_surface
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "CAD Surface Finishing"
-msgstr "Bề mặt CAD"
+#. module: plm
+#: model:ir.ui.menu,name:plm.plm_component_menu_view
+msgid "Components"
+msgstr "Linh kiện"
 
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_search_inherit_tdb
-msgid "Checked Out"
-msgstr "Đang kiểm xuất"
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Checked-Out By"
-msgstr "Được kiểm xuất bởi"
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_search_inherit_tdb
-msgid "Confirmed"
-msgstr "Đã xác nhận"
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Description"
-msgstr "Mô tả"
-
-#. module: tdb_plm_custom
-#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_product__display_name
-#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_template__display_name
-msgid "Display Name"
-msgstr "Tên hiển thị"
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
+#. module: plm
+#: model:ir.ui.menu,name:plm.ir_attachment_form
 msgid "Documents"
 msgstr "Tài liệu"
 
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Engineering Code"
-msgstr "Mã kỹ thuật"
+#. module: plm
+#: model:ir.ui.menu,name:plm.plm_menu_relation
+msgid "Component Relations"
+msgstr "Quan hệ linh kiện"
+
+#. module: plm
+#: model:ir.ui.menu,name:plm.plm_menu_dictionaries
+msgid "Configuration"
+msgstr "Cấu hình"
+
+# =========================================================================
+# 2. CÁC MENU CON TRONG MỤC "CẤU HÌNH" (CONFIGURATION SUB-MENUS - HÌNH 2)
+# =========================================================================
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.plm_access_action
+#: model:ir.ui.menu,name:plm.menu_plm_access
+msgid "PLM Access"
+msgstr "Quyền truy cập PLM"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.plm_action_description_form
+#: model:ir.ui.menu,name:plm.menu_description
+#: model_terms:ir.ui.view,arch_db:plm.plm_view_description_list
+msgid "Descriptions"
+msgstr "Mô tả kỹ thuật"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.plm_action_finishing_form
+#: model:ir.ui.menu,name:plm.menu_finishing
+#: model_terms:ir.ui.view,arch_db:plm.plm_view_finishing_list
+msgid "Finishings"
+msgstr "Hoàn thiện bề mặt"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.plm_action_treatment_form
+#: model:ir.ui.menu,name:plm.menu_treatment
+#: model_terms:ir.ui.view,arch_db:plm.plm_view_treatment_list
+msgid "Treatments"
+msgstr "Xử lý nhiệt & bề mặt"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.plm_action_material_form
+#: model:ir.ui.menu,name:plm.menu_material
+#: model_terms:ir.ui.view,arch_db:plm.plm_view_material_list
+msgid "Materials"
+msgstr "Vật liệu chế tạo"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.plm_action_plm_dbthread
+#: model:ir.ui.menu,name:plm.plm_dbthread_id
+msgid "DbThread"
+msgstr "Tiến trình CSDL (DbThread)"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.plm_action_res_groups
+#: model:ir.ui.menu,name:plm.plm_groups
+msgid "Groups"
+msgstr "Nhóm quyền người dùng"
+
+#. module: plm
+#: model:ir.ui.menu,name:plm.plm_product_cad_search
+msgid "Product Cad Search"
+msgstr "Tìm kiếm linh kiện CAD"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.plm_action_settings_form
+#: model:ir.ui.menu,name:plm.plm_settings
+msgid "Settings"
+msgstr "Cài đặt"
 
 #. module: tdb_plm_custom
+#: model:ir.actions.act_window,name:tdb_plm_custom.action_plm_desktop_token
+#: model:ir.ui.menu,name:tdb_plm_custom.menu_plm_desktop_token
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_list
+msgid "Desktop Access Tokens"
+msgstr "Token thiết bị CAD"
+
+# =========================================================================
+# 3. CÁC MENU TÌM KIẾM & BÁO CÁO PLM KHÁC
+# =========================================================================
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.action_plm_component_base
+#: model:ir.actions.act_window,name:plm.action_plm_component_base_cad_form
+#: model:ir.ui.menu,name:plm.menu_base_component
+msgid "Search on Engineering Parts"
+msgstr "Tìm kiếm linh kiện kỹ thuật"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.plm_action_document_form
+#: model:ir.ui.menu,name:plm.menu_document_files
+msgid "Search on Documents"
+msgstr "Tìm kiếm tài liệu"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.action_plm_backupdoc
+#: model:ir.ui.menu,name:plm.menu_backupdoc
+msgid "Search on Backup Data Set"
+msgstr "Tìm kiếm bản sao lưu"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.action_plm_checkout
+#: model:ir.ui.menu,name:plm.menu_checkout
+msgid "Search on Checked-Out Documents"
+msgstr "Tìm kiếm tài liệu đang kiểm xuất"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.plm_action_document_relations
+#: model:ir.ui.menu,name:plm.menu_document_relations
+msgid "Search on Document Relations"
+msgstr "Tìm kiếm quan hệ tài liệu"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.action_plm_cad_open
+#: model:ir.ui.menu,name:plm.menu_cad_open
+msgid "CAD Opens"
+msgstr "Lịch sử mở CAD"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.action_plm_cad_open_bck
+#: model:ir.ui.menu,name:plm.menu_cad_open_bck
+msgid "CAD Opens Bck"
+msgstr "Bản sao lưu mở CAD"
+
+#. module: plm
+#: model:ir.actions.act_window,name:plm.action_view_normal_bom
+#: model:ir.ui.menu,name:plm.menu_normal_bom
+msgid "Search on Normal Bill of Materials"
+msgstr "Tìm kiếm định mức vật tư (BOM)"
+
+#. module: plm
+#: model_terms:ir.ui.view,arch_db:plm.mrp_extension_search
+msgid "Where Used Bill of Materials"
+msgstr "Nơi sử dụng trong định mức (BOM)"
+
+#. module: plm
+#: model_terms:ir.ui.view,arch_db:plm.mrp_extension_search
+msgid "Bill of Materials Structure"
+msgstr "Cấu trúc định mức vật tư (BOM)"
+
+# =========================================================================
+# 4. DANH SÁCH LINH KIỆN KỸ THUẬT & TIÊU ĐỀ CỘT (ENGINEERING PARTS - HÌNH 2)
+# =========================================================================
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.actions.act_window,name:plm.action_plm_component_base
+#: model:ir.actions.act_window,name:plm.action_plm_component_base_cad_form
+#: model_terms:ir.ui.view,arch_db:plm.plm_component_base_tree
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
 msgid "Engineering Parts"
 msgstr "Linh kiện kỹ thuật"
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Engineering Status"
-msgstr "Trạng thái kỹ thuật"
-
-#. module: tdb_plm_custom
-#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_product__id
-#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_template__id
-msgid "ID"
-msgstr "ID"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
@@ -122,83 +197,317 @@ msgstr "Hình ảnh"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Internal Reference"
-msgstr "Tham chiếu nội bộ"
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_search_inherit_tdb
-msgid "Latest"
-msgstr "Mới nhất"
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Linked Documents"
-msgstr "Tài liệu liên kết"
-
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
 msgid "Name"
 msgstr "Tên"
 
 #. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_search_inherit_tdb
-msgid "Obsoleted"
-msgstr "Đã lỗi thời"
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Configuration Name"
+msgstr "Tên cấu hình"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.model.fields,field_description:plm.field_product_product__engineering_code
+#: model:ir.model.fields,field_description:plm.field_product_template__engineering_code
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Engineering Code"
+msgstr "Mã kỹ thuật"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Internal Reference"
+msgstr "Tham chiếu nội bộ"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.model.fields,field_description:plm.field_product_product__engineering_revision
+#: model:ir.model.fields,field_description:plm.field_product_template__engineering_revision
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
+msgid "Revision"
+msgstr "Phiên bản"
+
+#. module: plm
+#: model:ir.model.fields,field_description:plm.field_ir_attachment__engineering_revision
+msgid "Engineering Revision"
+msgstr "Phiên bản kỹ thuật"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.model.fields,field_description:plm.field_ir_attachment__engineering_state
+#: model:ir.model.fields,field_description:plm.field_product_product__engineering_state
+#: model:ir.model.fields,field_description:plm.field_product_template__engineering_state
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
+msgid "Engineering Status"
+msgstr "Trạng thái kỹ thuật"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Description"
+msgstr "Mô tả"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.model.fields,field_description:plm.field_ir_attachment__engineering_writable
+#: model:ir.model.fields,field_description:plm.field_product_product__engineering_writable
+#: model:ir.model.fields,field_description:plm.field_product_template__engineering_writable
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Writable"
+msgstr "Có thể chỉnh sửa"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.model.fields,field_description:plm.field_product_product__engineering_material
+#: model:ir.model.fields,field_description:plm.field_product_template__engineering_material
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "CAD Raw Material"
+msgstr "Vật liệu CAD"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.model.fields,field_description:plm.field_product_product__engineering_surface
+#: model:ir.model.fields,field_description:plm.field_product_template__engineering_surface
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "CAD Surface Finishing"
+msgstr "Bề mặt CAD"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.model.fields,field_description:plm.field_product_product__linkeddocuments
+#: model:ir.model.fields,field_description:plm.field_product_template__linkeddocuments
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Linked Documents"
+msgstr "Tài liệu liên kết"
+
+#. module: plm
+#. module: tdb_plm_custom
+#: model:ir.model.fields,field_description:plm.field_product_product__document_checkout_user_ids
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
+msgid "Checked-Out By"
+msgstr "Được kiểm xuất bởi"
 
 #. module: tdb_plm_custom
 #: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
 msgid "Preview"
 msgstr "Xem trước"
 
-#. module: tdb_plm_custom
-#: model:ir.model,name:tdb_plm_custom.model_product_product
-msgid "Product Product"
-msgstr "Biến thể sản phẩm"
+# =========================================================================
+# 5. TRẠNG THÁI VÒNG ĐỜI KỸ THUẬT (ENGINEERING LIFECYCLE STATES)
+# =========================================================================
 
-#. module: tdb_plm_custom
-#: model:ir.model,name:tdb_plm_custom.model_product_template
-msgid "Product Template"
-msgstr "Mẫu sản phẩm"
+#. module: plm
+#: model:ir.model.fields.selection,name:plm.selection__ir_attachment__engineering_state__draft
+#: model:ir.model.fields.selection,name:plm.selection__product_product__engineering_state__draft
+#: model:ir.model.fields.selection,name:plm.selection__product_template__engineering_state__draft
+#: model:ir.model.fields.selection,name:plm.selection__revision_plm_mixin__engineering_state__draft
+msgid "Draft"
+msgstr "Bản thảo"
 
-#. module: tdb_plm_custom
-#: model:ir.model.fields,help:tdb_plm_custom.field_product_template__engineering_material
-msgid "Raw material for current product, only description for titleblock."
-msgstr "Vật liệu cho sản phẩm kỹ thuật."
+#. module: plm
+#: model:ir.model.fields.selection,name:plm.selection__ir_attachment__engineering_state__confirmed
+#: model:ir.model.fields.selection,name:plm.selection__product_product__engineering_state__confirmed
+#: model:ir.model.fields.selection,name:plm.selection__product_template__engineering_state__confirmed
+#: model:ir.model.fields.selection,name:plm.selection__revision_plm_mixin__engineering_state__confirmed
+msgid "Confirmed"
+msgstr "Đã xác nhận"
 
-#. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_search_inherit_tdb
+#. module: plm
+#: model:ir.model.fields.selection,name:plm.selection__ir_attachment__engineering_state__released
+#: model:ir.model.fields.selection,name:plm.selection__product_product__engineering_state__released
+#: model:ir.model.fields.selection,name:plm.selection__product_template__engineering_state__released
+#: model:ir.model.fields.selection,name:plm.selection__revision_plm_mixin__engineering_state__released
 msgid "Released"
 msgstr "Đã ban hành"
 
-#. module: tdb_plm_custom
-#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_product__engineering_revision
-#: model:ir.model.fields,field_description:tdb_plm_custom.field_product_template__engineering_revision
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_ir_attachment_list_inherit_tdb
-msgid "Revision"
-msgstr "Phiên bản"
+#. module: plm
+#: model:ir.model.fields.selection,name:plm.selection__ir_attachment__engineering_state__undermodify
+#: model:ir.model.fields.selection,name:plm.selection__product_product__engineering_state__undermodify
+#: model:ir.model.fields.selection,name:plm.selection__product_template__engineering_state__undermodify
+#: model:ir.model.fields.selection,name:plm.selection__revision_plm_mixin__engineering_state__undermodify
+msgid "Under Modify"
+msgstr "Đang sửa đổi"
+
+#. module: plm
+#: model:ir.model.fields.selection,name:plm.selection__ir_attachment__engineering_state__obsoleted
+#: model:ir.model.fields.selection,name:plm.selection__product_product__engineering_state__obsoleted
+#: model:ir.model.fields.selection,name:plm.selection__product_template__engineering_state__obsoleted
+#: model:ir.model.fields.selection,name:plm.selection__revision_plm_mixin__engineering_state__obsoleted
+msgid "Obsoleted"
+msgstr "Đã lỗi thời"
+
+# =========================================================================
+# 6. BỘ LỌC TÌM KIẾM (SEARCH FILTERS & GROUP BY - HÌNH 2)
+# =========================================================================
+
+#. module: plm
+#: model_terms:ir.ui.view,arch_db:plm.plm_component_base_search
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_search_inherit_tdb
+msgid "Latest"
+msgstr "Mới nhất"
+
+#. module: plm
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_search_inherit_tdb
+msgid "Checked Out"
+msgstr "Đang kiểm xuất"
+
+#. module: plm
+#: model_terms:ir.ui.view,arch_db:plm.ir_attachment_search
+#: model_terms:ir.ui.view,arch_db:plm.plm_component_base_search
+msgid "Status"
+msgstr "Trạng thái"
+
+#. module: plm
+#: model_terms:ir.ui.view,arch_db:plm.ir_attachment_search
+msgid "Type Document"
+msgstr "Loại tài liệu"
+
+#. module: plm
+#: model_terms:ir.ui.view,arch_db:plm.ir_attachment_search
+msgid "Must Update from CAD"
+msgstr "Cần cập nhật từ CAD"
+
+#. module: plm
+#: model_terms:ir.ui.view,arch_db:plm.plm_backupdoc_search
+#: model_terms:ir.ui.view,arch_db:plm.plm_checkout_search
+msgid "Today"
+msgstr "Hôm nay"
+
+#. module: plm
+#: model_terms:ir.ui.view,arch_db:plm.plm_backupdoc_search
+#: model_terms:ir.ui.view,arch_db:plm.plm_checkout_search
+msgid "Yesterday"
+msgstr "Hôm qua"
+
+#. module: plm
+#: model_terms:ir.ui.view,arch_db:plm.plm_backupdoc_search
+#: model_terms:ir.ui.view,arch_db:plm.plm_checkout_search
+msgid "Latest 7 Days"
+msgstr "7 ngày gần nhất"
+
+# =========================================================================
+# 7. TRƯỜNG PHÂN QUYỀN PLM TRONG HỒ SƠ NGƯỜI DÙNG (USER PREFERENCES - HÌNH 1)
+# =========================================================================
+
+#. module: plm
+#: model:ir.model.fields,field_description:plm.field_res_users__plm_access_id
+msgid "Default PLM Access"
+msgstr "Quyền truy cập PLM mặc định"
+
+#. module: plm
+#: model:ir.model.fields,field_description:plm.field_res_partner__plm_portal_access
+#: model:ir.model.fields,field_description:plm.field_res_users__plm_portal_access
+msgid "PLM Portal Access"
+msgstr "Quyền truy cập PLM Portal"
+
+#. module: plm
+#: model:ir.model.fields.selection,name:plm.selection__res_users__plm_portal_access__inherit
+msgid "From the partner"
+msgstr "Từ đối tác"
+
+# =========================================================================
+# 8. TOKEN THIẾT BỊ CAD & SESSION SOLIDWORKS (TDB_PLM_CUSTOM)
+# =========================================================================
 
 #. module: tdb_plm_custom
-#: model:ir.model.fields,help:tdb_plm_custom.field_product_template__engineering_surface
-msgid ""
-"Surface finishing for current product, only description for titleblock."
-msgstr "Bề mặt cho sản phẩm kỹ thuật."
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_list
+msgid "CAD Engineer"
+msgstr "Kỹ sư CAD"
 
 #. module: tdb_plm_custom
-#: model:ir.module.module,shortdesc:base.module_tdb_plm_custom
-msgid "TDB PLM Customization - Giao diện & Tiêu đề Song ngữ PLM"
-msgstr "TDB PLM Customization - Giao diện & Tiêu đề Song ngữ PLM"
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_list
+msgid "Workstation Name"
+msgstr "Tên máy trạm"
 
 #. module: tdb_plm_custom
-#: model:ir.module.module,summary:base.module_tdb_plm_custom
-msgid ""
-"Tùy biến chuẩn hóa giao diện danh sách linh kiện PLM, tiêu đề song ngữ Anh -"
-" Việt và căn lề đồng đều"
-msgstr ""
-"Tùy biến chuẩn hóa giao diện danh sách linh kiện PLM, tiêu đề song ngữ Anh -"
-" Việt và căn lề đồng đều"
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "CAD Workstation Name"
+msgstr "Tên máy trạm CAD"
 
 #. module: tdb_plm_custom
-#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_component_base_tree_inherit_tdb
-msgid "Writable"
-msgstr "Có thể chỉnh sửa"
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_list
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "Client IP"
+msgstr "Địa chỉ IP máy trạm"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_list
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "CAD Version"
+msgstr "Phiên bản CAD"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_list
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "Issued Date"
+msgstr "Ngày cấp"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_list
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "Expiration Date"
+msgstr "Hạn chót"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_list
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "Last Access Date"
+msgstr "Lần truy cập cuối"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_list
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_search
+msgid "Active"
+msgstr "Hiệu lực"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_list
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "Revoke Access"
+msgstr "Thu hồi quyền"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_list
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "Restore"
+msgstr "Khôi phục"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "Device & Engineer Info"
+msgstr "Thông tin Thiết bị & Kỹ sư"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "Validity & Status"
+msgstr "Thời hạn & Trạng thái"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "Technical Details & Session"
+msgstr "Chi tiết Kỹ thuật & Session Odoo"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "Token Hash"
+msgstr "Mã Token Hash"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_form
+msgid "Session SID"
+msgstr "Session SID"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_search
+msgid "Search Desktop Tokens"
+msgstr "Tìm kiếm Token thiết bị"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_search
+msgid "Revoked"
+msgstr "Đã thu hồi"
+
+#. module: tdb_plm_custom
+#: model_terms:ir.ui.view,arch_db:tdb_plm_custom.plm_desktop_token_view_search
+msgid "Engineer"
+msgstr "Kỹ sư"

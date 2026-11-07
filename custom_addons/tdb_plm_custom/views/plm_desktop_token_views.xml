@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Danh sách (List View) Token thiết bị CAD -->
+    <!-- List View: CAD Desktop Access Tokens -->
     <record id="plm_desktop_token_view_list" model="ir.ui.view">
         <field name="name">plm.desktop.token.list</field>
         <field name="model">plm.desktop.token</field>
@@ -9,24 +9,24 @@
                   decoration-success="is_active"
                   decoration-danger="not is_active"
                   decoration-muted="is_revoked">
-                <field name="user_id" widget="many2one_avatar_user" string="Kỹ sư CAD"/>
-                <field name="machine_name" string="Tên máy trạm"/>
-                <field name="client_ip" string="IP LAN / Máy trạm"/>
-                <field name="cad_version" string="Phiên bản CAD"/>
-                <field name="issued_at" string="Ngày cấp"/>
-                <field name="expires_at" string="Hạn chót (180 ngày)"/>
-                <field name="last_used_date" string="Lần truy cập cuối"/>
-                <field name="is_active" widget="boolean_badge" string="Hiệu lực"/>
+                <field name="user_id" widget="many2one_avatar_user" string="CAD Engineer"/>
+                <field name="machine_name" string="Workstation Name"/>
+                <field name="client_ip" string="Client IP"/>
+                <field name="cad_version" string="CAD Version"/>
+                <field name="issued_at" string="Issued Date"/>
+                <field name="expires_at" string="Expiration Date"/>
+                <field name="last_used_date" string="Last Access Date"/>
+                <field name="is_active" widget="boolean_badge" string="Active"/>
                 <button name="action_revoke"
                         type="object"
-                        string="Thu hồi quyền (Revoke)"
+                        string="Revoke Access"
                         class="btn-danger btn-sm"
                         icon="fa-ban"
                         invisible="not is_active"
-                        confirm="Bạn có chắc chắn muốn thu hồi quyền truy cập của thiết bị này không? Máy trạm SolidWorks sẽ bị ngắt kết nối ngay lập tức!"/>
+                        confirm="Are you sure you want to revoke access for this device? The SolidWorks CAD workstation will be disconnected immediately!"/>
                 <button name="action_unrevoke"
                         type="object"
-                        string="Khôi phục"
+                        string="Restore"
                         class="btn-secondary btn-sm"
                         icon="fa-refresh"
                         invisible="is_active"/>
@@ -34,7 +34,7 @@
         </field>
     </record>
 
-    <!-- Chi tiết (Form View) Token thiết bị CAD -->
+    <!-- Form View: CAD Desktop Access Token -->
     <record id="plm_desktop_token_view_form" model="ir.ui.view">
         <field name="name">plm.desktop.token.form</field>
         <field name="model">plm.desktop.token</field>
@@ -43,14 +43,14 @@
                 <header>
                     <button name="action_revoke"
                             type="object"
-                            string="Thu hồi quyền (Revoke)"
+                            string="Revoke Access"
                             class="btn-danger"
                             icon="fa-ban"
                             invisible="not is_active"
-                            confirm="Bạn có chắc chắn muốn ngắt kết nối và thu hồi phiên làm việc của thiết bị CAD này không?"/>
+                            confirm="Are you sure you want to disconnect and revoke this CAD workstation session?"/>
                     <button name="action_unrevoke"
                             type="object"
-                            string="Khôi phục kết nối"
+                            string="Restore"
                             class="btn-secondary"
                             icon="fa-refresh"
                             invisible="is_active"/>
@@ -58,19 +58,19 @@
                 </header>
                 <sheet>
                     <div class="oe_title">
-                        <label for="machine_name" string="Tên máy trạm CAD"/>
+                        <label for="machine_name" string="CAD Workstation Name"/>
                         <h1>
-                            <field name="machine_name" placeholder="Ví dụ: WS-CAD-01"/>
+                            <field name="machine_name" placeholder="e.g. WS-CAD-01"/>
                         </h1>
                     </div>
                     <group>
-                        <group string="Thông tin Thiết bị &amp; Kỹ sư">
+                        <group string="Device &amp; Engineer Info">
                             <field name="user_id" widget="many2one_avatar_user"/>
                             <field name="machine_uuid"/>
                             <field name="cad_version"/>
                             <field name="client_ip"/>
                         </group>
-                        <group string="Thời hạn 180 ngày &amp; Trạng thái">
+                        <group string="Validity &amp; Status">
                             <field name="issued_at"/>
                             <field name="expires_at"/>
                             <field name="last_used_date"/>
@@ -79,10 +79,10 @@
                         </group>
                     </group>
                     <notebook>
-                        <page string="Chi tiết Kỹ thuật &amp; Session Odoo" groups="base.group_no_one,base.group_system">
+                        <page string="Technical Details &amp; Session" groups="base.group_no_one,base.group_system">
                             <group>
-                                <field name="name" string="Mã Token Hash"/>
-                                <field name="session_id" string="Session SID (Cookie)"/>
+                                <field name="name" string="Token Hash"/>
+                                <field name="session_id" string="Session SID"/>
                             </group>
                         </page>
                     </notebook>
@@ -91,27 +91,27 @@
         </field>
     </record>
 
-    <!-- Bộ lọc & Tìm kiếm (Search View) -->
+    <!-- Search View -->
     <record id="plm_desktop_token_view_search" model="ir.ui.view">
         <field name="name">plm.desktop.token.search</field>
         <field name="model">plm.desktop.token</field>
         <field name="arch" type="xml">
-            <search string="Tìm kiếm Desktop Tokens">
+            <search string="Search Desktop Tokens">
                 <field name="user_id"/>
                 <field name="machine_name"/>
                 <field name="client_ip"/>
                 <field name="cad_version"/>
-                <filter name="filter_active" string="Đang hoạt động" domain="[('is_active', '=', True)]"/>
-                <filter name="filter_revoked" string="Đã thu hồi" domain="[('is_revoked', '=', True)]"/>
+                <filter name="filter_active" string="Active" domain="[('is_active', '=', True)]"/>
+                <filter name="filter_revoked" string="Revoked" domain="[('is_revoked', '=', True)]"/>
                 <group>
-                    <filter name="group_user" string="Kỹ sư" domain="[]" context="{'group_by': 'user_id'}"/>
-                    <filter name="group_cad" string="Phiên bản CAD" domain="[]" context="{'group_by': 'cad_version'}"/>
+                    <filter name="group_user" string="Engineer" domain="[]" context="{'group_by': 'user_id'}"/>
+                    <filter name="group_cad" string="CAD Version" domain="[]" context="{'group_by': 'cad_version'}"/>
                 </group>
             </search>
         </field>
     </record>
 
-    <!-- Action mở danh sách Desktop Tokens -->
+    <!-- Action: Desktop Tokens -->
     <record id="action_plm_desktop_token" model="ir.actions.act_window">
         <field name="name">Desktop Access Tokens</field>
         <field name="res_model">plm.desktop.token</field>
@@ -119,17 +119,17 @@
         <field name="context">{'search_default_filter_active': 1}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
-                Chưa có thiết bị CAD nào kết nối.
+                No CAD devices connected yet.
             </p>
             <p>
-                Khi kỹ sư đăng nhập từ Add-in SolidWorks (OdooPLM), hệ thống sẽ tự động cấp phiên làm việc 180 ngày và lưu thông tin thiết bị tại đây.
+                When engineers log in from the SolidWorks CAD Add-in (OdooPLM), the system automatically issues a 180-day session and records the workstation details here.
             </p>
         </field>
     </record>
 
-    <!-- Menuitem: PLM ➔ Cấu hình (Configuration) ➔ Desktop Access Tokens -->
+    <!-- Menuitem: PLM ➔ Configuration ➔ Desktop Access Tokens -->
     <menuitem id="menu_plm_desktop_token"
-              name="Desktop Access Tokens (Quản lý thiết bị CAD)"
+              name="Desktop Access Tokens"
               parent="plm.plm_menu_dictionaries"
               action="action_plm_desktop_token"
               sequence="90"
