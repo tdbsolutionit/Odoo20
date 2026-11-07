@@ -27,7 +27,7 @@ class TdbPlmUploadDocument(UploadDocument):
     def login(self, login, password, db=None, **kw):
         """Kế thừa và mở rộng Controller gốc: Ép Session 180 ngày và ghi nhận Token thiết bị."""
         # Gọi phương thức login gốc của UploadDocument để Odoo Core xác thực tài khoản
-        res = super().login(login, password, db=db, **kw)
+        res = super().login(login, password, db=db)
 
         # Nếu đăng nhập không thành công
         if res.status_code != 200 or not getattr(request, 'session', None) or not request.session.uid:
