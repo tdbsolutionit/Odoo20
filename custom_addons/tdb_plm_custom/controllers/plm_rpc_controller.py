@@ -84,11 +84,11 @@ def _cad_dispatch_rpc(service_name, method, params):
             return 'production'
 
     elif service_name == 'common' and method == 'authenticate':
-        # Bắt sự kiện đăng nhập lại từ hộp thoại CAD (Execute New Login / Use new login)
+        # Chặn XML-RPC authenticate nếu token đã bị thu hồi HOẶC hết hạn.
+        # KHÔNG tự động gia hạn tại đây. Chỉ có /plm_document_upload/login (Execute New Login) mới gia hạn.
         db, login, password = params[:3]
         from odoo.modules.registry import Registry
         from odoo import api, fields
-        from datetime import timedelta
 
         client_ip = None
         try:
@@ -100,7 +100,7 @@ def _cad_dispatch_rpc(service_name, method, params):
         except Exception:
             pass
 
-        # 1. Kiểm tra trước: Nếu thiết bị đang bị Admin THU HỒI -> CHẶN ĐỨNG KHÔNG CHO ĐĂNG NHẬP
+        # Kiểm tra trước: Nếu thiết bị đang bị THU HỒI hoặc HẾT HẠN -> CHẶN ĐỨNG
         with Registry(db).cursor() as cr:
             env = api.Environment(cr, api.SUPERUSER_ID, {})
             if 'plm.desktop.token' in env.registry:
@@ -115,42 +115,27 @@ def _cad_dispatch_rpc(service_name, method, params):
                         tokens = env['plm.desktop.token'].search(domain, order='id desc')
                         if not tokens:
                             tokens = env['plm.desktop.token'].search([('user_id', '=', user.id)], order='id desc')
-                        if tokens and any(t.is_revoked for t in tokens):
-                            _logger.warning(
-                                f">>> [TDB PLM] TỪ CHỐI ĐĂNG NHẬP: Thiết bị của user '{login}' (IP: {client_ip}) "
-                                f"đang ở trạng thái BỊ THU HỒI bởi Quản trị viên."
-                            )
-                            raise odoo.exceptions.AccessDenied("CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.")
 
-        # 2. Cho phép Odoo xác thực tài khoản / mật khẩu
-        uid = _original_dispatch_rpc(service_name, method, params)
-
-        # 3. Nếu đăng nhập thành công qua hộp thoại CAD: MỞ KHÓA VÀ GIA HẠN 180 NGÀY CHO THIẾT BỊ
-        if uid:
-            with Registry(db).cursor() as cr:
-                env = api.Environment(cr, api.SUPERUSER_ID, {})
-                if 'plm.desktop.token' in env.registry:
-                    cr.execute("SELECT to_regclass('public.plm_desktop_token');")
-                    row = cr.fetchone()
-                    if row and row[0]:
-                        domain = [('user_id', '=', int(uid))]
-                        if client_ip:
-                            domain.append(('client_ip', '=', client_ip))
-                        tokens = env['plm.desktop.token'].search(domain, order='id desc')
-                        if not tokens:
-                            tokens = env['plm.desktop.token'].search([('user_id', '=', int(uid))], order='id desc')
                         if tokens:
+                            # 1. Nếu thiết bị đang bị Admin THU HỒI -> CHẶN
+                            if any(t.is_revoked for t in tokens):
+                                _logger.warning(
+                                    f">>> [TDB PLM] TỪ CHỐI XML-RPC AUTHENTICATE: Thiết bị của user '{login}' (IP: {client_ip}) "
+                                    f"đang ở trạng thái BỊ THU HỒI bởi Quản trị viên."
+                                )
+                                raise odoo.exceptions.AccessDenied("CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.")
+
+                            # 2. Nếu token ĐÃ HẾT HẠN -> CHẶN (buộc dùng Execute New Login qua HTTP)
                             now = fields.Datetime.now()
-                            tokens[0].write({
-                                'expires_at': now + timedelta(days=180),
-                                'is_revoked': False,
-                                'last_used_date': now,
-                            })
-                            cr.commit()
-                            _logger.info(
-                                f">>> [TDB PLM] Kỹ sư '{login}' (UID {uid}) đã đăng nhập lại qua Execute New Login: "
-                                f"Đã gia hạn 180 ngày cho thiết bị '{tokens[0].machine_name}'."
-                            )
+                            if tokens[0].expires_at and tokens[0].expires_at <= now:
+                                _logger.warning(
+                                    f">>> [TDB PLM] TỪ CHỐI XML-RPC AUTHENTICATE: Thiết bị của user '{login}' (IP: {client_ip}) "
+                                    f"ĐÃ HẾT HẠN 180 NGÀY ({tokens[0].expires_at}). Buộc dùng Execute New Login."
+                                )
+                                raise odoo.exceptions.AccessDenied("CAD 180-day Session has EXPIRED. Please use 'Execute New Login' from SolidWorks to renew.")
+
+        # Cho phép Odoo xác thực tài khoản / mật khẩu (token hợp lệ và còn hạn)
+        uid = _original_dispatch_rpc(service_name, method, params)
         return uid
 
     elif service_name == 'object':
