@@ -66,3 +66,4 @@ class IrAttachment(models.Model):
         """Chặn lưu cấu trúc lắp ráp CAD khi token hết hạn."""
         self._check_cad_access_token()
         return super().saveStructure(arguments)
+

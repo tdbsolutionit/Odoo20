@@ -116,12 +116,24 @@ def _cad_dispatch_rpc(service_name, method, params):
                         user = env['res.users'].search([('login', '=', login)], limit=1)
                         if user:
                             tokens = env['plm.desktop.token'].search([('user_id', '=', user.id)], order='id desc')
-                            if tokens and any(t.is_revoked for t in tokens):
-                                _logger.warning(
-                                    f">>> [TDB PLM] TỪ CHỐI XML-RPC {method.upper()}: Thiết bị của user '{login}' "
-                                    f"đang ở trạng thái BỊ THU HỒI bởi Quản trị viên."
-                                )
-                                raise UserError("Thiết bị CAD đã bị Quản trị viên thu hồi quyền truy cập. Vui lòng liên hệ Quản trị viên.")
+                            if tokens:
+                                # 1. Chặn nếu bị Quản trị viên Thu hồi
+                                if any(t.is_revoked for t in tokens):
+                                    _logger.warning(
+                                        f">>> [TDB PLM] TỪ CHỐI XML-RPC {method.upper()}: Thiết bị của user '{login}' "
+                                        f"đang ở trạng thái BỊ THU HỒI bởi Quản trị viên."
+                                    )
+                                    raise UserError("Thiết bị CAD đã bị Quản trị viên thu hồi quyền truy cập. Vui lòng liên hệ Quản trị viên.")
+
+                                # 2. Chặn nếu thiết bị ĐÃ HẾT HẠN 180 ngày (Tuyệt đối không cho phép tự động gia hạn ngầm)
+                                now = fields.Datetime.now()
+                                active_tokens = [t for t in tokens if (not t.is_revoked) and t.expires_at and (t.expires_at > now)]
+                                if not active_tokens:
+                                    _logger.warning(
+                                        f">>> [TDB PLM] TỪ CHỐI XML-RPC {method.upper()}: Thiết bị của user '{login}' "
+                                        f"ĐÃ HẾT HẠN 180 NGÀY. TỪ CHỐI TỰ ĐỘNG GIA HẠN NGẦM."
+                                    )
+                                    raise UserError("Phiên làm việc CAD 180 ngày đã HẾT HẠN. Máy trạm đã bị khóa. Vui lòng liên hệ Quản trị viên bấm 'Gia hạn 180 ngày' trên Odoo Web.")
         except (UserError, AccessDenied):
             raise
         except Exception as e:

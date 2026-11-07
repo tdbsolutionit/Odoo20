@@ -38,20 +38,34 @@ class TdbPlmUploadDocument(UploadDocument):
         machine_uuid = kw.get('machine_uuid') or request.httprequest.headers.get('X-Machine-UUID') or f"WS_{machine_name}"
         cad_version = kw.get('cad_version') or request.httprequest.headers.get('X-CAD-Version') or 'SolidWorks 2022'
 
-        # 2. Kiểm tra xem thiết bị CAD này hoặc User này đã bị Quản trị viên THU HỒI quyền chưa
+        # 2. Kiểm tra xem thiết bị CAD này hoặc User này đã bị Quản trị viên THU HỒI hoặc HẾT HẠN chưa
         try:
             if 'plm.desktop.token' in request.env.registry:
                 token_model = request.env['plm.desktop.token'].sudo()
                 tokens = token_model.search([('user_id.login', '=', login)], order='id desc')
-                if tokens and any(t.is_revoked for t in tokens):
-                    _logger.warning(
-                        f">>> [TDB PLM] CHẶN ĐĂNG NHẬP: Máy trạm '{machine_name}' (IP: {client_ip}) "
-                        f"của tài khoản '{login}' ĐÃ BỊ THU HỒI quyền truy cập bởi Quản trị viên."
-                    )
-                    return Response(
-                        response="CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.",
-                        status=403,
-                    )
+                if tokens:
+                    if any(t.is_revoked for t in tokens):
+                        _logger.warning(
+                            f">>> [TDB PLM] CHẶN ĐĂNG NHẬP: Máy trạm '{machine_name}' (IP: {client_ip}) "
+                            f"của tài khoản '{login}' ĐÃ BỊ THU HỒI quyền truy cập bởi Quản trị viên."
+                        )
+                        return Response(
+                            response="CAD Workstation access has been REVOKED by Administrator. Please contact Admin to restore access.",
+                            status=403,
+                        )
+
+                    from odoo import fields
+                    now = fields.Datetime.now()
+                    active_tokens = [t for t in tokens if (not t.is_revoked) and t.expires_at and (t.expires_at > now)]
+                    if not active_tokens:
+                        _logger.warning(
+                            f">>> [TDB PLM] CHẶN ĐĂNG NHẬP: Máy trạm '{machine_name}' (IP: {client_ip}) "
+                            f"của tài khoản '{login}' ĐÃ HẾT HẠN 180 NGÀY. TỪ CHỐI TỰ ĐỘNG GIA HẠN."
+                        )
+                        return Response(
+                            response="CAD 180-day Session has EXPIRED. Workstation is locked. Please contact Administrator to renew on Odoo Web.",
+                            status=401,
+                        )
         except Exception as e:
             _logger.debug(f"[TDB PLM] Lỗi kiểm tra revoked token trước login: {e}")
 
