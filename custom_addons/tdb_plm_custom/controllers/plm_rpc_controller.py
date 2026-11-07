@@ -85,12 +85,14 @@ def _cad_dispatch_rpc(service_name, method, params):
 
     elif service_name == 'common' and method == 'authenticate':
         # Xác thực XML-RPC cho CAD Client:
-        # 1. Chặn đứng nếu thiết bị đang bị Admin THU HỒI quyền.
-        # 2. KHÔNG chặn token hết hạn tại đây để cho phép kỹ sư dùng 'Execute New Login' xác thực và gia hạn lại.
-        # 3. KHÔNG tự ý gia hạn 180 ngày tại đây để ngăn 'Use Current Session' tự động reset hạn.
+        # 1. Chặn đứng nếu thiết bị đang bị Admin THU HỒI quyền (kể cả có mật khẩu đúng).
+        # 2. Khi kỹ sư bấm Login từ hộp thoại CAD (New Login) với mật khẩu đúng:
+        #    Tự động mở khóa và gia hạn 180 ngày cho token của thiết bị.
         db, login, password = params[:3]
         from odoo.modules.registry import Registry
-        from odoo import api
+        from odoo import api, fields
+        from datetime import timedelta
+        import secrets
 
         # Kiểm tra trước: Nếu tài khoản/thiết bị đang bị Admin THU HỒI -> CHẶN ĐỨNG
         with Registry(db).cursor() as cr:
@@ -111,6 +113,46 @@ def _cad_dispatch_rpc(service_name, method, params):
 
         # Cho phép Odoo xác thực tài khoản / mật khẩu
         uid = _original_dispatch_rpc(service_name, method, params)
+
+        # Khi đăng nhập thành công qua hộp thoại CAD (Execute New Login):
+        # Mở khóa và gia hạn 180 ngày cho thiết bị
+        if uid:
+            with Registry(db).cursor() as cr:
+                env = api.Environment(cr, api.SUPERUSER_ID, {})
+                if 'plm.desktop.token' in env.registry:
+                    cr.execute("SELECT to_regclass('public.plm_desktop_token');")
+                    row = cr.fetchone()
+                    if row and row[0]:
+                        tokens = env['plm.desktop.token'].search([('user_id', '=', int(uid))], order='id desc')
+                        now = fields.Datetime.now()
+                        new_session = f"cad_{now.strftime('%Y%m%d%H%M%S')}_{secrets.token_hex(8)}"
+                        if tokens:
+                            tokens.write({
+                                'expires_at': now + timedelta(days=180),
+                                'is_revoked': False,
+                                'session_id': new_session,
+                                'last_used_date': now,
+                            })
+                            if len(tokens) > 1:
+                                (tokens - tokens[0]).unlink()
+                        else:
+                            env['plm.desktop.token'].create({
+                                'name': secrets.token_urlsafe(32),
+                                'user_id': int(uid),
+                                'machine_name': f"CAD WS ({login})",
+                                'machine_uuid': f"WS_{login}",
+                                'expires_at': now + timedelta(days=180),
+                                'is_revoked': False,
+                                'session_id': new_session,
+                                'last_used_date': now,
+                                'issued_at': now,
+                            })
+                        cr.commit()
+                        _logger.info(
+                            f">>> [TDB PLM] Kỹ sư '{login}' (UID {uid}) đã đăng nhập thành công từ hộp thoại CAD: "
+                            f"Đã mở khóa và gia hạn 180 ngày cho thiết bị."
+                        )
+
         return uid
 
     elif service_name == 'object':
