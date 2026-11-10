@@ -18,25 +18,45 @@ patch(NavBar.prototype, {
             this.rpc = null;
         }
 
-        // 1. Kiểm tra trạng thái đăng nhập hoặc landing mặc định để mở ngay Home Menu
-        const isFromLogin =
-            sessionStorage.getItem("tdb_open_home_menu") === "true" ||
-            (document.referrer && document.referrer.includes("/web/login"));
+        // 1. Kiểm tra trạng thái tải trang (F5/Reload vs Điều hướng mới/Đăng nhập)
+        const navEntries =
+            typeof performance !== "undefined" && performance.getEntriesByType
+                ? performance.getEntriesByType("navigation")
+                : [];
+        const isPageReload =
+            (navEntries.length > 0 && navEntries[0].type === "reload") ||
+            (typeof performance !== "undefined" &&
+                performance.navigation &&
+                performance.navigation.type === 1);
 
-        const isDefaultLanding =
-            window.location.pathname === "/odoo/discuss" ||
-            window.location.pathname === "/odoo" ||
-            window.location.pathname === "/odoo/" ||
-            window.location.pathname === "/web" ||
-            window.location.pathname === "/web/" ||
-            !window.location.hash ||
-            window.location.hash === "#" ||
-            window.location.hash.includes("action=mail.action_discuss");
+        // Kiểm tra xem trước khi tải lại trang người dùng có đang chủ động mở Home Menu hay không
+        const wasHomeMenuExplicitlyOpen =
+            sessionStorage.getItem("tdb_home_menu_active") === "true";
 
-        const shouldOpenHomeMenu = isFromLogin || isDefaultLanding;
-
-        if (sessionStorage.getItem("tdb_open_home_menu")) {
+        // Kiểm tra đăng nhập mới từ trang login
+        const isFreshLogin = sessionStorage.getItem("tdb_open_home_menu") === "true";
+        if (isFreshLogin) {
             sessionStorage.removeItem("tdb_open_home_menu");
+        }
+
+        // Kiểm tra đường dẫn có phải trang gốc không (chỉ root /odoo, /web và không có action/model cụ thể)
+        const pathname = (window.location.pathname || "").replace(/\/+$/, "") || "/";
+        const isBareRoot = pathname === "/odoo" || pathname === "/web" || pathname === "";
+        const hasSpecificActionOrTarget =
+            Boolean(window.location.search && window.location.search.length > 1) ||
+            Boolean(window.location.hash && window.location.hash.length > 1 && window.location.hash !== "#");
+
+        let shouldOpenHomeMenu = false;
+        if (isPageReload) {
+            // Khi F5 / Reload: GIỮ NGUYÊN TRANG HIỆN TẠI!
+            // Chỉ mở Home Menu nếu trước đó người dùng thực sự đang đứng ở màn hình Home Menu
+            shouldOpenHomeMenu = wasHomeMenuExplicitlyOpen;
+        } else if (isFreshLogin) {
+            shouldOpenHomeMenu = !hasSpecificActionOrTarget;
+        } else if (isBareRoot && !hasSpecificActionOrTarget) {
+            shouldOpenHomeMenu = true;
+        } else {
+            shouldOpenHomeMenu = false;
         }
 
         this.state.isHomeMenuOpened = Boolean(shouldOpenHomeMenu);
@@ -44,6 +64,7 @@ patch(NavBar.prototype, {
         this.state.currentDateTime = this.getFormattedDateTime();
 
         if (this.state.isHomeMenuOpened) {
+            sessionStorage.setItem("tdb_home_menu_active", "true");
             this._suppressMenuAppChanged = true;
             document.title = "TDB Solution";
             setTimeout(() => {
@@ -53,6 +74,8 @@ patch(NavBar.prototype, {
                 const input = document.querySelector(".o_home_menu_search_input");
                 input?.focus();
             }, 120);
+        } else {
+            sessionStorage.removeItem("tdb_home_menu_active");
         }
 
         // Tự động cập nhật ngày giờ thời gian thực mỗi giây
@@ -80,8 +103,7 @@ patch(NavBar.prototype, {
 
         useListener(window, "keydown", (ev) => {
             if (this.state.isHomeMenuOpened && ev.key === "Escape") {
-                this.state.isHomeMenuOpened = false;
-                this.state.searchQuery = "";
+                this.toggleHomeMenu(false);
             }
         });
 
@@ -89,8 +111,7 @@ patch(NavBar.prototype, {
             if (this._suppressMenuAppChanged) {
                 return;
             }
-            this.state.isHomeMenuOpened = false;
-            this.state.searchQuery = "";
+            this.toggleHomeMenu(false);
         });
     },
 
@@ -119,12 +140,15 @@ patch(NavBar.prototype, {
             typeof force === "boolean" ? force : !this.state.isHomeMenuOpened;
         this.state.searchQuery = "";
         if (this.state.isHomeMenuOpened) {
+            sessionStorage.setItem("tdb_home_menu_active", "true");
             this.state.currentDateTime = this.getFormattedDateTime();
             document.title = "TDB Solution";
             setTimeout(() => {
                 const input = document.querySelector(".o_home_menu_search_input");
                 input?.focus();
             }, 60);
+        } else {
+            sessionStorage.removeItem("tdb_home_menu_active");
         }
     },
 
@@ -132,6 +156,7 @@ patch(NavBar.prototype, {
         this._suppressMenuAppChanged = false;
         this.state.isHomeMenuOpened = false;
         this.state.searchQuery = "";
+        sessionStorage.removeItem("tdb_home_menu_active");
         this.onNavBarDropdownItemSelection(app);
     },
 
