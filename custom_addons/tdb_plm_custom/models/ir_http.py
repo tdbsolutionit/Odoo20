@@ -42,7 +42,7 @@ class IrHttp(models.AbstractModel):
         uid = getattr(request.session, 'uid', None)
 
         if not session_id or not uid:
-            raise Unauthorized("CAD Session is invalid. Please log in again from SolidWorks.")
+            raise Forbidden("CAD Session is invalid. Please log in again from SolidWorks.")
 
         tokens = token_model.search([
             ('user_id', '=', uid),
@@ -58,8 +58,8 @@ class IrHttp(models.AbstractModel):
             active_tokens = [t for t in tokens if (not t.is_revoked) and t.expires_at and (t.expires_at > now)]
             if not active_tokens:
                 _logger.warning(f">>> [TDB PLM Middleware] Chặn CAD đã hết hạn: User ID {uid}")
-                raise Unauthorized("CAD 180-day Session has EXPIRED. Please use 'Execute New Login' from SolidWorks to renew.")
+                raise Forbidden("CAD 180-day Session has EXPIRED. Please use 'Execute New Login' from SolidWorks to renew.")
 
             tokens[0].update_last_used()
         else:
-            raise Unauthorized("CAD workstation token not found. Please log in again from SolidWorks.")
+            raise Forbidden("CAD workstation token not found. Please log in again from SolidWorks.")

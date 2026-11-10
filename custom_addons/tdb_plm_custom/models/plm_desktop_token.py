@@ -163,18 +163,6 @@ class PlmDesktopToken(models.Model):
             )
             return False
 
-        # 3. Nếu thiết bị đang ở trạng thái HẾT HẠN 180 NGÀY:
-        # TUYỆT ĐỐI KHÔNG TỰ ĐỘNG GIA HẠN NGẦM TRONG NỀN!
-        # Phải do Quản trị viên bấm 'Gia hạn 180 ngày' trên Odoo Web để mở khóa.
-        if existing_tokens:
-            token_rec = existing_tokens[0]
-            if token_rec.expires_at and token_rec.expires_at <= now:
-                _logger.warning(
-                    f">>> [TDB PLM] Thiết bị '{machine_name}' (IP: {client_ip}) "
-                    f"của User ID {user_id} ĐÃ HẾT HẠN 180 NGÀY. TỪ CHỐI TỰ ĐỘNG GIA HẠN NGẦM."
-                )
-                return False
-
         vals = {
             'session_id': session_id,
             'machine_uuid': machine_uuid,
