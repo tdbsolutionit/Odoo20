@@ -56,3 +56,4 @@ class BaseCadSecurity(models.AbstractModel):
     def unlink(self):
         self._check_cad_active_token()
         return super().unlink()
+

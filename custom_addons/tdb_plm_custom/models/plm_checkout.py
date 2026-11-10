@@ -49,3 +49,4 @@ class TdbPlmCheckout(models.Model):
                 'sticky': False,
             }
         }
+

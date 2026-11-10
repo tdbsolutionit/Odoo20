@@ -83,7 +83,7 @@
                         type="object"
                         string="Check-out (Khóa)"
                         class="btn-primary"
-                        invisible="is_checkout == True or engineering_state not in ['draft', False]"/>
+                        invisible="is_checkout == True"/>
                 <button name="action_web_checkin"
                         type="object"
                         string="Check-in (Mở khóa)"
