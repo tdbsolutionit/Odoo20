@@ -2,10 +2,11 @@
 <odoo>
     <!-- ======================================================================= -->
     <!-- TDB SOLUTION - PHÂN TẦNG LAYER 5: VIEWS VÀ GIAO DIỆN BACKEND PLM       -->
-    <!-- Kế thừa giao diện danh sách PLM Documents (ir_attachment_list)          -->
-    <!-- Chuẩn hóa chuỗi gốc tiếng Anh - Bản dịch tiếng Việt tự động quản lý    -->
+    <!-- Quản lý Document Lock: Khóa độc quyền, Chống sửa đồng thời             -->
+    <!-- & Cưỡng chế mở khóa (Force Unlock) cho Quản trị viên                   -->
     <!-- ======================================================================= -->
 
+    <!-- 1. Danh sách Documents (List View): Bổ sung trạng thái khóa & nút phá khóa -->
     <record id="plm_ir_attachment_list_inherit_tdb" model="ir.ui.view">
         <field name="name">ir.attachment.list.plm.tdb.custom</field>
         <field name="model">ir.attachment</field>
@@ -37,6 +38,113 @@
                 <attribute name="string">Engineering Status</attribute>
                 <attribute name="class">text-center</attribute>
                 <attribute name="width">140px</attribute>
+            </xpath>
+
+            <!-- Trạng thái khóa & Người giữ khóa -->
+            <xpath expr="//field[@name='checkout_user']" position="replace">
+                <field name="is_checkout" column_invisible="1"/>
+                <field name="lock_state"
+                       widget="badge"
+                       decoration-danger="lock_state == 'locked'"
+                       decoration-success="lock_state == 'unlocked'"
+                       string="Trạng thái khóa"
+                       optional="show"/>
+                <field name="checkout_user" string="Người giữ khóa" optional="show"/>
+                <button name="action_force_unlock"
+                        type="object"
+                        string="Phá khóa"
+                        icon="fa-unlock"
+                        class="btn-link text-danger"
+                        invisible="is_checkout == False"
+                        groups="plm.group_plm_admin"
+                        confirm="Bạn có chắc chắn muốn CƯỠNG CHẾ MỞ KHÓA tài liệu này không? Hành động này sẽ được ghi nhận vào nhật ký kiểm toán."/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- 2. Form View Documents: Thêm nút Force Unlock & Banner cảnh báo khi bị khóa -->
+    <record id="plm_ir_attachment_form_inherit_tdb" model="ir.ui.view">
+        <field name="name">ir.attachment.form.plm.tdb.custom</field>
+        <field name="model">ir.attachment</field>
+        <field name="inherit_id" ref="plm.view_attachment_form_plm_hinerit"/>
+        <field name="priority" eval="10"/>
+        <field name="arch" type="xml">
+            <!-- Thêm nút Phá khóa trên Header -->
+            <xpath expr="//header" position="inside">
+                <field name="is_checkout" invisible="1"/>
+                <button name="action_force_unlock"
+                        type="object"
+                        string="Phá khóa (Force Unlock)"
+                        class="btn-danger"
+                        invisible="is_checkout == False"
+                        groups="plm.group_plm_admin"
+                        confirm="CẢNH BÁO: Bạn có chắc chắn muốn CƯỠNG CHẾ MỞ KHÓA tài liệu này không? Toàn bộ thay đổi chưa Check-in của kỹ sư giữ khóa sẽ không thể lưu đè. Hành động này được ghi vào Chatter."/>
+                <button name="action_web_checkout"
+                        type="object"
+                        string="Check-out (Khóa)"
+                        class="btn-primary"
+                        invisible="is_checkout == True or engineering_state not in ['draft', False]"/>
+                <button name="action_web_checkin"
+                        type="object"
+                        string="Check-in (Mở khóa)"
+                        class="btn-success"
+                        invisible="is_checkout == False"/>
+            </xpath>
+
+            <!-- Banner cảnh báo đỏ nổi bật khi tài liệu đang bị khóa -->
+            <xpath expr="//sheet" position="before">
+                <div class="alert alert-danger d-flex align-items-center mb-0 py-2 justify-content-between"
+                     role="alert"
+                     invisible="is_checkout == False">
+                    <div>
+                        <strong>🔒 TÀI LIỆU ĐANG BỊ KHÓA ĐỘC QUYỀN</strong>:
+                        Đang được giữ bởi kỹ sư <field name="checkout_user" class="fw-bold text-decoration-underline"/>
+                        <span invisible="not locked_hostname"> trên máy trạm <b><field name="locked_hostname"/></b></span>
+                        <span invisible="not locked_date"> (từ <field name="locked_date"/>)</span>.
+                    </div>
+                    <div>
+                        <span class="badge bg-danger">Chế độ Chỉ-Đọc (Read-only)</span>
+                    </div>
+                </div>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- 3. Kế thừa danh sách Checked-Out Documents: Thêm nút Phá khóa -->
+    <record id="plm_checkout_list_inherit_tdb" model="ir.ui.view">
+        <field name="name">plm.checkout.list.tdb</field>
+        <field name="model">plm.checkout</field>
+        <field name="inherit_id" ref="plm.plm_checkout_list"/>
+        <field name="priority" eval="10"/>
+        <field name="arch" type="xml">
+            <xpath expr="//field[@name='create_date']" position="after">
+                <button name="action_force_unlock"
+                        type="object"
+                        string="Phá khóa"
+                        icon="fa-unlock"
+                        class="btn-link text-danger"
+                        groups="plm.group_plm_admin"
+                        confirm="Bạn có chắc chắn muốn CƯỠNG CHẾ MỞ KHÓA tài liệu này không?"/>
+            </xpath>
+        </field>
+    </record>
+
+    <!-- 4. Kế thừa Form View Checked-Out Documents: Thêm Header & nút Phá khóa -->
+    <record id="plm_checkout_form_inherit_tdb" model="ir.ui.view">
+        <field name="name">plm.checkout.form.tdb</field>
+        <field name="model">plm.checkout</field>
+        <field name="inherit_id" ref="plm.view_plm_checkout_form"/>
+        <field name="priority" eval="10"/>
+        <field name="arch" type="xml">
+            <xpath expr="//sheet" position="before">
+                <header>
+                    <button name="action_force_unlock"
+                            type="object"
+                            string="Cưỡng chế mở khóa (Force Unlock)"
+                            class="btn-danger"
+                            groups="plm.group_plm_admin"
+                            confirm="Bạn có chắc chắn muốn CƯỠNG CHẾ MỞ KHÓA tài liệu này không?"/>
+                </header>
             </xpath>
         </field>
     </record>
