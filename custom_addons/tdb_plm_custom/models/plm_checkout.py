@@ -5,6 +5,7 @@ Mở rộng model plm.checkout:
 Bổ sung tính năng Phá khóa cưỡng chế (Force Unlock) có ghi nhận nhật ký kiểm toán (Audit Log).
 """
 import logging
+from markupsafe import Markup
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
@@ -30,12 +31,14 @@ class TdbPlmCheckout(models.Model):
             if doc:
                 doc.write({'engineering_writable': False})
                 doc.assign_must_update_flag()
-                audit_msg = _(
-                    "<strong>🚨 CƯỠNG CHẾ MỞ KHÓA (FORCE UNLOCK)</strong><br/>"
-                    "• Người thực hiện: <b>%s</b><br/>"
-                    "• Kỹ sư từng giữ khóa: <b>%s</b> (Máy trạm: <b>%s</b>)<br/>"
-                    "• Trạng thái: Đã giải phóng khóa cưỡng chế thành công."
-                ) % (self.env.user.name, prev_user, prev_host)
+                audit_msg = Markup(_(
+                    "<p><strong>🚨 CƯỠNG CHẾ MỞ KHÓA (FORCE UNLOCK)</strong></p>"
+                    "<ul>"
+                    "<li>Người thực hiện: <b>%s</b></li>"
+                    "<li>Kỹ sư từng giữ khóa: <b>%s</b> (Máy trạm: <b>%s</b>)</li>"
+                    "<li>Trạng thái tài liệu: Đã giải phóng khóa cưỡng chế thành công.</li>"
+                    "</ul>"
+                )) % (self.env.user.name, prev_user, prev_host)
                 doc.message_post(body=audit_msg, message_type='notification')
                 _logger.warning(f">>> [TDB PLM FORCE UNLOCK] {self.env.user.name} đã phá khóa bản vẽ {doc.name} (Doc ID {doc.id})")
 

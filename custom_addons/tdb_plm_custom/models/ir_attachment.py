@@ -10,6 +10,7 @@ Mở rộng model ir.attachment cho phân hệ OdooPLM:
    - Các trường tính toán trực quan hóa trạng thái khóa (lock_state, locked_user_id, locked_hostname).
 """
 import logging
+from markupsafe import Markup
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
@@ -169,13 +170,15 @@ class IrAttachment(models.Model):
             doc.assign_must_update_flag()
 
             # Ghi nhận log kiểm toán vào Chatter
-            audit_msg = _(
-                "<strong>🚨 CƯỠNG CHẾ MỞ KHÓA (FORCE UNLOCK)</strong><br/>"
-                "• Người thực hiện phá khóa: <b>%s</b><br/>"
-                "• Kỹ sư từng giữ khóa: <b>%s</b><br/>"
-                "• Máy trạm từng giữ khóa: <b>%s</b><br/>"
-                "• Trạng thái tài liệu: Đã giải phóng khóa thành công, sẵn sàng để kỹ sư khác tiếp quản."
-            ) % (self.env.user.name, prev_user_str, prev_host_str)
+            audit_msg = Markup(_(
+                "<p><strong>🚨 CƯỠNG CHẾ MỞ KHÓA (FORCE UNLOCK)</strong></p>"
+                "<ul>"
+                "<li>Người thực hiện phá khóa: <b>%s</b></li>"
+                "<li>Kỹ sư từng giữ khóa: <b>%s</b></li>"
+                "<li>Máy trạm từng giữ khóa: <b>%s</b></li>"
+                "<li>Trạng thái tài liệu: Đã giải phóng khóa thành công, sẵn sàng để kỹ sư khác tiếp quản.</li>"
+                "</ul>"
+            )) % (self.env.user.name, prev_user_str, prev_host_str)
             doc.message_post(body=audit_msg, message_type='notification')
             _logger.warning(f">>> [TDB PLM FORCE UNLOCK] {self.env.user.name} đã cưỡng chế mở khóa tài liệu {doc.name} (ID {doc.id})")
 

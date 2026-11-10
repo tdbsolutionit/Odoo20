@@ -149,8 +149,9 @@
         </field>
     </record>
 
-    <!-- Cập nhật tiêu đề Action cửa sổ Documents -->
+    <!-- Cập nhật Action Documents: Gỡ bỏ bộ lọc mặc định 'Must Update from CAD' để hiển thị toàn bộ tài liệu ngay khi mở menu -->
     <record id="plm.plm_action_document_form" model="ir.actions.act_window">
         <field name="name">Documents</field>
+        <field name="context">{"odooPLM": True}</field>
     </record>
 </odoo>
