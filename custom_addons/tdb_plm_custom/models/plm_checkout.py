@@ -33,10 +33,10 @@ class TdbPlmCheckout(models.Model):
                 doc.with_context(is_web_operation=True).assign_must_update_flag()
                 audit_msg = Markup(_(
                     "<p>"
-                    "<strong>Cưỡng chế mở khóa (Force Unlock)</strong><br/>"
-                    "Người thực hiện: <b>%s</b><br/>"
-                    "Kỹ sư từng giữ khóa: <b>%s</b><br/>"
-                    "Máy trạm từng giữ khóa: <b>%s</b><br/>"
+                    "Cưỡng chế mở khóa (Force Unlock)<br/>"
+                    "Người thực hiện: %s<br/>"
+                    "Kỹ sư từng giữ khóa: %s<br/>"
+                    "Máy trạm từng giữ khóa: %s<br/>"
                     "Trạng thái: Đã giải phóng khóa tài liệu thành công."
                     "</p>"
                 )) % (self.env.user.name, prev_user, prev_host)

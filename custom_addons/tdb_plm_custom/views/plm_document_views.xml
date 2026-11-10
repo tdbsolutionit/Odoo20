@@ -91,19 +91,18 @@
                         invisible="is_checkout == False"/>
             </xpath>
 
-            <!-- Banner cảnh báo đỏ nổi bật khi tài liệu đang bị khóa -->
+            <!-- Banner cảnh báo đỏ khi tài liệu đang bị khóa -->
             <xpath expr="//sheet" position="before">
                 <div class="alert alert-danger d-flex align-items-center mb-0 py-2 justify-content-between"
                      role="alert"
                      invisible="is_checkout == False">
                     <div>
-                        <strong>🔒 TÀI LIỆU ĐANG BỊ KHÓA ĐỘC QUYỀN</strong>:
-                        Đang được giữ bởi kỹ sư <field name="checkout_user" class="fw-bold text-decoration-underline"/>
-                        <span invisible="not locked_hostname"> trên máy trạm <b><field name="locked_hostname"/></b></span>
+                        <span>Tài liệu đang bị khóa: Đang được giữ bởi kỹ sư </span><field name="checkout_user"/>
+                        <span invisible="not locked_hostname"> trên máy trạm <field name="locked_hostname"/></span>
                         <span invisible="not locked_date"> (từ <field name="locked_date"/>)</span>.
                     </div>
                     <div>
-                        <span class="badge bg-danger">Chế độ Chỉ-Đọc (Read-only)</span>
+                        <span class="badge bg-danger">Chế độ chỉ đọc</span>
                     </div>
                 </div>
             </xpath>

@@ -184,13 +184,13 @@ class IrAttachment(models.Model):
             doc.write({'engineering_writable': False})
             doc.assign_must_update_flag()
 
-            # Ghi nhận log kiểm toán vào Chatter (định dạng ERP chuẩn, không icon, không bullet AI)
+            # Ghi nhận log kiểm toán vào Chatter (định dạng văn bản thuần, không icon, không in đậm)
             audit_msg = Markup(_(
                 "<p>"
-                "<strong>Cưỡng chế mở khóa (Force Unlock)</strong><br/>"
-                "Người thực hiện: <b>%s</b><br/>"
-                "Kỹ sư từng giữ khóa: <b>%s</b><br/>"
-                "Máy trạm từng giữ khóa: <b>%s</b><br/>"
+                "Cưỡng chế mở khóa (Force Unlock)<br/>"
+                "Người thực hiện: %s<br/>"
+                "Kỹ sư từng giữ khóa: %s<br/>"
+                "Máy trạm từng giữ khóa: %s<br/>"
                 "Trạng thái: Đã giải phóng khóa tài liệu thành công."
                 "</p>"
             )) % (self.env.user.name, prev_user_str, prev_host_str)
@@ -336,9 +336,9 @@ class IrAttachment(models.Model):
 
             kwargs['body'] = Markup(_(
                 "<p>"
-                "<strong>Khóa tài liệu (Check-out)</strong><br/>"
-                "Người thực hiện: <b>%s</b><br/>"
-                "Máy trạm: <b>%s</b>"
+                "Khóa tài liệu (Check-out)<br/>"
+                "Người thực hiện: %s<br/>"
+                "Máy trạm: %s"
                 "</p>"
             )) % (user_name, hostname)
 
@@ -348,8 +348,8 @@ class IrAttachment(models.Model):
             user_name = self.env.user.name
             kwargs['body'] = Markup(_(
                 "<p>"
-                "<strong>Mở khóa tài liệu (Check-in)</strong><br/>"
-                "Người thực hiện: <b>%s</b>"
+                "Mở khóa tài liệu (Check-in)<br/>"
+                "Người thực hiện: %s"
                 "</p>"
             )) % user_name
 
