@@ -21,7 +21,24 @@ class BaseCadSecurity(models.AbstractModel):
     _inherit = 'base'
 
     def _check_cad_active_token(self):
-        """Kiểm tra token cho mọi thao tác từ CAD Client (mang cờ odooPLM=True)."""
+        """Kiểm tra token cho mọi thao tác từ CAD Client (SolidWorks / Inventor qua RPC).
+        Bỏ qua hoàn toàn đối với các thao tác từ Web Browser của Admin / Kỹ sư.
+        """
+        # 1. Bỏ qua nếu có cờ định danh thao tác Web
+        if self.env.context.get('is_web_operation'):
+            return
+
+        # 2. Bỏ qua hoàn toàn nếu request xuất phát từ trình duyệt Web (/web, /odoo)
+        try:
+            from odoo.http import request
+            if request and hasattr(request, 'httprequest'):
+                path = getattr(request.httprequest, 'path', '') or ''
+                if path.startswith('/web') or path.startswith('/odoo'):
+                    return
+        except Exception:
+            pass
+
+        # 3. Chỉ kiểm tra khi có cờ CAD Client (odooPLM=True)
         if not self.env.context.get('odooPLM'):
             return
 

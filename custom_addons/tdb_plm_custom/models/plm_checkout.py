@@ -21,7 +21,7 @@ class TdbPlmCheckout(models.Model):
         if not is_admin:
             raise UserError(_("Chỉ Quản trị viên PLM hoặc Trưởng phòng mới có quyền thực hiện Phá khóa cưỡng chế."))
 
-        for co in self:
+        for co in self.with_context(is_web_operation=True):
             doc = co.documentid
             prev_user = co.userid.name if co.userid else _("Không rõ")
             prev_host = co.hostname or _("Không rõ")
@@ -29,8 +29,8 @@ class TdbPlmCheckout(models.Model):
             co.unlink()
 
             if doc:
-                doc.write({'engineering_writable': False})
-                doc.assign_must_update_flag()
+                doc.with_context(is_web_operation=True).write({'engineering_writable': False})
+                doc.with_context(is_web_operation=True).assign_must_update_flag()
                 audit_msg = Markup(_(
                     "<p><strong>🚨 CƯỠNG CHẾ MỞ KHÓA (FORCE UNLOCK)</strong></p>"
                     "<ul>"

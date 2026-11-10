@@ -71,8 +71,23 @@ class IrAttachment(models.Model):
     # =========================================================================
     def _check_cad_access_token(self):
         """Kiểm tra token thiết bị CAD tại tầng ORM:
-        Chặn tuyệt đối mọi thao tác lưu bản vẽ, check-in, check-out nếu token bị thu hồi hoặc hết hạn.
+        Chặn tuyệt đối mọi thao tác lưu bản vẽ, check-in, check-out từ SolidWorks nếu token bị thu hồi hoặc hết hạn.
+        Bỏ qua hoàn toàn đối với các thao tác từ Web Browser.
         """
+        # 1. Bỏ qua nếu có cờ định danh thao tác Web
+        if self.env.context.get('is_web_operation'):
+            return
+
+        # 2. Bỏ qua hoàn toàn nếu request xuất phát từ trình duyệt Web (/web, /odoo)
+        try:
+            from odoo.http import request
+            if request and hasattr(request, 'httprequest'):
+                path = getattr(request.httprequest, 'path', '') or ''
+                if path.startswith('/web') or path.startswith('/odoo'):
+                    return
+        except Exception:
+            pass
+
         if 'plm.desktop.token' in self.env.registry:
             token_model = self.env['plm.desktop.token'].sudo()
             tokens = token_model.search([('user_id', '=', self.env.uid)], order='id desc')
@@ -145,8 +160,8 @@ class IrAttachment(models.Model):
         if not is_admin:
             raise UserError(_("Bạn không có quyền thực hiện Phá khóa cưỡng chế. Chỉ Quản trị viên PLM hoặc Trưởng phòng mới được phép thực hiện."))
 
-        checkout_model = self.env['plm.checkout'].sudo()
-        for doc in self:
+        checkout_model = self.env['plm.checkout'].sudo().with_context(is_web_operation=True)
+        for doc in self.with_context(is_web_operation=True):
             checkouts = checkout_model.search([('documentid', '=', doc.id)])
             if not checkouts:
                 continue
@@ -196,7 +211,7 @@ class IrAttachment(models.Model):
     def action_web_checkout(self):
         """Cho phép kỹ sư bấm Check-out trực tiếp trên Web Browser."""
         self.ensure_one()
-        plm_checkout_id, msg = self.checkout(f"Web ({self.env.user.name})", "web_browser", showError=True)
+        plm_checkout_id, msg = self.with_context(is_web_operation=True).checkout(f"Web ({self.env.user.name})", "web_browser", showError=True)
         if plm_checkout_id:
             return {
                 'type': 'ir.actions.client',
@@ -214,7 +229,7 @@ class IrAttachment(models.Model):
         self.ensure_one()
         if not self.isCheckedOutByMe():
             raise UserError(_("Bạn không phải người đang giữ khóa tài liệu này nên không thể Check-in."))
-        self._check_in()
+        self.with_context(is_web_operation=True)._check_in()
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',

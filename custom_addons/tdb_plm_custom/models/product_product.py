@@ -26,8 +26,23 @@ class ProductProduct(models.Model):
 
     def _check_cad_access_token(self):
         """Kiểm tra token thiết bị CAD tại tầng ORM:
-        Chặn tuyệt đối mọi thao tác tạo/sửa linh kiện nếu token bị thu hồi hoặc hết hạn 180 ngày.
+        Chặn tuyệt đối mọi thao tác tạo/sửa linh kiện từ CAD Client nếu token bị thu hồi hoặc hết hạn 180 ngày.
+        Bỏ qua hoàn toàn đối với các thao tác từ Web Browser của Admin / Kỹ sư.
         """
+        # 1. Bỏ qua nếu có cờ định danh thao tác Web
+        if self.env.context.get('is_web_operation'):
+            return
+
+        # 2. Bỏ qua hoàn toàn nếu request xuất phát từ trình duyệt Web (/web, /odoo)
+        try:
+            from odoo.http import request
+            if request and hasattr(request, 'httprequest'):
+                path = getattr(request.httprequest, 'path', '') or ''
+                if path.startswith('/web') or path.startswith('/odoo'):
+                    return
+        except Exception:
+            pass
+
         if 'plm.desktop.token' in self.env.registry:
             token_model = self.env['plm.desktop.token'].sudo()
             tokens = token_model.search([('user_id', '=', self.env.uid)], order='id desc')
