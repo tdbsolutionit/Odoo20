@@ -50,3 +50,22 @@ class ProductProduct(models.Model):
         """Chặn chuyển đổi linh kiện PLM nếu token hết hạn hoặc bị thu hồi."""
         self._check_cad_access_token()
         return super().ConvertToPlmProduct(attributes_list)
+
+    @api.model
+    def createFromProps(self, productAttribute):
+        """Chặn tạo/sửa linh kiện từ hộp thoại Component Properties của SolidWorks Add-in."""
+        self._check_cad_access_token()
+        return super().createFromProps(productAttribute)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Chặn tạo linh kiện khi thao tác từ SolidWorks nếu token hết hạn."""
+        if self.env.context.get('odooPLM'):
+            self._check_cad_access_token()
+        return super().create(vals_list)
+
+    def write(self, vals):
+        """Chặn sửa linh kiện khi thao tác từ SolidWorks nếu token hết hạn."""
+        if self.env.context.get('odooPLM'):
+            self._check_cad_access_token()
+        return super().write(vals)

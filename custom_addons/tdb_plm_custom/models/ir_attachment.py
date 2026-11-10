@@ -67,3 +67,38 @@ class IrAttachment(models.Model):
         self._check_cad_access_token()
         return super().saveStructure(arguments)
 
+    @api.model
+    def createFromProps(self, *args, **kwargs):
+        """Chặn tạo/sửa bản vẽ từ hộp thoại Properties của SolidWorks."""
+        self._check_cad_access_token()
+        return super().createFromProps(*args, **kwargs)
+
+    @api.model
+    def saveSingleLevel(self, clientArg):
+        """Chặn lưu bản vẽ đơn cấp khi token hết hạn."""
+        self._check_cad_access_token()
+        return super().saveSingleLevel(clientArg)
+
+    def CheckIn2(self, request, default=None, force=False):
+        """Chặn CheckIn2 khi token hết hạn."""
+        self._check_cad_access_token()
+        return super().CheckIn2(request, default=default, force=force)
+
+    def CheckInRecursive2(self, involved_docs_dict, **kargs):
+        """Chặn CheckInRecursive2 khi token hết hạn."""
+        self._check_cad_access_token()
+        return super().CheckInRecursive2(involved_docs_dict, **kargs)
+
+    @api.model_create_multi
+    def create(self, vals_list):
+        """Chặn tạo tài liệu/bản vẽ từ SolidWorks khi token hết hạn."""
+        if self.env.context.get('odooPLM'):
+            self._check_cad_access_token()
+        return super().create(vals_list)
+
+    def write(self, vals):
+        """Chặn cập nhật tài liệu/bản vẽ từ SolidWorks khi token hết hạn."""
+        if self.env.context.get('odooPLM'):
+            self._check_cad_access_token()
+        return super().write(vals)
+
