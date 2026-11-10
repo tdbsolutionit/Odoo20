@@ -177,22 +177,22 @@ class IrAttachment(models.Model):
             prev_user_str = ", ".join(prev_users) or _("Không rõ")
             prev_host_str = ", ".join(prev_hosts) or _("Không rõ")
 
-            # Xóa bản ghi khóa trong plm.checkout
-            checkouts.unlink()
+            # Xóa bản ghi khóa trong plm.checkout (bỏ qua log Checked-In mặc định vì đã có log Phá khóa)
+            checkouts.with_context(skip_checkin_audit=True).unlink()
 
             # Hoàn nguyên cờ ghi được
             doc.write({'engineering_writable': False})
             doc.assign_must_update_flag()
 
-            # Ghi nhận log kiểm toán vào Chatter
+            # Ghi nhận log kiểm toán vào Chatter (định dạng ERP chuẩn, không icon, không bullet AI)
             audit_msg = Markup(_(
-                "<p><strong>🚨 CƯỠNG CHẾ MỞ KHÓA (FORCE UNLOCK)</strong></p>"
-                "<ul>"
-                "<li>Người thực hiện phá khóa: <b>%s</b></li>"
-                "<li>Kỹ sư từng giữ khóa: <b>%s</b></li>"
-                "<li>Máy trạm từng giữ khóa: <b>%s</b></li>"
-                "<li>Trạng thái tài liệu: Đã giải phóng khóa thành công, sẵn sàng để kỹ sư khác tiếp quản.</li>"
-                "</ul>"
+                "<p>"
+                "<strong>Cưỡng chế mở khóa (Force Unlock)</strong><br/>"
+                "Người thực hiện: <b>%s</b><br/>"
+                "Kỹ sư từng giữ khóa: <b>%s</b><br/>"
+                "Máy trạm từng giữ khóa: <b>%s</b><br/>"
+                "Trạng thái: Đã giải phóng khóa tài liệu thành công."
+                "</p>"
             )) % (self.env.user.name, prev_user_str, prev_host_str)
             doc.message_post(body=audit_msg, message_type='notification')
             _logger.warning(f">>> [TDB PLM FORCE UNLOCK] {self.env.user.name} đã cưỡng chế mở khóa tài liệu {doc.name} (ID {doc.id})")
@@ -310,3 +310,47 @@ class IrAttachment(models.Model):
         if self.env.context.get('odooPLM'):
             self._check_cad_access_token()
         return super().write(vals)
+
+    # =========================================================================
+    # 6. CHUẨN HÓA NHẬT KÝ CHATTER CHO CHECK-OUT & CHECK-IN
+    # =========================================================================
+    def message_post(self, **kwargs):
+        """Chuẩn hóa nhật ký Chatter cho các sự kiện Check-out và Check-in:
+        Ghi rõ chi tiết người thực hiện, máy trạm và trạng thái bằng văn bản thuần ERP.
+        Không dùng icon màu mè hay danh sách bullet AI.
+        """
+        body = kwargs.get('body', '')
+        body_str = str(body or '').strip()
+
+        if 'Checked-Out ID' in body_str:
+            user_name = self.env.user.name
+            hostname = ''
+            if self.checkout_ids:
+                co = self.checkout_ids[0]
+                if co.userid:
+                    user_name = co.userid.name
+                if co.hostname:
+                    hostname = co.hostname
+            if not hostname:
+                hostname = self.env.context.get('hostname') or 'CAD Client'
+
+            kwargs['body'] = Markup(_(
+                "<p>"
+                "<strong>Khóa tài liệu (Check-out)</strong><br/>"
+                "Người thực hiện: <b>%s</b><br/>"
+                "Máy trạm: <b>%s</b>"
+                "</p>"
+            )) % (user_name, hostname)
+
+        elif body_str == 'Checked-In' or body_str == _('Checked-In'):
+            if self.env.context.get('skip_checkin_audit'):
+                return self.env['mail.message']
+            user_name = self.env.user.name
+            kwargs['body'] = Markup(_(
+                "<p>"
+                "<strong>Mở khóa tài liệu (Check-in)</strong><br/>"
+                "Người thực hiện: <b>%s</b>"
+                "</p>"
+            )) % user_name
+
+        return super().message_post(**kwargs)

@@ -26,18 +26,19 @@ class TdbPlmCheckout(models.Model):
             prev_user = co.userid.name if co.userid else _("Không rõ")
             prev_host = co.hostname or _("Không rõ")
 
-            co.unlink()
+            co.with_context(skip_checkin_audit=True).unlink()
 
             if doc:
                 doc.with_context(is_web_operation=True).write({'engineering_writable': False})
                 doc.with_context(is_web_operation=True).assign_must_update_flag()
                 audit_msg = Markup(_(
-                    "<p><strong>🚨 CƯỠNG CHẾ MỞ KHÓA (FORCE UNLOCK)</strong></p>"
-                    "<ul>"
-                    "<li>Người thực hiện: <b>%s</b></li>"
-                    "<li>Kỹ sư từng giữ khóa: <b>%s</b> (Máy trạm: <b>%s</b>)</li>"
-                    "<li>Trạng thái tài liệu: Đã giải phóng khóa cưỡng chế thành công.</li>"
-                    "</ul>"
+                    "<p>"
+                    "<strong>Cưỡng chế mở khóa (Force Unlock)</strong><br/>"
+                    "Người thực hiện: <b>%s</b><br/>"
+                    "Kỹ sư từng giữ khóa: <b>%s</b><br/>"
+                    "Máy trạm từng giữ khóa: <b>%s</b><br/>"
+                    "Trạng thái: Đã giải phóng khóa tài liệu thành công."
+                    "</p>"
                 )) % (self.env.user.name, prev_user, prev_host)
                 doc.message_post(body=audit_msg, message_type='notification')
                 _logger.warning(f">>> [TDB PLM FORCE UNLOCK] {self.env.user.name} đã phá khóa bản vẽ {doc.name} (Doc ID {doc.id})")
