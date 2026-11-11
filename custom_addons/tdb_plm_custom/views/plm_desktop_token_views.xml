@@ -154,15 +154,7 @@
         </field>
     </record>
 
-    <!-- Menuitem 1 (Top Bar): PLM ➔ Desktop Access Tokens (Chỉ dành cho Admin Cài đặt / System Administrator) -->
-    <menuitem id="menu_plm_desktop_token_top"
-              name="Desktop Access Tokens"
-              parent="plm.plm_menu"
-              action="action_plm_desktop_token"
-              groups="base.group_system"
-              sequence="60"/>
-
-    <!-- Menuitem 2 (Dropdown): PLM ➔ Configuration ➔ Desktop Access Tokens (Chỉ dành cho Admin Cài đặt / System Administrator) -->
+    <!-- Menuitem: PLM ➔ Configuration ➔ Desktop Access Tokens (Chỉ dành cho Admin Cài đặt / System Administrator) -->
     <menuitem id="menu_plm_desktop_token"
               name="Desktop Access Tokens"
               parent="plm.plm_menu_dictionaries"
