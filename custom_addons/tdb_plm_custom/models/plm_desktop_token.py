@@ -148,20 +148,6 @@ class PlmDesktopToken(models.Model):
                 return False
         return super().check_access_rights(operation, raise_exception=raise_exception)
 
-    @api.model
-    def search_read(self, domain=None, fields=None, offset=0, limit=None, order=None):
-        """Chặn trả về dữ liệu nếu không phải Sếp / Administrator."""
-        if not self.env.su and self.env.user.id != 2 and self.env.user.login != 'admin':
-            return []
-        return super().search_read(domain=domain, fields=fields, offset=offset, limit=limit, order=order)
-
-    @api.model
-    def web_search_read(self, domain=None, specification=None, offset=0, limit=None, order=None, count_limit=None):
-        """Chặn trả về dữ liệu web list view nếu không phải Sếp / Administrator."""
-        if not self.env.su and self.env.user.id != 2 and self.env.user.login != 'admin':
-            return {'records': [], 'length': 0}
-        return super().web_search_read(domain=domain, specification=specification, offset=offset, limit=limit, order=order, count_limit=count_limit)
-
     def init(self):
         """Tự động dọn dẹp trùng lặp và xóa menu top bar cũ khi nạp module."""
         super().init()
