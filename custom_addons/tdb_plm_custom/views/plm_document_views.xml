@@ -70,20 +70,35 @@
             <xpath expr="//header" position="inside">
                 <field name="is_key_holder" invisible="1"/>
                 <field name="is_checkout" invisible="1"/>
+
+                <!-- Nút cho Admin: Cưỡng chế chuyển giao Key (Force Unlock) -->
                 <button name="action_open_transfer_key_wizard"
                         type="object"
                         string="Chuyển giao Key (Force Unlock)"
                         class="btn-danger"
                         groups="plm.group_plm_admin"/>
+
+                <!-- Nút cho Kỹ sư giữ Key (khi không phải Admin): Bàn giao Key -->
+                <button name="action_open_transfer_key_wizard"
+                        type="object"
+                        string="Bàn giao Key"
+                        class="btn-warning"
+                        invisible="not is_key_holder"
+                        groups="!plm.group_plm_admin"/>
+
+                <!-- Nút Check-out: Mọi kỹ sư đều có thể bấm khi chưa check-out -->
                 <button name="action_web_checkout"
                         type="object"
                         string="Check-out (Lấy file)"
-                        class="btn-secondary"/>
+                        class="btn-secondary"
+                        invisible="is_checkout == True"/>
+
+                <!-- Nút Check-in: Chỉ hiển thị cho người đang Check-out VÀ đang giữ Key -->
                 <button name="action_web_checkin"
                         type="object"
                         string="Check-in (Lưu file)"
                         class="btn-primary"
-                        invisible="not is_key_holder"/>
+                        invisible="is_checkout == False or not is_key_holder"/>
             </xpath>
 
             <!-- Banner thông tin Người giữ Key -->

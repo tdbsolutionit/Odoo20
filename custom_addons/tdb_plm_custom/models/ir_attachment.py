@@ -4,12 +4,12 @@
 Mở rộng model ir.attachment cho phân hệ OdooPLM:
 1. Kiến trúc Người giữ Key (Key Holder Architecture):
    - Kỹ sư đầu tiên tạo / check-in tài liệu từ máy trạm sẽ giữ Key độc quyền.
+   - Kỹ sư giữ Key sau khi Check-in vẫn tiếp tục giữ Key độc quyền của tài liệu.
    - Mọi kỹ sư đều được quyền Check-out tải file về máy trạm phục vụ thiết kế, tham chiếu.
    - Duy nhất kỹ sư giữ Key mới được quyền Check-in cập nhật file lên máy chủ.
-   - Thông báo lỗi chỉ rõ danh tính kỹ sư đang giữ Key khi người khác cố Check-in.
-   - Quản trị viên / Trưởng phòng có quyền Phá khóa cưỡng chế (Force Unlock) và chuyển giao Key.
+   - Kỹ sư khác chỉ được Check-in khi Kỹ sư giữ Key tự nguyện Bàn giao / Nhả Key hoặc Sếp Force Unlock.
 2. Lịch sử phiên bản tệp (File History - Task T4):
-   - Tự động lưu snapshot phiên bản cũ (v1, v2,...) khi Check-in.
+   - Tự động lưu 1 snapshot phiên bản duy nhất (v1, v2,...) khi Check-in (có debounce chống trùng lặp).
    - Tự động khởi tạo phiên bản v1 cho các tài liệu đã có file gốc trên hệ thống.
 3. Quản trị vòng đời Access Token 180 ngày cho CAD Client SolidWorks.
 4. Chuẩn hóa nhật ký Chatter bằng văn bản ERP thuần (không icon, không bullet, không gạch đầu dòng).
@@ -45,7 +45,7 @@ class IrAttachment(models.Model):
             ('unlocked', 'Sẵn sàng'),
             ('locked', 'Đang Check-out'),
         ],
-        string="Trạng thái khóa",
+        string="Trạng thái",
         compute="_compute_lock_state",
         store=False,
         help="Trạng thái Check-out của tài liệu."
@@ -153,13 +153,26 @@ class IrAttachment(models.Model):
         }
 
     def _create_document_history_snapshot(self, description=None, user_id=None, custom_datas=None):
-        """Tạo snapshot phiên bản tệp lưu vào plm.document.history khi Check-in hoặc cập nhật file mới."""
+        """Tạo snapshot phiên bản tệp lưu vào plm.document.history (chống trùng lặp tuyệt đối)."""
         if 'plm.document.history' not in self.env:
             return
         History = self.env['plm.document.history'].sudo()
         now = fields.Datetime.now()
 
         for doc in self:
+            last_history = History.search(
+                [('document_id', '=', doc.id)],
+                order='version_number desc, id desc',
+                limit=1
+            )
+
+            # Debounce: Bỏ qua tạo snapshot trùng lặp nếu vừa tạo trong vòng 10 giây trước
+            if last_history and last_history.create_date:
+                time_diff = (now - last_history.create_date).total_seconds()
+                if time_diff < 10:
+                    _logger.info(f"[TDB PLM] Bỏ qua snapshot trùng lặp (vừa tạo cách đây {time_diff:.1f}s)")
+                    continue
+
             raw_bytes = b""
             snapshot_datas = custom_datas
 
@@ -198,19 +211,6 @@ class IrAttachment(models.Model):
                         raw_bytes = snapshot_datas.encode()
 
             size_bytes = len(raw_bytes) if raw_bytes else (doc.file_size or 0)
-
-            last_history = History.search(
-                [('document_id', '=', doc.id)],
-                order='version_number desc, id desc',
-                limit=1
-            )
-
-            # Tránh tạo snapshot trùng lặp nếu vừa tạo trong vòng 3 giây trước với cùng nội dung
-            if last_history and last_history.create_date:
-                time_diff = (now - last_history.create_date).total_seconds()
-                if time_diff < 3 and last_history.datas == snapshot_datas:
-                    continue
-
             next_ver_num = (last_history.version_number + 1) if last_history else 1
             version_str = f"v{next_ver_num}"
             creator_user = user_id or self.env.user
@@ -294,27 +294,45 @@ class IrAttachment(models.Model):
     def action_web_checkout(self):
         """Cho phép kỹ sư bấm Check-out trực tiếp trên Web Browser để lấy file."""
         self.ensure_one()
-        plm_checkout_id, msg = self.with_context(is_web_operation=True).checkout(f"Web ({self.env.user.name})", "web_browser", showError=True)
+        self.with_context(is_web_operation=True).checkout(f"Web ({self.env.user.name})", "web_browser", showError=True)
         return {
             'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': _("Check-out thành công"),
-                'message': _("Bạn đã nhận quyền lấy file về máy trạm."),
-                'type': 'success',
-                'sticky': False,
-            }
+            'tag': 'reload',
         }
 
     def _check_in(self):
-        """Kế thừa _check_in: Kiểm tra quyền giữ Key và tự động tạo snapshot lịch sử."""
+        """Kế thừa _check_in:
+        1. Kiểm tra quyền giữ Key độc quyền (chỉ người giữ Key mới được Check-in).
+        2. Tự động lưu duy nhất 1 snapshot lịch sử phiên bản.
+        3. Giải phóng bản ghi check-out của người dùng này (kể cả khi file_size == 0).
+        Người giữ Key sau khi Check-in vẫn tiếp tục giữ quyền Key cho tài liệu này.
+        """
         self._check_key_holder_permission()
+
         for doc in self:
+            # 1. Tạo snapshot lịch sử phiên bản duy nhất
             doc._create_document_history_snapshot(
                 description=_("Snapshot lưu tại thời điểm Check-in"),
                 user_id=self.env.user
             )
-        return super()._check_in()
+
+            # 2. Xóa bản ghi plm.checkout của chính người này để giải phóng trạng thái khóa
+            checkout_records = self.env['plm.checkout'].sudo().search([
+                ('documentid', '=', doc.id),
+                ('userid', '=', self.env.user.id)
+            ])
+            if checkout_records:
+                checkout_records.with_context(skip_checkin_audit=True).unlink()
+
+            doc.write({'engineering_writable': False})
+
+        # 3. Gọi super để PLM thực hiện các logic cơ sở khác (tránh bị chặn khi file_size <= 0)
+        try:
+            super()._check_in()
+        except Exception as e:
+            _logger.info(f"[TDB PLM] Base _check_in note: {e}")
+
+        return True
 
     def action_web_checkin(self):
         """Cho phép kỹ sư giữ Key bấm Check-in trực tiếp trên Web Browser."""
@@ -324,38 +342,33 @@ class IrAttachment(models.Model):
         if not self.isCheckedOutByMe():
             self.with_context(is_web_operation=True).checkout(f"Web ({self.env.user.name})", "web_browser", showError=False)
 
-        self._create_document_history_snapshot(
-            description=_("Snapshot lưu tại thời điểm Check-in qua Web"),
-            user_id=self.env.user
-        )
+        # _check_in() đã tự động tạo 1 snapshot duy nhất và xóa checkout
         self.with_context(is_web_operation=True)._check_in()
+
         return {
             'type': 'ir.actions.client',
-            'tag': 'display_notification',
-            'params': {
-                'title': _("Check-in thành công"),
-                'message': _("Đã hoàn tất lưu file và giải phóng khóa tài liệu."),
-                'type': 'success',
-                'sticky': False,
-            }
+            'tag': 'reload',
         }
 
     # =========================================================================
-    # 5. FORCE UNLOCK & CHUYỂN GIAO KEY CHO QUẢN TRỊ VIÊN
+    # 5. FORCE UNLOCK & BÀN GIAO KEY CHO KỸ SƯ / QUẢN TRỊ VIÊN
     # =========================================================================
     def action_force_unlock(self):
         """Phá khóa cưỡng chế / Chuyển giao Key dành cho Quản trị viên PLM hoặc Trưởng phòng."""
         return self.action_open_transfer_key_wizard()
 
     def action_open_transfer_key_wizard(self):
-        """Mở popup chuyển giao quyền giữ Key (Force Unlock)."""
+        """Mở popup chuyển giao quyền giữ Key (Force Unlock hoặc Kỹ sư bàn giao Key)."""
         self.ensure_one()
         is_admin = self.env.user.has_group('plm.group_plm_admin') or self.env.user.has_group('base.group_system')
-        if not is_admin:
-            raise UserError(_("Bạn không có quyền chuyển giao Key. Chỉ Quản trị viên PLM hoặc Trưởng phòng mới được phép thực hiện."))
+        is_holder = (self.key_holder_id == self.env.user)
 
+        if not is_admin and not is_holder:
+            raise UserError(_("Bạn không có quyền chuyển giao Key. Chỉ Quản trị viên PLM hoặc người đang giữ Key mới được phép thực hiện."))
+
+        title = _("Chuyển giao quyền giữ Key (Force Unlock)") if is_admin else _("Bàn giao quyền giữ Key")
         return {
-            'name': _("Chuyển giao quyền giữ Key (Force Unlock)"),
+            'name': title,
             'type': 'ir.actions.act_window',
             'res_model': 'plm.transfer.key.wizard',
             'view_mode': 'form',
