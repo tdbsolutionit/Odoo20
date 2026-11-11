@@ -137,12 +137,14 @@ class PlmDesktopToken(models.Model):
 
     @api.model
     def check_access_rights(self, operation, raise_exception=True):
-        """Chỉ cho phép tài khoản Administrator (id: 2 hoặc login: admin) truy cập model này."""
+        """Chỉ cho phép tài khoản Sếp / Administrator (id: 2 hoặc login: admin) truy cập model này."""
         if not self.env.su:
             user = self.env.user
-            if user.id != 2 and user.login != 'admin' and not user.has_group('base.group_system'):
+            # Duy nhất tài khoản Sếp gốc (admin / id 2) mới có quyền truy cập quản trị token
+            is_boss = (user.id == 2 or user.login == 'admin')
+            if not is_boss:
                 if raise_exception:
-                    raise AccessError(_("Chỉ Quản trị viên hệ thống mới có quyền truy cập Desktop Access Tokens."))
+                    raise AccessError(_("Chỉ Quản trị viên (Sếp) mới có quyền xem và quản lý Desktop Access Tokens."))
                 return False
         return super().check_access_rights(operation, raise_exception=raise_exception)
 

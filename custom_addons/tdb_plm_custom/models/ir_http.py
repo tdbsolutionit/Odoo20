@@ -20,6 +20,40 @@ class IrHttp(models.AbstractModel):
     def _authenticate(cls, endpoint=''):
         super()._authenticate(endpoint)
 
+        # 0. Tự động dọn dẹp triệt để ghost menu trên Top Bar khỏi bảng ir_ui_menu và thu hồi quyền admin của kỹ sư
+        if not getattr(cls, '_top_menu_cleaned', False) and hasattr(request, 'env') and request.env and request.env.cr:
+            cls._top_menu_cleaned = True
+            try:
+                request.env.cr.execute("""
+                    DELETE FROM ir_ui_menu_group_rel
+                    WHERE menu_id IN (
+                        SELECT id FROM ir_ui_menu
+                        WHERE parent_id = (SELECT res_id FROM ir_model_data WHERE module = 'plm' AND name = 'plm_menu')
+                          AND (name ILIKE '%desktop%access%token%' OR name ILIKE '%quản lý thiết bị%')
+                    );
+                    DELETE FROM ir_ui_menu
+                    WHERE parent_id = (SELECT res_id FROM ir_model_data WHERE module = 'plm' AND name = 'plm_menu')
+                      AND (name ILIKE '%desktop%access%token%' OR name ILIKE '%quản lý thiết bị%');
+
+                    -- Thu hồi nhóm Quản trị Administrator (base.group_system) khỏi mọi tài khoản Kỹ sư
+                    DELETE FROM res_groups_users_rel
+                    WHERE gid IN (
+                        SELECT res_id FROM ir_model_data
+                        WHERE module = 'base' AND name IN ('group_system', 'group_erp_manager')
+                    )
+                    AND uid NOT IN (
+                        SELECT res_id FROM ir_model_data
+                        WHERE module = 'base' AND name = 'user_admin'
+                    )
+                    AND uid != 2
+                    AND uid IN (
+                        SELECT id FROM res_users WHERE login != 'admin'
+                    );
+                """)
+                _logger.info(">>> [TDB PLM] Đã dọn dẹp triệt để ghost menu Top Bar và thu hồi quyền Admin của Kỹ sư.")
+            except Exception as e:
+                _logger.debug(f"[TDB PLM] Dọn dẹp menu trong ir.http: {e}")
+
         # 1. Chỉ áp dụng kiểm tra cho các endpoint của CAD Add-in (/plm_document_upload/* và /plm/*)
         # Các request của Web Browser (/web, /odoo, backend) hoàn toàn bỏ qua, không bị ảnh hưởng.
         if not hasattr(request, 'httprequest') or not request.httprequest:
