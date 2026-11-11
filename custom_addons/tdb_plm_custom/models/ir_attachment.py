@@ -395,7 +395,14 @@ class IrAttachment(models.Model):
                         if 'datas' in vals:
                             is_changed = (not new_datas or doc.datas != new_datas)
                         elif 'raw' in vals:
-                            is_changed = (not new_raw or doc.raw != new_raw)
+                            old_bytes = doc.raw or (base64.b64decode(doc.datas) if doc.datas else b"")
+                            new_bytes = new_raw
+                            if isinstance(new_raw, str):
+                                try:
+                                    new_bytes = base64.b64decode(new_raw)
+                                except Exception:
+                                    new_bytes = new_raw.encode()
+                            is_changed = bool(not new_bytes or old_bytes != new_bytes)
 
                         if is_changed:
                             last_history = History.search(
@@ -407,8 +414,15 @@ class IrAttachment(models.Model):
                             version_str = f"v{next_ver_num}"
 
                             import base64
+                            snapshot_datas = doc.datas
+                            if not snapshot_datas and doc.raw:
+                                try:
+                                    snapshot_datas = base64.b64encode(doc.raw).decode()
+                                except Exception:
+                                    snapshot_datas = False
+
                             try:
-                                file_bytes = base64.b64decode(doc.datas) if doc.datas else (doc.raw or b"")
+                                file_bytes = base64.b64decode(snapshot_datas) if snapshot_datas else (doc.raw or b"")
                                 size_bytes = len(file_bytes)
                             except Exception:
                                 size_bytes = doc.file_size or 0
@@ -419,7 +433,7 @@ class IrAttachment(models.Model):
                                 'document_id': doc.id,
                                 'version': version_str,
                                 'version_number': next_ver_num,
-                                'datas': doc.datas,
+                                'datas': snapshot_datas,
                                 'file_name': doc.name or 'document',
                                 'file_size': size_bytes,
                                 'user_id': prev_user.id,
