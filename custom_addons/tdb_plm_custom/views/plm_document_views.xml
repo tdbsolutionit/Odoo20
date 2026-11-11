@@ -133,8 +133,7 @@
                             <button name="action_download_file"
                                     type="object"
                                     string="Tải về"
-                                    icon="fa-download"
-                                    class="btn-link"
+                                    class="btn btn-sm btn-secondary"
                                     title="Tải snapshot phiên bản này"/>
                         </list>
                     </field>
@@ -199,8 +198,7 @@
                 <button name="action_download_file"
                         type="object"
                         string="Tải về"
-                        icon="fa-download"
-                        class="btn-link"
+                        class="btn btn-sm btn-secondary"
                         title="Tải snapshot phiên bản này"/>
             </list>
         </field>
@@ -216,8 +214,7 @@
                     <button name="action_download_file"
                             type="object"
                             string="Tải file snapshot về máy"
-                            class="btn-primary"
-                            icon="fa-download"/>
+                            class="btn-primary"/>
                 </header>
                 <sheet>
                     <group>
