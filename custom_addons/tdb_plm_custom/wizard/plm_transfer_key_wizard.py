@@ -53,7 +53,6 @@ class PlmTransferKeyWizard(models.TransientModel):
     reason = fields.Text(
         string="Lý do chuyển giao",
         required=True,
-        placeholder="Nhập lý do chuyển giao (ví dụ: Kỹ sư phụ trách bận việc, bàn giao bản vẽ cho kỹ sư mới tiếp quản)..."
     )
     release_all_checkouts = fields.Boolean(
         string="Giải phóng toàn bộ phiên Check-out hiện tại",
