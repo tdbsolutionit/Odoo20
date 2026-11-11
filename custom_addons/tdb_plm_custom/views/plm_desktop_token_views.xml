@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
+    <!-- Xóa bỏ menu cũ trên Top Bar khỏi CSDL nếu còn tồn tại -->
+    <delete model="ir.ui.menu" id="menu_plm_desktop_token_top"/>
+
     <!-- List View: CAD Desktop Access Tokens -->
     <record id="plm_desktop_token_view_list" model="ir.ui.view">
         <field name="name">plm.desktop.token.list</field>

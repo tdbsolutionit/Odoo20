@@ -140,90 +140,21 @@ class PlmDesktopToken(models.Model):
         """Chỉ cho phép tài khoản Administrator (id: 2 hoặc login: admin) truy cập model này."""
         if not self.env.su:
             user = self.env.user
-            if user.id != 2 and user.login != 'admin':
+            if user.id != 2 and user.login != 'admin' and not user.has_group('base.group_system'):
                 if raise_exception:
-                    raise AccessError(_("Chỉ tài khoản Administrator mới có quyền xem và quản lý Desktop Access Tokens."))
+                    raise AccessError(_("Chỉ Quản trị viên hệ thống mới có quyền truy cập Desktop Access Tokens."))
                 return False
         return super().check_access_rights(operation, raise_exception=raise_exception)
 
-    @api.model
-    def web_search_read(self, *args, **kwargs):
-        """Chặn triệt để giao diện Web Client (list/form view) đối với mọi tài khoản không phải Admin."""
-        if not self.env.su:
-            user = self.env.user
-            if user.id != 2 and user.login != 'admin':
-                raise AccessError(_("Chỉ tài khoản Administrator mới có quyền truy cập Desktop Access Tokens."))
-        return super().web_search_read(*args, **kwargs)
-
-    @api.model
-    def search_read(self, *args, **kwargs):
-        """Chặn triệt để đọc bản ghi đối với mọi tài khoản không phải Admin."""
-        if not self.env.su:
-            user = self.env.user
-            if user.id != 2 and user.login != 'admin':
-                raise AccessError(_("Chỉ tài khoản Administrator mới có quyền truy cập Desktop Access Tokens."))
-        return super().search_read(*args, **kwargs)
-
-    @api.model
-    def _register_hook(self):
-        """Chạy tự động mỗi khi máy chủ Odoo khởi động hoặc nạp Registry: Quét sạch menu top bar khỏi CSDL."""
-        super()._register_hook()
-        try:
-            self.env.cr.execute("""
-                DELETE FROM ir_ui_menu_group_rel
-                WHERE menu_id IN (
-                    SELECT res_id FROM ir_model_data
-                    WHERE module = 'tdb_plm_custom' AND name = 'menu_plm_desktop_token_top'
-                );
-                DELETE FROM ir_ui_menu
-                WHERE id IN (
-                    SELECT res_id FROM ir_model_data
-                    WHERE module = 'tdb_plm_custom' AND name = 'menu_plm_desktop_token_top'
-                );
-                DELETE FROM ir_model_data
-                WHERE module = 'tdb_plm_custom' AND name = 'menu_plm_desktop_token_top';
-
-                -- Xóa mọi menu mồ côi trên thanh top bar trỏ tới action token
-                DELETE FROM ir_ui_menu
-                WHERE parent_id = (SELECT res_id FROM ir_model_data WHERE module = 'plm' AND name = 'plm_menu')
-                  AND (name ILIKE '%desktop%token%' OR name ILIKE '%quản lý thiết bị%');
-
-                -- Thu hồi quyền base.group_system khỏi mọi tài khoản kỹ sư
-                DELETE FROM res_groups_users_rel
-                WHERE gid IN (
-                    SELECT res_id FROM ir_model_data
-                    WHERE module = 'base' AND name IN ('group_system', 'group_erp_manager')
-                )
-                AND uid NOT IN (
-                    SELECT res_id FROM ir_model_data
-                    WHERE module = 'base' AND name = 'user_admin'
-                )
-                AND uid != 2
-                AND uid IN (
-                    SELECT id FROM res_users
-                    WHERE login != 'admin'
-                      AND (
-                          login ILIKE '%kysu%'
-                          OR login ILIKE '%ky_su%'
-                          OR name ILIKE '%ky su%'
-                          OR name ILIKE '%kỹ sư%'
-                          OR name ILIKE '%engineer%'
-                      )
-                );
-            """)
-            self.env.cr.commit()
-        except Exception as e:
-            _logger.warning(f"[TDB PLM] Không thể quét menu trong _register_hook: {e}")
-
     def init(self):
-        """Tự động dọn dẹp trùng lặp, xóa menu top bar và giới hạn nghiêm ngặt quyền chỉ cho Admin."""
+        """Tự động dọn dẹp trùng lặp và xóa menu top bar cũ khi nạp module."""
         super().init()
         try:
             self.cleanup_duplicate_tokens()
         except Exception as e:
             _logger.debug(f"[TDB PLM] Dọn dẹp token trong init: {e}")
         try:
-            # 1. Xóa hoàn toàn menu Desktop Access Tokens khỏi thanh Top Bar (ir_ui_menu và ir_model_data)
+            # Xóa triệt để menu Desktop Access Tokens khỏi thanh Top Bar (ir_ui_menu và ir_model_data)
             self.env.cr.execute("""
                 DELETE FROM ir_ui_menu_group_rel
                 WHERE menu_id IN (
@@ -237,47 +168,13 @@ class PlmDesktopToken(models.Model):
                 );
                 DELETE FROM ir_model_data
                 WHERE module = 'tdb_plm_custom' AND name = 'menu_plm_desktop_token_top';
-            """)
 
-            # 2. Thu hồi quyền truy cập model khỏi bất kỳ nhóm nào không phải base.group_system
-            self.env.cr.execute("""
-                DELETE FROM ir_model_access
-                WHERE model_id = (SELECT id FROM ir_model WHERE model = 'plm.desktop.token')
-                  AND group_id != (SELECT res_id FROM ir_model_data WHERE module = 'base' AND name = 'group_system');
+                -- Xóa bất kỳ menu mồ côi nào trên top bar (parent_id = plm.plm_menu) có tên Desktop Access Tokens
+                DELETE FROM ir_ui_menu
+                WHERE parent_id = (SELECT res_id FROM ir_model_data WHERE module = 'plm' AND name = 'plm_menu')
+                  AND (name ILIKE '%desktop%token%' OR name ILIKE '%quản lý thiết bị%');
 
-                -- 3. Đảm bảo menu Desktop Access Tokens trong Cấu hình chỉ liên kết với base.group_system
-                DELETE FROM ir_ui_menu_group_rel
-                WHERE menu_id IN (
-                    SELECT res_id FROM ir_model_data
-                    WHERE module = 'tdb_plm_custom' AND name = 'menu_plm_desktop_token'
-                );
-
-                INSERT INTO ir_ui_menu_group_rel (menu_id, gid)
-                SELECT m.res_id, g.res_id
-                FROM ir_model_data m
-                CROSS JOIN ir_model_data g
-                WHERE m.module = 'tdb_plm_custom'
-                  AND m.name = 'menu_plm_desktop_token'
-                  AND g.module = 'base'
-                  AND g.name = 'group_system'
-                ON CONFLICT DO NOTHING;
-
-                -- 4. Đảm bảo action_plm_desktop_token chỉ liên kết với duy nhất base.group_system
-                DELETE FROM ir_act_window_group_rel
-                WHERE act_id IN (
-                    SELECT res_id FROM ir_model_data
-                    WHERE module = 'tdb_plm_custom' AND name = 'action_plm_desktop_token'
-                );
-
-                INSERT INTO ir_act_window_group_rel (act_id, gid)
-                SELECT a.res_id, g.res_id
-                FROM ir_model_data a
-                CROSS JOIN ir_model_data g
-                WHERE a.module = 'tdb_plm_custom' AND a.name = 'action_plm_desktop_token'
-                  AND g.module = 'base' AND g.name = 'group_system'
-                ON CONFLICT DO NOTHING;
-
-                -- 5. Thu hồi quyền base.group_system và base.group_erp_manager khỏi toàn bộ tài khoản kỹ sư
+                -- Thu hồi quyền base.group_system khỏi tài khoản kỹ sư nếu bị gán nhầm
                 DELETE FROM res_groups_users_rel
                 WHERE gid IN (
                     SELECT res_id FROM ir_model_data
@@ -301,7 +198,7 @@ class PlmDesktopToken(models.Model):
                 );
             """)
         except Exception as e:
-            _logger.warning(f"[TDB PLM] Cập nhật phân quyền desktop token trong init: {e}")
+            _logger.debug(f"[TDB PLM] Xóa menu cũ trong init: {e}")
 
     @api.model
     def register_session_token(self, user_id, session_id, machine_uuid, machine_name, client_ip, cad_version):
