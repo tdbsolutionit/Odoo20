@@ -100,6 +100,65 @@ class IrAttachment(models.Model):
             "context": {"default_document_id": self.id},
         }
 
+    def _create_document_history_snapshot(self, description=None, user_id=None, custom_datas=None):
+        """Tạo snapshot phiên bản tệp lưu vào plm.document.history khi Check-in hoặc cập nhật file mới."""
+        if 'plm.document.history' not in self.env:
+            return
+        History = self.env['plm.document.history'].sudo()
+        now = fields.Datetime.now()
+
+        for doc in self:
+            # Lấy dữ liệu file snapshot (ưu tiên custom_datas nếu có, ngược lại lấy từ doc)
+            snapshot_datas = custom_datas or doc.datas
+            if not snapshot_datas and doc.raw:
+                try:
+                    import base64
+                    snapshot_datas = base64.b64encode(doc.raw).decode()
+                except Exception:
+                    snapshot_datas = False
+
+            # Bỏ qua nếu tài liệu hoàn toàn không có tệp đính kèm
+            if not snapshot_datas:
+                continue
+
+            last_history = History.search(
+                [('document_id', '=', doc.id)],
+                order='version_number desc, id desc',
+                limit=1
+            )
+
+            # Tránh tạo snapshot trùng lặp nếu vừa tạo trong vòng 3 giây trước với cùng nội dung
+            if last_history and last_history.create_date:
+                time_diff = (now - last_history.create_date).total_seconds()
+                if time_diff < 3 and last_history.datas == snapshot_datas:
+                    continue
+
+            next_ver_num = (last_history.version_number + 1) if last_history else 1
+            version_str = f"v{next_ver_num}"
+
+            import base64
+            try:
+                file_bytes = base64.b64decode(snapshot_datas)
+                size_bytes = len(file_bytes)
+            except Exception:
+                size_bytes = doc.file_size or 0
+
+            creator_user = user_id or self.env.user
+
+            History.create({
+                'document_id': doc.id,
+                'version': version_str,
+                'version_number': next_ver_num,
+                'datas': snapshot_datas,
+                'file_name': doc.name or 'document',
+                'file_size': size_bytes,
+                'user_id': creator_user.id,
+                'description': description or _("Snapshot lưu tại thời điểm Check-in"),
+            })
+            _logger.info(
+                f"[TDB PLM] Đã tạo snapshot phiên bản {version_str} cho tài liệu ID {doc.id} ({doc.name})"
+            )
+
     # =========================================================================
     # 2. KIỂM SOÁT TOKEN 180 NGÀY CHO CAD CLIENT
     # =========================================================================
@@ -258,11 +317,24 @@ class IrAttachment(models.Model):
                 }
             }
 
+    def _check_in(self):
+        """Kế thừa _check_in để tự động tạo snapshot lịch sử phiên bản khi Check-in."""
+        for doc in self:
+            doc._create_document_history_snapshot(
+                description=_("Snapshot lưu tại thời điểm Check-in"),
+                user_id=self.env.user
+            )
+        return super()._check_in()
+
     def action_web_checkin(self):
         """Cho phép kỹ sư bấm Check-in trực tiếp trên Web Browser."""
         self.ensure_one()
         if not self.isCheckedOutByMe():
             raise UserError(_("Bạn không phải người đang giữ khóa tài liệu này nên không thể Check-in."))
+        self._create_document_history_snapshot(
+            description=_("Snapshot lưu tại thời điểm Check-in qua Web"),
+            user_id=self.env.user
+        )
         self.with_context(is_web_operation=True)._check_in()
         return {
             'type': 'ir.actions.client',
@@ -301,6 +373,7 @@ class IrAttachment(models.Model):
         """Chặn Check-in đệ quy khi token hết hạn và kiểm tra trạng thái khóa rõ ràng chống crash CAD COM."""
         self._check_cad_access_token()
 
+        target_doc = False
         # Kiểm tra trạng thái khóa trước để thông báo rõ ràng cho kỹ sư SolidWorks
         if request and isinstance(request, (list, tuple)) and len(request) > 0:
             doc_args = request[0]
@@ -308,24 +381,30 @@ class IrAttachment(models.Model):
                 eng_code = doc_args.get("engineering_code")
                 doc_rev = doc_args.get("engineering_revision")
                 if eng_code:
-                    doc = self.search([
+                    target_doc = self.search([
                         ("engineering_code", "=", eng_code),
                         ("engineering_revision", "=", doc_rev)
                     ], limit=1)
-                    if doc:
-                        existing_co = self.env["plm.checkout"].search([("documentid", "=", doc.id)], limit=1)
+                    if target_doc:
+                        existing_co = self.env["plm.checkout"].search([("documentid", "=", target_doc.id)], limit=1)
                         if not existing_co:
                             raise UserError(_(
                                 "Tài liệu '%s' hiện chưa được Check-out (đang ở trạng thái mở khóa). "
                                 "Vui lòng bấm nút Check-out trên SolidWorks trước khi thực hiện Check-in."
-                            ) % (doc.name or eng_code))
+                            ) % (target_doc.name or eng_code))
                         elif existing_co.userid != self.env.user:
                             holder_name = existing_co.userid.name if existing_co.userid else _("kỹ sư khác")
                             holder_host = existing_co.hostname or _("máy trạm khác")
                             raise UserError(_(
                                 "Tài liệu '%s' đang bị khóa bởi kỹ sư '%s' trên máy trạm '%s'. "
                                 "Bạn không thể Check-in tài liệu do người khác đang giữ khóa."
-                            ) % (doc.name or eng_code, holder_name, holder_host))
+                            ) % (target_doc.name or eng_code, holder_name, holder_host))
+
+        if target_doc:
+            target_doc._create_document_history_snapshot(
+                description=_("Snapshot lưu tại thời điểm Check-in từ SolidWorks CAD"),
+                user_id=self.env.user
+            )
 
         res = super().CheckInRecursive(request, default=default)
         if res is False:
@@ -362,8 +441,21 @@ class IrAttachment(models.Model):
 
     @api.model
     def CheckInRecursive2(self, involved_docs_dict, **kargs):
-        """Chặn CheckInRecursive2 khi token hết hạn."""
+        """Chặn CheckInRecursive2 khi token hết hạn và lưu snapshot lịch sử."""
         self._check_cad_access_token()
+        try:
+            import json
+            involved = json.loads(involved_docs_dict)
+            for doc_vals in involved.get("to_check_in", []):
+                docId = self.getDocId(doc_vals)
+                if docId:
+                    docId._create_document_history_snapshot(
+                        description=_("Snapshot lưu tại thời điểm Check-in từ CAD Client"),
+                        user_id=self.env.user
+                    )
+        except Exception as e:
+            _logger.warning(f"[TDB PLM] Lỗi khi tạo snapshot CheckInRecursive2: {e}")
+
         return super().CheckInRecursive2(involved_docs_dict, **kargs)
 
     @api.model_create_multi
@@ -385,7 +477,6 @@ class IrAttachment(models.Model):
                 new_datas = vals.get('datas')
                 new_raw = vals.get('raw')
                 history_desc = vals.pop('history_description', None)
-                History = self.env['plm.document.history'].sudo()
 
                 for doc in self:
                     # Chỉ lưu cho tài liệu PLM có file cũ thực sự
@@ -405,42 +496,10 @@ class IrAttachment(models.Model):
                             is_changed = bool(not new_bytes or old_bytes != new_bytes)
 
                         if is_changed:
-                            last_history = History.search(
-                                [('document_id', '=', doc.id)],
-                                order='version_number desc, id desc',
-                                limit=1
-                            )
-                            next_ver_num = (last_history.version_number + 1) if last_history else 1
-                            version_str = f"v{next_ver_num}"
-
-                            import base64
-                            snapshot_datas = doc.datas
-                            if not snapshot_datas and doc.raw:
-                                try:
-                                    snapshot_datas = base64.b64encode(doc.raw).decode()
-                                except Exception:
-                                    snapshot_datas = False
-
-                            try:
-                                file_bytes = base64.b64decode(snapshot_datas) if snapshot_datas else (doc.raw or b"")
-                                size_bytes = len(file_bytes)
-                            except Exception:
-                                size_bytes = doc.file_size or 0
-
                             prev_user = doc.write_uid or doc.create_uid or self.env.user
-
-                            History.create({
-                                'document_id': doc.id,
-                                'version': version_str,
-                                'version_number': next_ver_num,
-                                'datas': snapshot_datas,
-                                'file_name': doc.name or 'document',
-                                'file_size': size_bytes,
-                                'user_id': prev_user.id,
-                                'description': history_desc or _("Tự động lưu snapshot trước khi cập nhật file mới"),
-                            })
-                            _logger.info(
-                                f"[TDB PLM] Đã tạo snapshot phiên bản {version_str} cho tài liệu ID {doc.id} ({doc.name})"
+                            doc._create_document_history_snapshot(
+                                description=history_desc or _("Tự động lưu snapshot trước khi cập nhật file mới"),
+                                user_id=prev_user
                             )
 
         # 2. Kiểm tra CAD token (đã miễn trừ Web)
