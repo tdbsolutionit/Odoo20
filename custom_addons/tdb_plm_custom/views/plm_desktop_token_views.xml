@@ -1,8 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <odoo>
-    <!-- Xóa bỏ menu cũ trên Top Bar khỏi CSDL nếu còn tồn tại -->
-    <delete model="ir.ui.menu" id="menu_plm_desktop_token_top"/>
-
     <!-- List View: CAD Desktop Access Tokens -->
     <record id="plm_desktop_token_view_list" model="ir.ui.view">
         <field name="name">plm.desktop.token.list</field>
@@ -140,12 +137,12 @@
         </field>
     </record>
 
-    <!-- Action: Desktop Tokens (Chỉ dành cho Admin Cài đặt / System Administrator) -->
+    <!-- Action: Desktop Tokens (Chỉ dành riêng cho Sếp / Administrator) -->
     <record id="action_plm_desktop_token" model="ir.actions.act_window">
         <field name="name">Desktop Access Tokens (Quản lý thiết bị CAD)</field>
         <field name="res_model">plm.desktop.token</field>
         <field name="view_mode">list,form</field>
-        <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
+        <field name="groups_id" eval="[(6, 0, [ref('tdb_plm_custom.group_plm_desktop_token_boss')])]"/>
         <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
@@ -157,11 +154,11 @@
         </field>
     </record>
 
-    <!-- Menuitem: PLM ➔ Configuration ➔ Desktop Access Tokens (Chỉ dành cho Admin Cài đặt / System Administrator) -->
+    <!-- Menuitem: PLM ➔ Configuration ➔ Desktop Access Tokens (Chỉ dành riêng cho Sếp) -->
     <menuitem id="menu_plm_desktop_token"
               name="Desktop Access Tokens"
               parent="plm.plm_menu_dictionaries"
               action="action_plm_desktop_token"
-              groups="base.group_system"
+              groups="tdb_plm_custom.group_plm_desktop_token_boss"
               sequence="90"/>
 </odoo>

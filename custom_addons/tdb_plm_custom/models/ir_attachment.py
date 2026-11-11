@@ -103,7 +103,7 @@ class IrAttachment(models.Model):
                 raise UserError(_(
                     "Tài liệu '%s' hiện do kỹ sư '%s' giữ Key. "
                     "Chỉ người giữ Key mới có quyền Check-in để ghi đè dữ liệu. "
-                    "Bạn chỉ được quyền Check-out để lấy file về máy trạm. "
+                    "Bạn chỉ được quyền Check-out ở chế độ tham chiếu. "
                     "Vui lòng liên hệ kỹ sư '%s' hoặc Quản trị viên để chuyển giao Key."
                 ) % (doc.name or doc.engineering_code, key_holder_name, key_holder_name))
 

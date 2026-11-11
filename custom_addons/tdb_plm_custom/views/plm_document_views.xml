@@ -89,14 +89,14 @@
                 <!-- Nút Check-out: Mọi kỹ sư đều có thể bấm khi chưa check-out -->
                 <button name="action_web_checkout"
                         type="object"
-                        string="Check-out (Lấy file)"
+                        string="Check-out"
                         class="btn-secondary"
                         invisible="is_checkout == True"/>
 
                 <!-- Nút Check-in: Chỉ hiển thị cho người đang Check-out VÀ đang giữ Key -->
                 <button name="action_web_checkin"
                         type="object"
-                        string="Check-in (Lưu file)"
+                        string="Check-in"
                         class="btn-primary"
                         invisible="is_checkout == False or not is_key_holder"/>
             </xpath>
@@ -108,7 +108,7 @@
                      invisible="not key_holder_id">
                     <div>
                         <span>Người giữ Key Check-in: </span><field name="key_holder_id" class="fw-bold"/>
-                        <span class="text-muted ms-2">(Mọi kỹ sư có thể Check-out lấy file về máy trạm)</span>
+                        <span class="text-muted ms-2">(Kỹ sư giữ Key được quyền Check-in cập nhật bản vẽ)</span>
                     </div>
                     <div>
                         <span class="badge bg-success" invisible="not is_key_holder">Bạn đang giữ Key</span>

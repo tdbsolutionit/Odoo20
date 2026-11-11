@@ -1,6 +1,5 @@
 id,name,model_id,group_id/id,operation,domain
-access_plm_desktop_token_admin,plm.desktop.token.admin,plm.desktop.token,base.group_system,crud,
-access_plm_desktop_token_system,plm.desktop.token.system,plm.desktop.token,base.group_system,crud,
+access_plm_desktop_token_boss,plm.desktop.token.boss,plm.desktop.token,tdb_plm_custom.group_plm_desktop_token_boss,crud,
 access_plm_document_history_user,plm.document.history.user,plm.document.history,base.group_user,cr,
 access_plm_document_history_admin,plm.document.history.admin,plm.document.history,plm.group_plm_admin,crud,
 access_plm_transfer_key_wizard_user,plm.transfer.key.wizard.user,plm.transfer.key.wizard,base.group_user,crud,
