@@ -108,18 +108,47 @@ class IrAttachment(models.Model):
         now = fields.Datetime.now()
 
         for doc in self:
-            # Lấy dữ liệu file snapshot (ưu tiên custom_datas nếu có, ngược lại lấy từ doc)
-            snapshot_datas = custom_datas or doc.datas
-            if not snapshot_datas and doc.raw:
-                try:
-                    import base64
-                    snapshot_datas = base64.b64encode(doc.raw).decode()
-                except Exception:
-                    snapshot_datas = False
+            # 1. Trích xuất dữ liệu file an toàn tuyệt đối trên Odoo 20
+            raw_bytes = b""
+            snapshot_datas = custom_datas
 
-            # Bỏ qua nếu tài liệu hoàn toàn không có tệp đính kèm
             if not snapshot_datas:
-                continue
+                # Odoo 20 lưu file trong trường 'raw' (BinaryBytes)
+                doc_raw = getattr(doc, 'raw', None)
+                if doc_raw:
+                    try:
+                        raw_bytes = bytes(doc_raw)
+                    except Exception:
+                        raw_bytes = doc_raw if isinstance(doc_raw, bytes) else b""
+
+                # Dự phòng nếu có db_datas
+                if not raw_bytes:
+                    db_d = getattr(doc, 'db_datas', None)
+                    if db_d:
+                        try:
+                            raw_bytes = bytes(db_d)
+                        except Exception:
+                            raw_bytes = db_d if isinstance(db_d, bytes) else b""
+
+                if raw_bytes:
+                    import base64
+                    try:
+                        snapshot_datas = base64.b64encode(raw_bytes).decode()
+                    except Exception:
+                        snapshot_datas = False
+            else:
+                if isinstance(snapshot_datas, bytes):
+                    raw_bytes = snapshot_datas
+                    import base64
+                    snapshot_datas = base64.b64encode(raw_bytes).decode()
+                elif isinstance(snapshot_datas, str):
+                    import base64
+                    try:
+                        raw_bytes = base64.b64decode(snapshot_datas)
+                    except Exception:
+                        raw_bytes = snapshot_datas.encode()
+
+            size_bytes = len(raw_bytes) if raw_bytes else (doc.file_size or 0)
 
             last_history = History.search(
                 [('document_id', '=', doc.id)],
@@ -135,28 +164,20 @@ class IrAttachment(models.Model):
 
             next_ver_num = (last_history.version_number + 1) if last_history else 1
             version_str = f"v{next_ver_num}"
-
-            import base64
-            try:
-                file_bytes = base64.b64decode(snapshot_datas)
-                size_bytes = len(file_bytes)
-            except Exception:
-                size_bytes = doc.file_size or 0
-
             creator_user = user_id or self.env.user
 
             History.create({
                 'document_id': doc.id,
                 'version': version_str,
                 'version_number': next_ver_num,
-                'datas': snapshot_datas,
+                'datas': snapshot_datas or False,
                 'file_name': doc.name or 'document',
                 'file_size': size_bytes,
                 'user_id': creator_user.id,
                 'description': description or _("Snapshot lưu tại thời điểm Check-in"),
             })
             _logger.info(
-                f"[TDB PLM] Đã tạo snapshot phiên bản {version_str} cho tài liệu ID {doc.id} ({doc.name})"
+                f"[TDB PLM] Đã tạo snapshot phiên bản {version_str} cho tài liệu ID {doc.id} ({doc.name}), size: {size_bytes} B"
             )
 
     # =========================================================================
@@ -467,40 +488,27 @@ class IrAttachment(models.Model):
 
     def write(self, vals):
         """Kế thừa write của ir.attachment:
-        1. Tự động lưu snapshot phiên bản cũ vào plm.document.history khi nội dung file (datas/raw) thay đổi.
+        1. Tự động lưu snapshot phiên bản cũ vào plm.document.history khi nội dung file thay đổi.
         2. Chặn cập nhật tài liệu/bản vẽ từ SolidWorks khi token hết hạn.
         """
         # 1. Bắt sự kiện cập nhật file để lưu snapshot phiên bản cũ
-        has_file_change = ('datas' in vals or 'raw' in vals)
+        has_file_change = ('raw' in vals or 'datas' in vals or 'db_datas' in vals)
         if has_file_change and not self.env.context.get('skip_document_history'):
             if 'plm.document.history' in self.env:
-                new_datas = vals.get('datas')
-                new_raw = vals.get('raw')
                 history_desc = vals.pop('history_description', None)
-
                 for doc in self:
-                    # Chỉ lưu cho tài liệu PLM có file cũ thực sự
-                    if doc.is_plm and (doc.datas or doc.raw):
-                        # Kiểm tra xem nội dung mới có thực sự khác nội dung cũ không
-                        is_changed = False
-                        if 'datas' in vals:
-                            is_changed = (not new_datas or doc.datas != new_datas)
-                        elif 'raw' in vals:
-                            old_bytes = doc.raw or (base64.b64decode(doc.datas) if doc.datas else b"")
-                            new_bytes = new_raw
-                            if isinstance(new_raw, str):
-                                try:
-                                    new_bytes = base64.b64decode(new_raw)
-                                except Exception:
-                                    new_bytes = new_raw.encode()
-                            is_changed = bool(not new_bytes or old_bytes != new_bytes)
+                    if getattr(doc, 'is_plm', False):
+                        prev_user = doc.write_uid or doc.create_uid or self.env.user
+                        doc._create_document_history_snapshot(
+                            description=history_desc or _("Tự động lưu snapshot trước khi cập nhật file mới"),
+                            user_id=prev_user
+                        )
 
-                        if is_changed:
-                            prev_user = doc.write_uid or doc.create_uid or self.env.user
-                            doc._create_document_history_snapshot(
-                                description=history_desc or _("Tự động lưu snapshot trước khi cập nhật file mới"),
-                                user_id=prev_user
-                            )
+        # 2. Kiểm tra CAD token (đã miễn trừ Web)
+        if self.env.context.get('odooPLM'):
+            self._check_cad_access_token()
+
+        return super().write(vals)
 
         # 2. Kiểm tra CAD token (đã miễn trừ Web)
         if self.env.context.get('odooPLM'):
