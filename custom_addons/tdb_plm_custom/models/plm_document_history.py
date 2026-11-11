@@ -122,3 +122,4 @@ class PlmDocumentHistory(models.Model):
             "url": f"/web/content/plm.document.history/{self.id}/datas/{filename}?download=true",
             "target": "self",
         }
+

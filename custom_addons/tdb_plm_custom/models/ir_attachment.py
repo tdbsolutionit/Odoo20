@@ -290,15 +290,47 @@ class IrAttachment(models.Model):
         self._check_cad_access_token()
         return super().CheckSaveUpdate(documents, default=default)
 
+    @api.model
     def CheckIn(self, attrs):
         """Chặn Check-in đơn lẻ khi token hết hạn."""
         self._check_cad_access_token()
         return super().CheckIn(attrs)
 
+    @api.model
     def CheckInRecursive(self, request, default=None):
-        """Chặn Check-in đệ quy khi token hết hạn."""
+        """Chặn Check-in đệ quy khi token hết hạn và kiểm tra trạng thái khóa rõ ràng chống crash CAD COM."""
         self._check_cad_access_token()
-        return super().CheckInRecursive(request, default=default)
+
+        # Kiểm tra trạng thái khóa trước để thông báo rõ ràng cho kỹ sư SolidWorks
+        if request and isinstance(request, (list, tuple)) and len(request) > 0:
+            doc_args = request[0]
+            if isinstance(doc_args, dict):
+                eng_code = doc_args.get("engineering_code")
+                doc_rev = doc_args.get("engineering_revision")
+                if eng_code:
+                    doc = self.search([
+                        ("engineering_code", "=", eng_code),
+                        ("engineering_revision", "=", doc_rev)
+                    ], limit=1)
+                    if doc:
+                        existing_co = self.env["plm.checkout"].search([("documentid", "=", doc.id)], limit=1)
+                        if not existing_co:
+                            raise UserError(_(
+                                "Tài liệu '%s' hiện chưa được Check-out (đang ở trạng thái mở khóa). "
+                                "Vui lòng bấm nút Check-out trên SolidWorks trước khi thực hiện Check-in."
+                            ) % (doc.name or eng_code))
+                        elif existing_co.userid != self.env.user:
+                            holder_name = existing_co.userid.name if existing_co.userid else _("kỹ sư khác")
+                            holder_host = existing_co.hostname or _("máy trạm khác")
+                            raise UserError(_(
+                                "Tài liệu '%s' đang bị khóa bởi kỹ sư '%s' trên máy trạm '%s'. "
+                                "Bạn không thể Check-in tài liệu do người khác đang giữ khóa."
+                            ) % (doc.name or eng_code, holder_name, holder_host))
+
+        res = super().CheckInRecursive(request, default=default)
+        if res is False:
+            return []
+        return res
 
     def CheckOutRecursive(self, structure, pws_path="", hostname="", force=False):
         """Chặn Check-out đệ quy cây lắp ráp khi token hết hạn."""
@@ -322,11 +354,13 @@ class IrAttachment(models.Model):
         self._check_cad_access_token()
         return super().saveSingleLevel(clientArg)
 
+    @api.model
     def CheckIn2(self, request, default=None, force=False):
         """Chặn CheckIn2 khi token hết hạn."""
         self._check_cad_access_token()
         return super().CheckIn2(request, default=default, force=force)
 
+    @api.model
     def CheckInRecursive2(self, involved_docs_dict, **kargs):
         """Chặn CheckInRecursive2 khi token hết hạn."""
         self._check_cad_access_token()
@@ -347,52 +381,53 @@ class IrAttachment(models.Model):
         # 1. Bắt sự kiện cập nhật file để lưu snapshot phiên bản cũ
         has_file_change = ('datas' in vals or 'raw' in vals)
         if has_file_change and not self.env.context.get('skip_document_history'):
-            new_datas = vals.get('datas')
-            new_raw = vals.get('raw')
-            history_desc = vals.pop('history_description', None)
-            History = self.env['plm.document.history'].sudo()
+            if 'plm.document.history' in self.env:
+                new_datas = vals.get('datas')
+                new_raw = vals.get('raw')
+                history_desc = vals.pop('history_description', None)
+                History = self.env['plm.document.history'].sudo()
 
-            for doc in self:
-                # Chỉ lưu cho tài liệu PLM có file cũ thực sự
-                if doc.is_plm and (doc.datas or doc.raw):
-                    # Kiểm tra xem nội dung mới có thực sự khác nội dung cũ không
-                    is_changed = False
-                    if 'datas' in vals:
-                        is_changed = (not new_datas or doc.datas != new_datas)
-                    elif 'raw' in vals:
-                        is_changed = (not new_raw or doc.raw != new_raw)
+                for doc in self:
+                    # Chỉ lưu cho tài liệu PLM có file cũ thực sự
+                    if doc.is_plm and (doc.datas or doc.raw):
+                        # Kiểm tra xem nội dung mới có thực sự khác nội dung cũ không
+                        is_changed = False
+                        if 'datas' in vals:
+                            is_changed = (not new_datas or doc.datas != new_datas)
+                        elif 'raw' in vals:
+                            is_changed = (not new_raw or doc.raw != new_raw)
 
-                    if is_changed:
-                        last_history = History.search(
-                            [('document_id', '=', doc.id)],
-                            order='version_number desc, id desc',
-                            limit=1
-                        )
-                        next_ver_num = (last_history.version_number + 1) if last_history else 1
-                        version_str = f"v{next_ver_num}"
+                        if is_changed:
+                            last_history = History.search(
+                                [('document_id', '=', doc.id)],
+                                order='version_number desc, id desc',
+                                limit=1
+                            )
+                            next_ver_num = (last_history.version_number + 1) if last_history else 1
+                            version_str = f"v{next_ver_num}"
 
-                        import base64
-                        try:
-                            file_bytes = base64.b64decode(doc.datas) if doc.datas else (doc.raw or b"")
-                            size_bytes = len(file_bytes)
-                        except Exception:
-                            size_bytes = doc.file_size or 0
+                            import base64
+                            try:
+                                file_bytes = base64.b64decode(doc.datas) if doc.datas else (doc.raw or b"")
+                                size_bytes = len(file_bytes)
+                            except Exception:
+                                size_bytes = doc.file_size or 0
 
-                        prev_user = doc.write_uid or doc.create_uid or self.env.user
+                            prev_user = doc.write_uid or doc.create_uid or self.env.user
 
-                        History.create({
-                            'document_id': doc.id,
-                            'version': version_str,
-                            'version_number': next_ver_num,
-                            'datas': doc.datas,
-                            'file_name': doc.name or 'document',
-                            'file_size': size_bytes,
-                            'user_id': prev_user.id,
-                            'description': history_desc or _("Tự động lưu snapshot trước khi cập nhật file mới"),
-                        })
-                        _logger.info(
-                            f"[TDB PLM] Đã tạo snapshot phiên bản {version_str} cho tài liệu ID {doc.id} ({doc.name})"
-                        )
+                            History.create({
+                                'document_id': doc.id,
+                                'version': version_str,
+                                'version_number': next_ver_num,
+                                'datas': doc.datas,
+                                'file_name': doc.name or 'document',
+                                'file_size': size_bytes,
+                                'user_id': prev_user.id,
+                                'description': history_desc or _("Tự động lưu snapshot trước khi cập nhật file mới"),
+                            })
+                            _logger.info(
+                                f"[TDB PLM] Đã tạo snapshot phiên bản {version_str} cho tài liệu ID {doc.id} ({doc.name})"
+                            )
 
         # 2. Kiểm tra CAD token (đã miễn trừ Web)
         if self.env.context.get('odooPLM'):
