@@ -5,8 +5,17 @@ echo ===========================================================================
 
 echo.
 echo [1/3] Dang cap nhat code moi nhat tu Git (origin/main)...
+REM Sao luu file cau hinh rieng cua may cuc bo (tranh bi de khi pull/reset)
+if exist config\odoo.conf copy /Y config\odoo.conf config\odoo.conf.local_backup >nul
+
 git fetch origin main
 git reset --hard origin/main
+
+REM Khoi phuc lai dung file cau hinh cua may nay
+if exist config\odoo.conf.local_backup (
+    copy /Y config\odoo.conf.local_backup config\odoo.conf >nul
+    del config\odoo.conf.local_backup >nul
+)
 
 echo.
 echo [2/3] Tam dung container Odoo de tranh lock...
