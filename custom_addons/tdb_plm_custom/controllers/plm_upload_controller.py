@@ -18,10 +18,21 @@ MAX_AGE_180_DAYS = 180 * 24 * 3600  # 15,552,000 giây (180 ngày)
 class TdbPlmUploadDocument(UploadDocument):
 
     @route(
+        "/plm_document_upload/isalive",
+        type="http",
+        auth="none",
+        methods=["GET", "POST"],
+        csrf=False,
+    )
+    def isalive(self, **kw):
+        """Cho phép cả GET và POST để tránh lỗi 405 Method Not Allowed."""
+        return Response("True", status=200)
+
+    @route(
         "/plm_document_upload/login",
         type="http",
         auth="none",
-        methods=["POST"],
+        methods=["GET", "POST"],
         csrf=False,
     )
     def login(self, login, password, db=None, **kw):
@@ -115,7 +126,7 @@ class TdbPlmUploadDocument(UploadDocument):
         "/plm_document_upload/upload",
         type="http",
         auth="user",
-        methods=["POST"],
+        methods=["GET", "POST"],
         csrf=False,
     )
     def upload(self, mod_file=None, doc_id=False, filename="", **kw):
