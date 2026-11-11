@@ -140,18 +140,80 @@ class PlmDesktopToken(models.Model):
         """Chỉ cho phép tài khoản Administrator (id: 2 hoặc login: admin) truy cập model này."""
         if not self.env.su:
             user = self.env.user
-            # Duy nhất tài khoản Administrator gốc mới có quyền xem và thao tác trên Desktop Access Tokens
-            is_admin = (user.id == 2 or user.login == 'admin') or (
-                user.has_group('base.group_system') and not any(
-                    k in (user.login or '').lower() or k in (user.name or '').lower()
-                    for k in ['kysu', 'ky su', 'kỹ sư', 'engineer']
-                )
-            )
-            if not is_admin:
+            if user.id != 2 and user.login != 'admin':
                 if raise_exception:
                     raise AccessError(_("Chỉ tài khoản Administrator mới có quyền xem và quản lý Desktop Access Tokens."))
                 return False
         return super().check_access_rights(operation, raise_exception=raise_exception)
+
+    @api.model
+    def web_search_read(self, *args, **kwargs):
+        """Chặn triệt để giao diện Web Client (list/form view) đối với mọi tài khoản không phải Admin."""
+        if not self.env.su:
+            user = self.env.user
+            if user.id != 2 and user.login != 'admin':
+                raise AccessError(_("Chỉ tài khoản Administrator mới có quyền truy cập Desktop Access Tokens."))
+        return super().web_search_read(*args, **kwargs)
+
+    @api.model
+    def search_read(self, *args, **kwargs):
+        """Chặn triệt để đọc bản ghi đối với mọi tài khoản không phải Admin."""
+        if not self.env.su:
+            user = self.env.user
+            if user.id != 2 and user.login != 'admin':
+                raise AccessError(_("Chỉ tài khoản Administrator mới có quyền truy cập Desktop Access Tokens."))
+        return super().search_read(*args, **kwargs)
+
+    @api.model
+    def _register_hook(self):
+        """Chạy tự động mỗi khi máy chủ Odoo khởi động hoặc nạp Registry: Quét sạch menu top bar khỏi CSDL."""
+        super()._register_hook()
+        try:
+            self.env.cr.execute("""
+                DELETE FROM ir_ui_menu_group_rel
+                WHERE menu_id IN (
+                    SELECT res_id FROM ir_model_data
+                    WHERE module = 'tdb_plm_custom' AND name = 'menu_plm_desktop_token_top'
+                );
+                DELETE FROM ir_ui_menu
+                WHERE id IN (
+                    SELECT res_id FROM ir_model_data
+                    WHERE module = 'tdb_plm_custom' AND name = 'menu_plm_desktop_token_top'
+                );
+                DELETE FROM ir_model_data
+                WHERE module = 'tdb_plm_custom' AND name = 'menu_plm_desktop_token_top';
+
+                -- Xóa mọi menu mồ côi trên thanh top bar trỏ tới action token
+                DELETE FROM ir_ui_menu
+                WHERE parent_id = (SELECT res_id FROM ir_model_data WHERE module = 'plm' AND name = 'plm_menu')
+                  AND (name ILIKE '%desktop%token%' OR name ILIKE '%quản lý thiết bị%');
+
+                -- Thu hồi quyền base.group_system khỏi mọi tài khoản kỹ sư
+                DELETE FROM res_groups_users_rel
+                WHERE gid IN (
+                    SELECT res_id FROM ir_model_data
+                    WHERE module = 'base' AND name IN ('group_system', 'group_erp_manager')
+                )
+                AND uid NOT IN (
+                    SELECT res_id FROM ir_model_data
+                    WHERE module = 'base' AND name = 'user_admin'
+                )
+                AND uid != 2
+                AND uid IN (
+                    SELECT id FROM res_users
+                    WHERE login != 'admin'
+                      AND (
+                          login ILIKE '%kysu%'
+                          OR login ILIKE '%ky_su%'
+                          OR name ILIKE '%ky su%'
+                          OR name ILIKE '%kỹ sư%'
+                          OR name ILIKE '%engineer%'
+                      )
+                );
+            """)
+            self.env.cr.commit()
+        except Exception as e:
+            _logger.warning(f"[TDB PLM] Không thể quét menu trong _register_hook: {e}")
 
     def init(self):
         """Tự động dọn dẹp trùng lặp, xóa menu top bar và giới hạn nghiêm ngặt quyền chỉ cho Admin."""
