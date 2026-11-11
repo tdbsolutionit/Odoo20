@@ -4,6 +4,7 @@
 from . import base
 from . import product_template
 from . import product_product
+from . import plm_document_history
 from . import ir_attachment
 from . import plm_checkout
 from . import plm_desktop_token

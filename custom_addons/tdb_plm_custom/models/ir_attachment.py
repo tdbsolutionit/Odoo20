@@ -67,6 +67,40 @@ class IrAttachment(models.Model):
                 doc.locked_date = False
 
     # =========================================================================
+    # LỊCH SỬ PHIÊN BẢN TỆP (FILE HISTORY - TASK T4)
+    # =========================================================================
+    history_ids = fields.One2many(
+        "plm.document.history",
+        "document_id",
+        string="Lịch sử phiên bản",
+        readonly=True,
+        help="Danh sách các bản snapshot phiên bản tệp cũ của tài liệu này."
+    )
+    history_count = fields.Integer(
+        string="Số phiên bản cũ",
+        compute="_compute_history_count",
+        store=False,
+        help="Tổng số phiên bản tệp cũ đã được lưu trữ."
+    )
+
+    @api.depends("history_ids")
+    def _compute_history_count(self):
+        for doc in self:
+            doc.history_count = len(doc.history_ids)
+
+    def action_view_file_history(self):
+        """Mở danh sách lịch sử phiên bản của tài liệu hiện tại."""
+        self.ensure_one()
+        return {
+            "name": _("Lịch sử phiên bản: %s") % (self.name or ""),
+            "type": "ir.actions.act_window",
+            "res_model": "plm.document.history",
+            "view_mode": "list,form",
+            "domain": [("document_id", "=", self.id)],
+            "context": {"default_document_id": self.id},
+        }
+
+    # =========================================================================
     # 2. KIỂM SOÁT TOKEN 180 NGÀY CHO CAD CLIENT
     # =========================================================================
     def _check_cad_access_token(self):
@@ -306,9 +340,64 @@ class IrAttachment(models.Model):
         return super().create(vals_list)
 
     def write(self, vals):
-        """Chặn cập nhật tài liệu/bản vẽ từ SolidWorks khi token hết hạn."""
+        """Kế thừa write của ir.attachment:
+        1. Tự động lưu snapshot phiên bản cũ vào plm.document.history khi nội dung file (datas/raw) thay đổi.
+        2. Chặn cập nhật tài liệu/bản vẽ từ SolidWorks khi token hết hạn.
+        """
+        # 1. Bắt sự kiện cập nhật file để lưu snapshot phiên bản cũ
+        has_file_change = ('datas' in vals or 'raw' in vals)
+        if has_file_change and not self.env.context.get('skip_document_history'):
+            new_datas = vals.get('datas')
+            new_raw = vals.get('raw')
+            history_desc = vals.pop('history_description', None)
+            History = self.env['plm.document.history'].sudo()
+
+            for doc in self:
+                # Chỉ lưu cho tài liệu PLM có file cũ thực sự
+                if doc.is_plm and (doc.datas or doc.raw):
+                    # Kiểm tra xem nội dung mới có thực sự khác nội dung cũ không
+                    is_changed = False
+                    if 'datas' in vals:
+                        is_changed = (not new_datas or doc.datas != new_datas)
+                    elif 'raw' in vals:
+                        is_changed = (not new_raw or doc.raw != new_raw)
+
+                    if is_changed:
+                        last_history = History.search(
+                            [('document_id', '=', doc.id)],
+                            order='version_number desc, id desc',
+                            limit=1
+                        )
+                        next_ver_num = (last_history.version_number + 1) if last_history else 1
+                        version_str = f"v{next_ver_num}"
+
+                        import base64
+                        try:
+                            file_bytes = base64.b64decode(doc.datas) if doc.datas else (doc.raw or b"")
+                            size_bytes = len(file_bytes)
+                        except Exception:
+                            size_bytes = doc.file_size or 0
+
+                        prev_user = doc.write_uid or doc.create_uid or self.env.user
+
+                        History.create({
+                            'document_id': doc.id,
+                            'version': version_str,
+                            'version_number': next_ver_num,
+                            'datas': doc.datas,
+                            'file_name': doc.name or 'document',
+                            'file_size': size_bytes,
+                            'user_id': prev_user.id,
+                            'description': history_desc or _("Tự động lưu snapshot trước khi cập nhật file mới"),
+                        })
+                        _logger.info(
+                            f"[TDB PLM] Đã tạo snapshot phiên bản {version_str} cho tài liệu ID {doc.id} ({doc.name})"
+                        )
+
+        # 2. Kiểm tra CAD token (đã miễn trừ Web)
         if self.env.context.get('odooPLM'):
             self._check_cad_access_token()
+
         return super().write(vals)
 
     # =========================================================================
