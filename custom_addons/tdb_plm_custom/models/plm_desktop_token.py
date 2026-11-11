@@ -14,6 +14,7 @@ import logging
 import secrets
 from datetime import timedelta
 from odoo import api, fields, models, _
+from odoo.exceptions import AccessError
 
 _logger = logging.getLogger(__name__)
 
@@ -134,33 +135,72 @@ class PlmDesktopToken(models.Model):
             to_delete.unlink()
             _logger.info(f">>> [TDB PLM] Đã dọn dẹp {len(to_delete)} bản ghi token trùng lặp.")
 
+    @api.model
+    def check_access_rights(self, operation, raise_exception=True):
+        """Chỉ cho phép tài khoản thuộc base.group_system (Admin Cài đặt) truy cập model này."""
+        if not self.env.su and not self.env.user.has_group('base.group_system'):
+            if raise_exception:
+                raise AccessError(_("Chỉ Quản trị viên hệ thống (Administrator) mới có quyền truy cập Desktop Access Tokens."))
+            return False
+        return super().check_access_rights(operation, raise_exception=raise_exception)
+
     def init(self):
-        """Tự động dọn dẹp trùng lặp và thu hồi quyền plm.group_plm_admin khi nạp module."""
+        """Tự động dọn dẹp trùng lặp và giới hạn nghiêm ngặt quyền chỉ cho base.group_system."""
         super().init()
         try:
             self.cleanup_duplicate_tokens()
         except Exception as e:
             _logger.debug(f"[TDB PLM] Dọn dẹp token trong init: {e}")
         try:
-            # Xóa triệt để quan hệ menu và quyền truy cập model của group_plm_admin đối với plm.desktop.token
+            # 1. Thu hồi quyền truy cập model khỏi bất kỳ nhóm nào không phải base.group_system
             self.env.cr.execute("""
+                DELETE FROM ir_model_access
+                WHERE model_id = (SELECT id FROM ir_model WHERE model = 'plm.desktop.token')
+                  AND group_id != (SELECT res_id FROM ir_model_data WHERE module = 'base' AND name = 'group_system');
+
+                -- 2. Đảm bảo các menu Desktop Access Tokens chỉ liên kết với duy nhất base.group_system
                 DELETE FROM ir_ui_menu_group_rel
                 WHERE menu_id IN (
                     SELECT res_id FROM ir_model_data
                     WHERE module = 'tdb_plm_custom'
                       AND name IN ('menu_plm_desktop_token_top', 'menu_plm_desktop_token')
-                )
-                AND gid IN (
-                    SELECT res_id FROM ir_model_data
-                    WHERE module = 'plm' AND name = 'group_plm_admin'
                 );
 
-                DELETE FROM ir_model_access
-                WHERE model_id = (SELECT id FROM ir_model WHERE model = 'plm.desktop.token')
-                  AND group_id = (SELECT res_id FROM ir_model_data WHERE module = 'plm' AND name = 'group_plm_admin');
+                INSERT INTO ir_ui_menu_group_rel (menu_id, gid)
+                SELECT m.res_id, g.res_id
+                FROM ir_model_data m
+                CROSS JOIN ir_model_data g
+                WHERE m.module = 'tdb_plm_custom'
+                  AND m.name IN ('menu_plm_desktop_token_top', 'menu_plm_desktop_token')
+                  AND g.module = 'base'
+                  AND g.name = 'group_system'
+                ON CONFLICT DO NOTHING;
+
+                -- 3. Đảm bảo action_plm_desktop_token chỉ liên kết với duy nhất base.group_system
+                DELETE FROM ir_act_window_group_rel
+                WHERE act_id IN (
+                    SELECT res_id FROM ir_model_data
+                    WHERE module = 'tdb_plm_custom' AND name = 'action_plm_desktop_token'
+                );
+
+                INSERT INTO ir_act_window_group_rel (act_id, gid)
+                SELECT a.res_id, g.res_id
+                FROM ir_model_data a
+                CROSS JOIN ir_model_data g
+                WHERE a.module = 'tdb_plm_custom' AND a.name = 'action_plm_desktop_token'
+                  AND g.module = 'base' AND g.name = 'group_system'
+                ON CONFLICT DO NOTHING;
+
+                -- 4. Nếu tài khoản 'Kỹ sư A' bị gán nhầm base.group_system (do nhân bản từ Admin), tự động thu hồi
+                DELETE FROM res_groups_users_rel
+                WHERE gid = (SELECT res_id FROM ir_model_data WHERE module = 'base' AND name = 'group_system')
+                  AND uid IN (
+                      SELECT id FROM res_users
+                      WHERE login != 'admin' AND id > 2 AND (name ILIKE '%kỹ sư%' OR login ILIKE '%kysu%')
+                  );
             """)
         except Exception as e:
-            _logger.debug(f"[TDB PLM] Thu hồi quyền plm.group_plm_admin trong init: {e}")
+            _logger.warning(f"[TDB PLM] Cập nhật phân quyền desktop token trong init: {e}")
 
     @api.model
     def register_session_token(self, user_id, session_id, machine_uuid, machine_name, client_ip, cad_version):

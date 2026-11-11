@@ -137,7 +137,7 @@
         </field>
     </record>
 
-    <!-- Action: Desktop Tokens -->
+    <!-- Action: Desktop Tokens (Chỉ dành cho Admin Cài đặt / System Administrator) -->
     <record id="action_plm_desktop_token" model="ir.actions.act_window">
         <field name="name">Desktop Access Tokens (Quản lý thiết bị CAD)</field>
         <field name="res_model">plm.desktop.token</field>
@@ -155,20 +155,18 @@
     </record>
 
     <!-- Menuitem 1 (Top Bar): PLM ➔ Desktop Access Tokens (Chỉ dành cho Admin Cài đặt / System Administrator) -->
-    <record id="menu_plm_desktop_token_top" model="ir.ui.menu">
-        <field name="name">Desktop Access Tokens</field>
-        <field name="parent_id" ref="plm.plm_menu"/>
-        <field name="action" ref="action_plm_desktop_token"/>
-        <field name="sequence">60</field>
-        <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
-    </record>
+    <menuitem id="menu_plm_desktop_token_top"
+              name="Desktop Access Tokens"
+              parent="plm.plm_menu"
+              action="action_plm_desktop_token"
+              groups="base.group_system"
+              sequence="60"/>
 
     <!-- Menuitem 2 (Dropdown): PLM ➔ Configuration ➔ Desktop Access Tokens (Chỉ dành cho Admin Cài đặt / System Administrator) -->
-    <record id="menu_plm_desktop_token" model="ir.ui.menu">
-        <field name="name">Desktop Access Tokens</field>
-        <field name="parent_id" ref="plm.plm_menu_dictionaries"/>
-        <field name="action" ref="action_plm_desktop_token"/>
-        <field name="sequence">90</field>
-        <field name="groups_id" eval="[(6, 0, [ref('base.group_system')])]"/>
-    </record>
+    <menuitem id="menu_plm_desktop_token"
+              name="Desktop Access Tokens"
+              parent="plm.plm_menu_dictionaries"
+              action="action_plm_desktop_token"
+              groups="base.group_system"
+              sequence="90"/>
 </odoo>
