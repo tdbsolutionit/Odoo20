@@ -175,29 +175,6 @@ class PlmDesktopToken(models.Model):
                 DELETE FROM ir_ui_menu
                 WHERE parent_id = (SELECT res_id FROM ir_model_data WHERE module = 'plm' AND name = 'plm_menu')
                   AND (name ILIKE '%desktop%token%' OR name ILIKE '%quản lý thiết bị%');
-
-                -- Thu hồi quyền base.group_system khỏi tài khoản kỹ sư nếu bị gán nhầm
-                DELETE FROM res_groups_users_rel
-                WHERE gid IN (
-                    SELECT res_id FROM ir_model_data
-                    WHERE module = 'base' AND name IN ('group_system', 'group_erp_manager')
-                )
-                AND uid NOT IN (
-                    SELECT res_id FROM ir_model_data
-                    WHERE module = 'base' AND name = 'user_admin'
-                )
-                AND uid != 2
-                AND uid IN (
-                    SELECT id FROM res_users
-                    WHERE login != 'admin'
-                      AND (
-                          login ILIKE '%kysu%'
-                          OR login ILIKE '%ky_su%'
-                          OR name ILIKE '%ky su%'
-                          OR name ILIKE '%kỹ sư%'
-                          OR name ILIKE '%engineer%'
-                      )
-                );
             """)
         except Exception as e:
             _logger.debug(f"[TDB PLM] Xóa menu cũ trong init: {e}")
