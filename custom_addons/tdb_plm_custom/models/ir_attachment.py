@@ -2,12 +2,17 @@
 # Copyright 2026 TDB Solution Co., Ltd.
 """
 Mở rộng model ir.attachment cho phân hệ OdooPLM:
-1. Quản trị vòng đời Access Token 180 ngày (Layer 2).
-2. Xử lý Document Lock độc quyền (Chống sửa đồng thời):
-   - Triệt tiêu Race Condition bằng Row-Level Locking (FOR UPDATE NOWAIT).
-   - Nút Force Unlock (Cưỡng chế mở khóa) cho Admin/Trưởng phòng có ghi nhận Audit Log.
-   - Thao tác Check-out / Check-in trực tiếp từ Web Browser.
-   - Các trường tính toán trực quan hóa trạng thái khóa (lock_state, locked_user_id, locked_hostname).
+1. Kiến trúc Người giữ Key (Key Holder Architecture):
+   - Kỹ sư đầu tiên tạo / check-in tài liệu từ máy trạm sẽ giữ Key độc quyền.
+   - Mọi kỹ sư đều được quyền Check-out tải file về máy trạm phục vụ thiết kế, tham chiếu.
+   - Duy nhất kỹ sư giữ Key mới được quyền Check-in cập nhật file lên máy chủ.
+   - Thông báo lỗi chỉ rõ danh tính kỹ sư đang giữ Key khi người khác cố Check-in.
+   - Quản trị viên / Trưởng phòng có quyền Phá khóa cưỡng chế (Force Unlock) và chuyển giao Key.
+2. Lịch sử phiên bản tệp (File History - Task T4):
+   - Tự động lưu snapshot phiên bản cũ (v1, v2,...) khi Check-in.
+   - Tự động khởi tạo phiên bản v1 cho các tài liệu đã có file gốc trên hệ thống.
+3. Quản trị vòng đời Access Token 180 ngày cho CAD Client SolidWorks.
+4. Chuẩn hóa nhật ký Chatter bằng văn bản ERP thuần (không icon, không bullet, không gạch đầu dòng).
 """
 import logging
 from markupsafe import Markup
@@ -21,38 +26,55 @@ class IrAttachment(models.Model):
     _inherit = "ir.attachment"
 
     # =========================================================================
-    # 1. CÁC TRƯỜNG DỮ LIỆU HIỂN THỊ TRẠNG THÁI KHÓA (DOCUMENT LOCK)
+    # 1. KIẾN TRÚC NGƯỜI GIỮ KEY (KEY HOLDER ARCHITECTURE)
     # =========================================================================
+    key_holder_id = fields.Many2one(
+        "res.users",
+        string="Người giữ Key",
+        index=True,
+        tracking=True,
+        help="Kỹ sư giữ quyền Check-in độc quyền cho tài liệu CAD này."
+    )
+    is_key_holder = fields.Boolean(
+        string="Tôi đang giữ Key",
+        compute="_compute_is_key_holder",
+        store=False
+    )
     lock_state = fields.Selection(
         [
-            ('unlocked', 'Sẵn sàng (Chưa khóa)'),
-            ('locked', 'Đang bị khóa'),
+            ('unlocked', 'Sẵn sàng'),
+            ('locked', 'Đang Check-out'),
         ],
         string="Trạng thái khóa",
         compute="_compute_lock_state",
         store=False,
-        help="Trạng thái khóa độc quyền của tài liệu CAD chống sửa đồng thời."
+        help="Trạng thái Check-out của tài liệu."
     )
     locked_user_id = fields.Many2one(
         "res.users",
-        string="Người giữ khóa",
+        string="Người Check-out",
         compute="_compute_lock_state",
         store=False
     )
     locked_hostname = fields.Char(
-        string="Máy trạm giữ khóa",
+        string="Máy trạm Check-out",
         compute="_compute_lock_state",
         store=False
     )
     locked_date = fields.Datetime(
-        string="Thời điểm khóa",
+        string="Thời điểm Check-out",
         compute="_compute_lock_state",
         store=False
     )
 
-    @api.depends('checkout_ids', 'is_checkout')
+    @api.depends('key_holder_id')
+    def _compute_is_key_holder(self):
+        for doc in self:
+            doc.is_key_holder = (doc.key_holder_id == self.env.user)
+
+    @api.depends('checkout_ids', 'key_holder_id')
     def _compute_lock_state(self):
-        """Tính toán trạng thái khóa từ model plm.checkout."""
+        """Tính toán trạng thái Check-out từ model plm.checkout."""
         for doc in self:
             if doc.checkout_ids:
                 co = doc.checkout_ids[0]
@@ -66,8 +88,27 @@ class IrAttachment(models.Model):
                 doc.locked_hostname = False
                 doc.locked_date = False
 
+    def _check_key_holder_permission(self):
+        """Kiểm tra quyền giữ Key độc quyền trước khi Check-in:
+        Chỉ kỹ sư giữ Key mới được quyền Check-in để ghi đè dữ liệu tệp lên hệ thống.
+        Các kỹ sư khác chỉ có quyền Check-out tải file về máy trạm phục vụ tham chiếu.
+        """
+        for doc in self:
+            if not doc.key_holder_id:
+                doc.sudo().write({'key_holder_id': self.env.user.id})
+                continue
+
+            if doc.key_holder_id != self.env.user:
+                key_holder_name = doc.key_holder_id.name
+                raise UserError(_(
+                    "Tài liệu '%s' hiện do kỹ sư '%s' giữ Key. "
+                    "Chỉ người giữ Key mới có quyền Check-in để ghi đè dữ liệu. "
+                    "Bạn chỉ được quyền Check-out để lấy file về máy trạm. "
+                    "Vui lòng liên hệ kỹ sư '%s' hoặc Quản trị viên để chuyển giao Key."
+                ) % (doc.name or doc.engineering_code, key_holder_name, key_holder_name))
+
     # =========================================================================
-    # LỊCH SỬ PHIÊN BẢN TỆP (FILE HISTORY - TASK T4)
+    # 2. LỊCH SỬ PHIÊN BẢN TỆP (FILE HISTORY - TASK T4)
     # =========================================================================
     history_ids = fields.One2many(
         "plm.document.history",
@@ -77,16 +118,27 @@ class IrAttachment(models.Model):
         help="Danh sách các bản snapshot phiên bản tệp cũ của tài liệu này."
     )
     history_count = fields.Integer(
-        string="Số phiên bản cũ",
+        string="Số phiên bản",
         compute="_compute_history_count",
         store=False,
-        help="Tổng số phiên bản tệp cũ đã được lưu trữ."
+        help="Tổng số phiên bản tệp đã được lưu trữ."
     )
 
     @api.depends("history_ids")
     def _compute_history_count(self):
         for doc in self:
-            doc.history_count = len(doc.history_ids)
+            count = len(doc.history_ids)
+            # Tự động tạo snapshot v1 nếu tài liệu đã có file gốc nhưng chưa có lịch sử
+            if count == 0 and doc.is_plm and (doc.raw or (doc.file_size and doc.file_size > 0)):
+                try:
+                    doc._create_document_history_snapshot(
+                        description=_("Phiên bản gốc tải lên lần đầu"),
+                        user_id=doc.create_uid or self.env.user
+                    )
+                    count = len(doc.history_ids)
+                except Exception as e:
+                    _logger.warning(f"[TDB PLM] Lỗi tự động tạo snapshot ban đầu: {e}")
+            doc.history_count = count
 
     def action_view_file_history(self):
         """Mở danh sách lịch sử phiên bản của tài liệu hiện tại."""
@@ -108,12 +160,10 @@ class IrAttachment(models.Model):
         now = fields.Datetime.now()
 
         for doc in self:
-            # 1. Trích xuất dữ liệu file an toàn tuyệt đối trên Odoo 20
             raw_bytes = b""
             snapshot_datas = custom_datas
 
             if not snapshot_datas:
-                # Odoo 20 lưu file trong trường 'raw' (BinaryBytes)
                 doc_raw = getattr(doc, 'raw', None)
                 if doc_raw:
                     try:
@@ -121,7 +171,6 @@ class IrAttachment(models.Model):
                     except Exception:
                         raw_bytes = doc_raw if isinstance(doc_raw, bytes) else b""
 
-                # Dự phòng nếu có db_datas
                 if not raw_bytes:
                     db_d = getattr(doc, 'db_datas', None)
                     if db_d:
@@ -181,18 +230,16 @@ class IrAttachment(models.Model):
             )
 
     # =========================================================================
-    # 2. KIỂM SOÁT TOKEN 180 NGÀY CHO CAD CLIENT
+    # 3. KIỂM SOÁT TOKEN 180 NGÀY CHO CAD CLIENT
     # =========================================================================
     def _check_cad_access_token(self):
         """Kiểm tra token thiết bị CAD tại tầng ORM:
         Chặn tuyệt đối mọi thao tác lưu bản vẽ, check-in, check-out từ SolidWorks nếu token bị thu hồi hoặc hết hạn.
         Bỏ qua hoàn toàn đối với các thao tác từ Web Browser.
         """
-        # 1. Bỏ qua nếu có cờ định danh thao tác Web
         if self.env.context.get('is_web_operation'):
             return
 
-        # 2. Bỏ qua hoàn toàn nếu request xuất phát từ trình duyệt Web (/web, /odoo)
         try:
             from odoo.http import request
             if request and hasattr(request, 'httprequest'):
@@ -214,132 +261,54 @@ class IrAttachment(models.Model):
                     raise UserError(_("Phiên làm việc CAD 180 ngày đã hết hạn. Vui lòng bấm 'Execute New Login' từ SolidWorks để tiếp tục."))
 
     # =========================================================================
-    # 3. DOCUMENT LOCK & RACE CONDITION RESOLUTION
+    # 4. THAO TÁC CHECK-OUT VÀ CHECK-IN
     # =========================================================================
+    def canCheckOut(self, showError=False):
+        """Mở rộng canCheckOut: Cho phép tất cả kỹ sư đều có thể Check-out tài liệu để lấy file về máy trạm."""
+        for doc in self:
+            if doc.engineering_state not in ['draft', 'wip', False]:
+                msg = _("Tài liệu '%s' đang ở trạng thái '%s' nên không thể Check-out.") % (
+                    doc.name or doc.engineering_code, doc.engineering_state
+                )
+                if showError:
+                    raise UserError(msg)
+                return False, msg
+        return True, ""
+
     def checkout(self, hostName, hostPws, showError=True, user_id=False):
-        """Khóa tài liệu độc quyền (Check-out) chống sửa đồng thời & chống Race Condition:
-        1. Kiểm tra Token CAD 180 ngày.
-        2. Dùng FOR UPDATE NOWAIT ở tầng PostgreSQL để triệt tiêu Race Condition khi 2 người cùng bấm một lúc.
-        3. Phản hồi thông báo thân thiện rõ ràng nếu tài liệu đã có người khác giữ khóa.
+        """Khóa tài liệu Check-out:
+        Cho phép mọi kỹ sư Check-out để lấy file về máy trạm SolidWorks (PWS) phục vụ thiết kế và tham chiếu.
+        Quyền Check-in ghi đè được kiểm soát riêng biệt bởi Người giữ Key (key_holder_id).
         """
         self._check_cad_access_token()
         if not user_id:
             user_id = self.env.uid
 
+        # Đảm bảo tài liệu luôn có người giữ Key (người đầu tiên thao tác sẽ giữ Key)
         for doc in self:
-            # Nếu đã được chính người này check-out thì cho phép tiếp tục
-            if doc.isCheckedOutByMe():
-                continue
-
-            # Áp dụng khóa dòng DB (Row-level lock) tránh đụng độ race condition tại t=0
-            try:
-                self.env.cr.execute(
-                    "SELECT id FROM ir_attachment WHERE id = %s FOR UPDATE NOWAIT",
-                    [doc.id]
-                )
-            except Exception as e:
-                _logger.warning(f"[TDB PLM LOCK] Xung đột khóa đồng thời cho Doc ID {doc.id}: {e}")
-                msg = _("Tài liệu '%s' đang có giao dịch khóa khác xử lý đồng thời. Vui lòng thử lại sau giây lát.") % (doc.name or doc.engineering_code)
-                if showError:
-                    raise UserError(msg)
-                return False, msg
-
-            # Kiểm tra xem tài liệu đã có ai giữ khóa chưa
-            existing_checkout = self.env['plm.checkout'].search([('documentid', '=', doc.id)], limit=1)
-            if existing_checkout:
-                holder_name = existing_checkout.userid.name if existing_checkout.userid else _("Người dùng khác")
-                holder_host = existing_checkout.hostname or _("Máy trạm không xác định")
-                msg = _("Tài liệu '%s' (Rev %s) HIỆN ĐANG BỊ KHÓA bởi kỹ sư '%s' trên máy trạm '%s'. Bạn chỉ được quyền mở xem (Chế độ Read-only).") % (
-                    doc.name or doc.engineering_code,
-                    doc.engineering_revision or 0,
-                    holder_name,
-                    holder_host
-                )
-                _logger.info(f">>> [TDB PLM LOCK] Từ chối check-out: {msg}")
-                if showError:
-                    raise UserError(msg)
-                return False, msg
+            if not doc.key_holder_id:
+                doc.sudo().write({'key_holder_id': user_id})
 
         return super().checkout(hostName, hostPws, showError=showError, user_id=user_id)
 
-    # =========================================================================
-    # 4. FORCE UNLOCK (PHÁ KHÓA CƯỠNG CHẾ CHO QUẢN TRỊ VIÊN)
-    # =========================================================================
-    def action_force_unlock(self):
-        """Phá khóa cưỡng chế (Force Unlock) dành cho Quản trị viên / Trưởng phòng:
-        Dùng khi kỹ sư giữ khóa nhưng nghỉ việc, vắng mặt hoặc máy trạm gặp sự cố.
-        Ghi nhận nhật ký kiểm toán (Audit Log) vào Chatter để chống gian lận.
-        """
-        is_admin = self.env.user.has_group('plm.group_plm_admin') or self.env.user.has_group('base.group_system')
-        if not is_admin:
-            raise UserError(_("Bạn không có quyền thực hiện Phá khóa cưỡng chế. Chỉ Quản trị viên PLM hoặc Trưởng phòng mới được phép thực hiện."))
-
-        checkout_model = self.env['plm.checkout'].sudo().with_context(is_web_operation=True)
-        for doc in self.with_context(is_web_operation=True):
-            checkouts = checkout_model.search([('documentid', '=', doc.id)])
-            if not checkouts:
-                continue
-
-            prev_users = []
-            prev_hosts = []
-            for co in checkouts:
-                if co.userid:
-                    prev_users.append(co.userid.name)
-                if co.hostname:
-                    prev_hosts.append(co.hostname)
-
-            prev_user_str = ", ".join(prev_users) or _("Không rõ")
-            prev_host_str = ", ".join(prev_hosts) or _("Không rõ")
-
-            # Xóa bản ghi khóa trong plm.checkout (bỏ qua log Checked-In mặc định vì đã có log Phá khóa)
-            checkouts.with_context(skip_checkin_audit=True).unlink()
-
-            # Hoàn nguyên cờ ghi được
-            doc.write({'engineering_writable': False})
-            doc.assign_must_update_flag()
-
-            # Ghi nhận log kiểm toán vào Chatter (định dạng văn bản thuần, không icon, không in đậm)
-            audit_msg = Markup(_(
-                "<p>"
-                "Cưỡng chế mở khóa (Force Unlock)<br/>"
-                "Người thực hiện: %s<br/>"
-                "Kỹ sư từng giữ khóa: %s<br/>"
-                "Máy trạm từng giữ khóa: %s<br/>"
-                "Trạng thái: Đã giải phóng khóa tài liệu thành công."
-                "</p>"
-            )) % (self.env.user.name, prev_user_str, prev_host_str)
-            doc.message_post(body=audit_msg, message_type='notification')
-            _logger.warning(f">>> [TDB PLM FORCE UNLOCK] {self.env.user.name} đã cưỡng chế mở khóa tài liệu {doc.name} (ID {doc.id})")
-
+    def action_web_checkout(self):
+        """Cho phép kỹ sư bấm Check-out trực tiếp trên Web Browser để lấy file."""
+        self.ensure_one()
+        plm_checkout_id, msg = self.with_context(is_web_operation=True).checkout(f"Web ({self.env.user.name})", "web_browser", showError=True)
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
-                'title': _("Phá khóa thành công"),
-                'message': _("Tài liệu đã được giải phóng khóa cưỡng chế và sẵn sàng cho kỹ sư khác tiếp quản."),
+                'title': _("Check-out thành công"),
+                'message': _("Bạn đã nhận quyền lấy file về máy trạm."),
                 'type': 'success',
                 'sticky': False,
             }
         }
 
-    def action_web_checkout(self):
-        """Cho phép kỹ sư bấm Check-out trực tiếp trên Web Browser."""
-        self.ensure_one()
-        plm_checkout_id, msg = self.with_context(is_web_operation=True).checkout(f"Web ({self.env.user.name})", "web_browser", showError=True)
-        if plm_checkout_id:
-            return {
-                'type': 'ir.actions.client',
-                'tag': 'display_notification',
-                'params': {
-                    'title': _("Check-out thành công"),
-                    'message': _("Bạn đã nhận quyền khóa độc quyền để chỉnh sửa tài liệu."),
-                    'type': 'success',
-                    'sticky': False,
-                }
-            }
-
     def _check_in(self):
-        """Kế thừa _check_in để tự động tạo snapshot lịch sử phiên bản khi Check-in."""
+        """Kế thừa _check_in: Kiểm tra quyền giữ Key và tự động tạo snapshot lịch sử."""
+        self._check_key_holder_permission()
         for doc in self:
             doc._create_document_history_snapshot(
                 description=_("Snapshot lưu tại thời điểm Check-in"),
@@ -348,10 +317,13 @@ class IrAttachment(models.Model):
         return super()._check_in()
 
     def action_web_checkin(self):
-        """Cho phép kỹ sư bấm Check-in trực tiếp trên Web Browser."""
+        """Cho phép kỹ sư giữ Key bấm Check-in trực tiếp trên Web Browser."""
         self.ensure_one()
+        self._check_key_holder_permission()
+
         if not self.isCheckedOutByMe():
-            raise UserError(_("Bạn không phải người đang giữ khóa tài liệu này nên không thể Check-in."))
+            self.with_context(is_web_operation=True).checkout(f"Web ({self.env.user.name})", "web_browser", showError=False)
+
         self._create_document_history_snapshot(
             description=_("Snapshot lưu tại thời điểm Check-in qua Web"),
             user_id=self.env.user
@@ -362,14 +334,40 @@ class IrAttachment(models.Model):
             'tag': 'display_notification',
             'params': {
                 'title': _("Check-in thành công"),
-                'message': _("Đã hoàn tất chỉnh sửa và giải phóng khóa tài liệu."),
+                'message': _("Đã hoàn tất lưu file và giải phóng khóa tài liệu."),
                 'type': 'success',
                 'sticky': False,
             }
         }
 
     # =========================================================================
-    # 5. CÁC HÀM CAD CHẶN LƯU KHI HẾT HẠN TOKEN
+    # 5. FORCE UNLOCK & CHUYỂN GIAO KEY CHO QUẢN TRỊ VIÊN
+    # =========================================================================
+    def action_force_unlock(self):
+        """Phá khóa cưỡng chế / Chuyển giao Key dành cho Quản trị viên PLM hoặc Trưởng phòng."""
+        return self.action_open_transfer_key_wizard()
+
+    def action_open_transfer_key_wizard(self):
+        """Mở popup chuyển giao quyền giữ Key (Force Unlock)."""
+        self.ensure_one()
+        is_admin = self.env.user.has_group('plm.group_plm_admin') or self.env.user.has_group('base.group_system')
+        if not is_admin:
+            raise UserError(_("Bạn không có quyền chuyển giao Key. Chỉ Quản trị viên PLM hoặc Trưởng phòng mới được phép thực hiện."))
+
+        return {
+            'name': _("Chuyển giao quyền giữ Key (Force Unlock)"),
+            'type': 'ir.actions.act_window',
+            'res_model': 'plm.transfer.key.wizard',
+            'view_mode': 'form',
+            'target': 'new',
+            'context': {
+                'default_document_id': self.id,
+                'default_current_key_holder_id': self.key_holder_id.id if self.key_holder_id else False,
+            }
+        }
+
+    # =========================================================================
+    # 6. CÁC HÀM CAD CHẶN LƯU & BẢO VỆ CLIENT COM
     # =========================================================================
     @api.model
     def SaveOrUpdate(self, documents, default=None):
@@ -385,17 +383,20 @@ class IrAttachment(models.Model):
 
     @api.model
     def CheckIn(self, attrs):
-        """Chặn Check-in đơn lẻ khi token hết hạn."""
+        """Chặn Check-in đơn lẻ khi không giữ Key hoặc token hết hạn."""
         self._check_cad_access_token()
+        doc_id = attrs.get("id")
+        if doc_id:
+            doc = self.browse(doc_id)
+            doc._check_key_holder_permission()
         return super().CheckIn(attrs)
 
     @api.model
     def CheckInRecursive(self, request, default=None):
-        """Chặn Check-in đệ quy khi token hết hạn và kiểm tra trạng thái khóa rõ ràng chống crash CAD COM."""
+        """Chặn Check-in đệ quy khi token hết hạn, kiểm tra quyền giữ Key và bảo vệ client CAD chống crash COM."""
         self._check_cad_access_token()
 
         target_doc = False
-        # Kiểm tra trạng thái khóa trước để thông báo rõ ràng cho kỹ sư SolidWorks
         if request and isinstance(request, (list, tuple)) and len(request) > 0:
             doc_args = request[0]
             if isinstance(doc_args, dict):
@@ -407,19 +408,13 @@ class IrAttachment(models.Model):
                         ("engineering_revision", "=", doc_rev)
                     ], limit=1)
                     if target_doc:
-                        existing_co = self.env["plm.checkout"].search([("documentid", "=", target_doc.id)], limit=1)
-                        if not existing_co:
-                            raise UserError(_(
-                                "Tài liệu '%s' hiện chưa được Check-out (đang ở trạng thái mở khóa). "
-                                "Vui lòng bấm nút Check-out trên SolidWorks trước khi thực hiện Check-in."
-                            ) % (target_doc.name or eng_code))
-                        elif existing_co.userid != self.env.user:
-                            holder_name = existing_co.userid.name if existing_co.userid else _("kỹ sư khác")
-                            holder_host = existing_co.hostname or _("máy trạm khác")
-                            raise UserError(_(
-                                "Tài liệu '%s' đang bị khóa bởi kỹ sư '%s' trên máy trạm '%s'. "
-                                "Bạn không thể Check-in tài liệu do người khác đang giữ khóa."
-                            ) % (target_doc.name or eng_code, holder_name, holder_host))
+                        # 1. Kiểm tra quyền giữ Key độc quyền
+                        target_doc._check_key_holder_permission()
+
+                        # 2. Đảm bảo bản ghi checkout tồn tại cho user này để tránh lỗi COM SolidWorks
+                        if not target_doc.isCheckedOutByMe():
+                            host_name = doc_args.get("hostname") or "SolidWorks CAD"
+                            target_doc.checkout(host_name, "pws", showError=False)
 
         if target_doc:
             target_doc._create_document_history_snapshot(
@@ -456,7 +451,7 @@ class IrAttachment(models.Model):
 
     @api.model
     def CheckIn2(self, request, default=None, force=False):
-        """Chặn CheckIn2 khi token hết hạn."""
+        """Chặn CheckIn2 khi không giữ Key hoặc token hết hạn."""
         self._check_cad_access_token()
         return super().CheckIn2(request, default=default, force=force)
 
@@ -470,6 +465,7 @@ class IrAttachment(models.Model):
             for doc_vals in involved.get("to_check_in", []):
                 docId = self.getDocId(doc_vals)
                 if docId:
+                    docId._check_key_holder_permission()
                     docId._create_document_history_snapshot(
                         description=_("Snapshot lưu tại thời điểm Check-in từ CAD Client"),
                         user_id=self.env.user
@@ -481,18 +477,32 @@ class IrAttachment(models.Model):
 
     @api.model_create_multi
     def create(self, vals_list):
-        """Chặn tạo tài liệu/bản vẽ từ SolidWorks khi token hết hạn."""
+        """Tự động thiết lập người tạo đầu tiên làm Người giữ Key."""
         if self.env.context.get('odooPLM'):
             self._check_cad_access_token()
+        for vals in vals_list:
+            if not vals.get('key_holder_id'):
+                vals['key_holder_id'] = self.env.user.id
         return super().create(vals_list)
 
     def write(self, vals):
         """Kế thừa write của ir.attachment:
-        1. Tự động lưu snapshot phiên bản cũ vào plm.document.history khi nội dung file thay đổi.
-        2. Chặn cập nhật tài liệu/bản vẽ từ SolidWorks khi token hết hạn.
+        1. Kiểm tra quyền giữ Key nếu có thay đổi nội dung file.
+        2. Tự động lưu snapshot phiên bản cũ vào plm.document.history khi nội dung file thay đổi.
+        3. Chặn cập nhật từ CAD khi token hết hạn.
         """
-        # 1. Bắt sự kiện cập nhật file để lưu snapshot phiên bản cũ
         has_file_change = ('raw' in vals or 'datas' in vals or 'db_datas' in vals)
+
+        if has_file_change and not self.env.context.get('skip_key_holder_check'):
+            for doc in self:
+                if doc.key_holder_id and doc.key_holder_id != self.env.user:
+                    key_holder_name = doc.key_holder_id.name
+                    raise UserError(_(
+                        "Tài liệu '%s' hiện do kỹ sư '%s' giữ Key. "
+                        "Chỉ người giữ Key mới có quyền cập nhật tệp lên hệ thống. "
+                        "Vui lòng liên hệ kỹ sư '%s' hoặc Quản trị viên để chuyển giao Key."
+                    ) % (doc.name or doc.engineering_code, key_holder_name, key_holder_name))
+
         if has_file_change and not self.env.context.get('skip_document_history'):
             if 'plm.document.history' in self.env:
                 history_desc = vals.pop('history_description', None)
@@ -504,25 +514,17 @@ class IrAttachment(models.Model):
                             user_id=prev_user
                         )
 
-        # 2. Kiểm tra CAD token (đã miễn trừ Web)
-        if self.env.context.get('odooPLM'):
-            self._check_cad_access_token()
-
-        return super().write(vals)
-
-        # 2. Kiểm tra CAD token (đã miễn trừ Web)
         if self.env.context.get('odooPLM'):
             self._check_cad_access_token()
 
         return super().write(vals)
 
     # =========================================================================
-    # 6. CHUẨN HÓA NHẬT KÝ CHATTER CHO CHECK-OUT & CHECK-IN
+    # 7. CHUẨN HÓA NHẬT KÝ CHATTER CHO CHECK-OUT & CHECK-IN
     # =========================================================================
     def message_post(self, **kwargs):
         """Chuẩn hóa nhật ký Chatter cho các sự kiện Check-out và Check-in:
-        Ghi rõ chi tiết người thực hiện, máy trạm và trạng thái bằng văn bản thuần ERP.
-        Không dùng icon màu mè hay danh sách bullet AI.
+        Ghi rõ người thực hiện, máy trạm bằng văn bản thuần ERP (không icon, không bullet).
         """
         body = kwargs.get('body', '')
         body_str = str(body or '').strip()

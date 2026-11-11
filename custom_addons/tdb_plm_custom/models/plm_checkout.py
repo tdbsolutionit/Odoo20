@@ -2,7 +2,8 @@
 # Copyright 2026 TDB Solution Co., Ltd.
 """
 Mở rộng model plm.checkout:
-Bổ sung tính năng Phá khóa cưỡng chế (Force Unlock) có ghi nhận nhật ký kiểm toán (Audit Log).
+1. Gỡ bỏ ràng buộc unique 1 người để cho phép nhiều kỹ sư cùng Check-out tải file về máy trạm.
+2. Tích hợp chuyển giao Key (Force Unlock) có ghi nhận nhật ký kiểm toán vào Chatter.
 """
 import logging
 from markupsafe import Markup
@@ -15,42 +16,33 @@ _logger = logging.getLogger(__name__)
 class TdbPlmCheckout(models.Model):
     _inherit = "plm.checkout"
 
+    def init(self):
+        super().init()
+        # Cho phép nhiều kỹ sư cùng Check-out để lấy file về máy trạm tham chiếu
+        self.env.cr.execute("""
+            ALTER TABLE plm_checkout DROP CONSTRAINT IF EXISTS plm_checkout_documentid_uniq;
+            ALTER TABLE plm_checkout DROP CONSTRAINT IF EXISTS plm_checkout__documentid;
+            CREATE UNIQUE INDEX IF NOT EXISTS plm_checkout_doc_user_uniq ON plm_checkout (documentid, userid);
+        """)
+
     def action_force_unlock(self):
-        """Phá khóa cưỡng chế ngay trên danh sách hoặc form bản ghi plm.checkout."""
+        """Phá khóa cưỡng chế / Chuyển giao Key ngay trên danh sách hoặc form bản ghi plm.checkout."""
+        self.ensure_one()
         is_admin = self.env.user.has_group('plm.group_plm_admin') or self.env.user.has_group('base.group_system')
         if not is_admin:
             raise UserError(_("Chỉ Quản trị viên PLM hoặc Trưởng phòng mới có quyền thực hiện Phá khóa cưỡng chế."))
 
-        for co in self.with_context(is_web_operation=True):
-            doc = co.documentid
-            prev_user = co.userid.name if co.userid else _("Không rõ")
-            prev_host = co.hostname or _("Không rõ")
+        if self.documentid:
+            return self.documentid.action_open_transfer_key_wizard()
 
-            co.with_context(skip_checkin_audit=True).unlink()
-
-            if doc:
-                doc.with_context(is_web_operation=True).write({'engineering_writable': False})
-                doc.with_context(is_web_operation=True).assign_must_update_flag()
-                audit_msg = Markup(_(
-                    "<p>"
-                    "Cưỡng chế mở khóa (Force Unlock)<br/>"
-                    "Người thực hiện: %s<br/>"
-                    "Kỹ sư từng giữ khóa: %s<br/>"
-                    "Máy trạm từng giữ khóa: %s<br/>"
-                    "Trạng thái: Đã giải phóng khóa tài liệu thành công."
-                    "</p>"
-                )) % (self.env.user.name, prev_user, prev_host)
-                doc.message_post(body=audit_msg, message_type='notification')
-                _logger.warning(f">>> [TDB PLM FORCE UNLOCK] {self.env.user.name} đã phá khóa bản vẽ {doc.name} (Doc ID {doc.id})")
-
+        self.with_context(skip_checkin_audit=True).unlink()
         return {
             'type': 'ir.actions.client',
             'tag': 'display_notification',
             'params': {
                 'title': _("Phá khóa thành công"),
-                'message': _("Đã giải phóng khóa cưỡng chế thành công."),
+                'message': _("Đã giải phóng bản ghi check-out."),
                 'type': 'success',
                 'sticky': False,
             }
         }
-

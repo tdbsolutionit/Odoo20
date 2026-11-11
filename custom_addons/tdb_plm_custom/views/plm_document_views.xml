@@ -2,11 +2,11 @@
 <odoo>
     <!-- ======================================================================= -->
     <!-- TDB SOLUTION - PHÂN TẦNG LAYER 5: VIEWS VÀ GIAO DIỆN BACKEND PLM       -->
-    <!-- Quản lý Document Lock: Khóa độc quyền, Chống sửa đồng thời             -->
-    <!-- & Cưỡng chế mở khóa (Force Unlock) cho Quản trị viên                   -->
+    <!-- Quản lý Document Lock: Kiến trúc Người giữ Key (Key Holder Architecture)-->
+    <!-- & Chuyển giao Key cưỡng chế (Force Unlock) cho Quản trị viên            -->
     <!-- ======================================================================= -->
 
-    <!-- 1. Danh sách Documents (List View): Bổ sung trạng thái khóa & nút phá khóa -->
+    <!-- 1. Danh sách Documents (List View): Người giữ Key, Trạng thái & Nút chuyển giao Key -->
     <record id="plm_ir_attachment_list_inherit_tdb" model="ir.ui.view">
         <field name="name">ir.attachment.list.plm.tdb.custom</field>
         <field name="model">ir.attachment</field>
@@ -40,71 +40,71 @@
                 <attribute name="width">140px</attribute>
             </xpath>
 
-            <!-- Trạng thái khóa & Người giữ khóa -->
+            <!-- Người giữ Key & Nút chuyển giao Key -->
             <xpath expr="//field[@name='checkout_user']" position="replace">
                 <field name="is_checkout" column_invisible="1"/>
+                <field name="key_holder_id" string="Người giữ Key" widget="many2one_avatar_user" optional="show"/>
                 <field name="lock_state"
                        widget="badge"
                        decoration-danger="lock_state == 'locked'"
                        decoration-success="lock_state == 'unlocked'"
-                       string="Trạng thái khóa"
+                       string="Trạng thái"
                        optional="show"/>
-                <field name="checkout_user" string="Người giữ khóa" optional="show"/>
-                <button name="action_force_unlock"
+                <button name="action_open_transfer_key_wizard"
                         type="object"
-                        string="Phá khóa"
-                        icon="fa-unlock"
-                        class="btn-link text-danger"
-                        invisible="is_checkout == False"
-                        groups="plm.group_plm_admin"
-                        confirm="Bạn có chắc chắn muốn CƯỠNG CHẾ MỞ KHÓA tài liệu này không? Hành động này sẽ được ghi nhận vào nhật ký kiểm toán."/>
+                        string="Chuyển giao Key"
+                        class="btn btn-sm btn-outline-danger"
+                        groups="plm.group_plm_admin"/>
             </xpath>
         </field>
     </record>
 
-    <!-- 2. Form View Documents: Thêm nút Force Unlock & Banner cảnh báo khi bị khóa -->
+    <!-- 2. Form View Documents: Thêm Banner Người giữ Key & Header Actions -->
     <record id="plm_ir_attachment_form_inherit_tdb" model="ir.ui.view">
         <field name="name">ir.attachment.form.plm.tdb.custom</field>
         <field name="model">ir.attachment</field>
         <field name="inherit_id" ref="plm.view_attachment_form_plm_hinerit"/>
         <field name="priority" eval="10"/>
         <field name="arch" type="xml">
-            <!-- Thêm nút Phá khóa trên Header -->
+            <!-- Thêm các nút thao tác trên Header -->
             <xpath expr="//header" position="inside">
+                <field name="is_key_holder" invisible="1"/>
                 <field name="is_checkout" invisible="1"/>
-                <button name="action_force_unlock"
+                <button name="action_open_transfer_key_wizard"
                         type="object"
-                        string="Phá khóa (Force Unlock)"
+                        string="Chuyển giao Key (Force Unlock)"
                         class="btn-danger"
-                        invisible="is_checkout == False"
-                        groups="plm.group_plm_admin"
-                        confirm="CẢNH BÁO: Bạn có chắc chắn muốn CƯỠNG CHẾ MỞ KHÓA tài liệu này không? Toàn bộ thay đổi chưa Check-in của kỹ sư giữ khóa sẽ không thể lưu đè. Hành động này được ghi vào Chatter."/>
+                        groups="plm.group_plm_admin"/>
                 <button name="action_web_checkout"
                         type="object"
-                        string="Check-out (Khóa)"
-                        class="btn-primary"
-                        invisible="is_checkout == True"/>
+                        string="Check-out (Lấy file)"
+                        class="btn-secondary"/>
                 <button name="action_web_checkin"
                         type="object"
-                        string="Check-in (Mở khóa)"
-                        class="btn-success"
-                        invisible="is_checkout == False"/>
+                        string="Check-in (Lưu file)"
+                        class="btn-primary"
+                        invisible="not is_key_holder"/>
             </xpath>
 
-            <!-- Banner cảnh báo đỏ khi tài liệu đang bị khóa -->
+            <!-- Banner thông tin Người giữ Key -->
             <xpath expr="//sheet" position="before">
-                <div class="alert alert-danger d-flex align-items-center mb-0 py-2 justify-content-between"
+                <div class="alert alert-info d-flex align-items-center mb-0 py-2 justify-content-between"
                      role="alert"
-                     invisible="is_checkout == False">
+                     invisible="not key_holder_id">
                     <div>
-                        <span>Tài liệu đang bị khóa: Đang được giữ bởi kỹ sư </span><field name="checkout_user"/>
-                        <span invisible="not locked_hostname"> trên máy trạm <field name="locked_hostname"/></span>
-                        <span invisible="not locked_date"> (từ <field name="locked_date"/>)</span>.
+                        <span>Người giữ Key Check-in: </span><field name="key_holder_id" class="fw-bold"/>
+                        <span class="text-muted ms-2">(Mọi kỹ sư có thể Check-out lấy file về máy trạm)</span>
                     </div>
                     <div>
-                        <span class="badge bg-danger">Chế độ chỉ đọc</span>
+                        <span class="badge bg-success" invisible="not is_key_holder">Bạn đang giữ Key</span>
+                        <span class="badge bg-secondary" invisible="is_key_holder">Chế độ tham chiếu</span>
                     </div>
                 </div>
+            </xpath>
+
+            <!-- Bổ sung Người giữ Key vào nhóm thông tin PLM INFOS -->
+            <xpath expr="//group[@name='main_doc_info']" position="inside">
+                <field name="key_holder_id" readonly="1" widget="many2one_avatar_user" string="Người giữ Key"/>
             </xpath>
 
             <!-- Stat button đếm và xem lịch sử phiên bản tệp -->
@@ -142,7 +142,7 @@
         </field>
     </record>
 
-    <!-- 3. Kế thừa danh sách Checked-Out Documents: Thêm nút Phá khóa -->
+    <!-- 3. Kế thừa danh sách Checked-Out Documents: Thêm nút Chuyển giao Key -->
     <record id="plm_checkout_list_inherit_tdb" model="ir.ui.view">
         <field name="name">plm.checkout.list.tdb</field>
         <field name="model">plm.checkout</field>
@@ -152,16 +152,14 @@
             <xpath expr="//field[@name='create_date']" position="after">
                 <button name="action_force_unlock"
                         type="object"
-                        string="Phá khóa"
-                        icon="fa-unlock"
-                        class="btn-link text-danger"
-                        groups="plm.group_plm_admin"
-                        confirm="Bạn có chắc chắn muốn CƯỠNG CHẾ MỞ KHÓA tài liệu này không?"/>
+                        string="Chuyển giao Key"
+                        class="btn btn-sm btn-outline-danger"
+                        groups="plm.group_plm_admin"/>
             </xpath>
         </field>
     </record>
 
-    <!-- 4. Kế thừa Form View Checked-Out Documents: Thêm Header & nút Phá khóa -->
+    <!-- 4. Kế thừa Form View Checked-Out Documents: Thêm Header & nút Chuyển giao Key -->
     <record id="plm_checkout_form_inherit_tdb" model="ir.ui.view">
         <field name="name">plm.checkout.form.tdb</field>
         <field name="model">plm.checkout</field>
@@ -172,10 +170,9 @@
                 <header>
                     <button name="action_force_unlock"
                             type="object"
-                            string="Cưỡng chế mở khóa (Force Unlock)"
+                            string="Chuyển giao Key (Force Unlock)"
                             class="btn-danger"
-                            groups="plm.group_plm_admin"
-                            confirm="Bạn có chắc chắn muốn CƯỠNG CHẾ MỞ KHÓA tài liệu này không?"/>
+                            groups="plm.group_plm_admin"/>
                 </header>
             </xpath>
         </field>

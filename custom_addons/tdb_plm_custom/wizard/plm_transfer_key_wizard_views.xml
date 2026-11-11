@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_plm_transfer_key_wizard_form" model="ir.ui.view">
+        <field name="name">plm.transfer.key.wizard.form</field>
+        <field name="model">plm.transfer.key.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Chuyển giao quyền giữ Key (Force Unlock)">
+                <sheet>
+                    <div class="alert alert-warning mb-3 py-2" role="alert">
+                        Chức năng dành riêng cho Quản trị viên và Trưởng phòng để cưỡng chế chuyển giao quyền Check-in (giữ Key) cho kỹ sư khác khi người giữ Key vắng mặt hoặc bận việc.
+                    </div>
+                    <group>
+                        <group string="Thông tin tài liệu">
+                            <field name="document_id" invisible="1"/>
+                            <field name="document_name" string="Tài liệu"/>
+                            <field name="current_key_holder_id" string="Kỹ sư đang giữ Key" widget="many2one_avatar_user"/>
+                        </group>
+                        <group string="Kỹ sư tiếp nhận mới">
+                            <field name="new_key_holder_id" string="Kỹ sư nhận Key mới" widget="many2one_avatar_user" options="{'no_create': True, 'no_open': True}"/>
+                            <field name="release_all_checkouts" string="Giải phóng toàn bộ Check-out"/>
+                        </group>
+                    </group>
+                    <group string="Lý do chuyển giao Key">
+                        <field name="reason" placeholder="Nhập lý do chuyển giao quyền kiểm soát tài liệu..." nolabel="1"/>
+                    </group>
+                </sheet>
+                <footer>
+                    <button name="action_confirm_transfer"
+                            string="Xác nhận chuyển giao Key"
+                            type="object"
+                            class="btn-danger"/>
+                    <button string="Hủy bỏ"
+                            class="btn-secondary"
+                            special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

@@ -3,3 +3,4 @@ access_plm_desktop_token_user,plm.desktop.token.user,plm.desktop.token,base.grou
 access_plm_desktop_token_admin,plm.desktop.token.admin,plm.desktop.token,base.group_system,crud,
 access_plm_document_history_user,plm.document.history.user,plm.document.history,base.group_user,cr,
 access_plm_document_history_admin,plm.document.history.admin,plm.document.history,plm.group_plm_admin,crud,
+access_plm_transfer_key_wizard_user,plm.transfer.key.wizard.user,plm.transfer.key.wizard,base.group_user,crud,

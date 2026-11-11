@@ -6,4 +6,4 @@ Chuẩn hóa giao diện danh sách, tiêu đề song ngữ Anh - Việt và că
 """
 from . import models
 from . import controllers
-
+from . import wizard
