@@ -142,7 +142,7 @@
         <field name="name">Desktop Access Tokens (Quản lý thiết bị CAD)</field>
         <field name="res_model">plm.desktop.token</field>
         <field name="view_mode">list,form</field>
-        <field name="groups_id" eval="[(6, 0, [ref('tdb_plm_custom.group_plm_desktop_token_boss')])]"/>
+        <field name="groups_id" eval="[(6, 0, [ref('plm.group_plm_admin'), ref('base.group_system'), ref('tdb_plm_custom.group_plm_desktop_token_boss')])]"/>
         <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
@@ -154,11 +154,19 @@
         </field>
     </record>
 
-    <!-- Menuitem: PLM ➔ Configuration ➔ Desktop Access Tokens (Chỉ dành riêng cho Sếp) -->
+    <!-- Menuitem trên Top Bar PLM: Hiển thị trực tiếp cho Sếp / Administrator, ẩn hoàn toàn với Kỹ sư -->
+    <menuitem id="menu_plm_desktop_token_top"
+              name="Desktop Access Tokens"
+              parent="plm.plm_menu"
+              action="action_plm_desktop_token"
+              groups="plm.group_plm_admin,base.group_system,tdb_plm_custom.group_plm_desktop_token_boss"
+              sequence="90"/>
+
+    <!-- Menuitem phụ trong PLM ➔ Cấu hình: Dành cho Sếp / Administrator -->
     <menuitem id="menu_plm_desktop_token"
               name="Desktop Access Tokens"
               parent="plm.plm_menu_dictionaries"
               action="action_plm_desktop_token"
-              groups="tdb_plm_custom.group_plm_desktop_token_boss"
+              groups="plm.group_plm_admin,base.group_system,tdb_plm_custom.group_plm_desktop_token_boss"
               sequence="90"/>
 </odoo>

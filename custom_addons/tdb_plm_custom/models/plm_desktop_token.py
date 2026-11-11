@@ -149,44 +149,12 @@ class PlmDesktopToken(models.Model):
         return super().check_access_rights(operation, raise_exception=raise_exception)
 
     def init(self):
-        """Tự động dọn dẹp trùng lặp và xóa menu top bar cũ khi nạp module."""
+        """Tự động dọn dẹp trùng lặp khi nạp module."""
         super().init()
         try:
             self.cleanup_duplicate_tokens()
         except Exception as e:
             _logger.debug(f"[TDB PLM] Dọn dẹp token trong init: {e}")
-        try:
-            with self.env.cr.savepoint():
-                # Xóa triệt để menu Desktop Access Tokens khỏi thanh Top Bar (ir_ui_menu và ir_model_data)
-                self.env.cr.execute("""
-                    DELETE FROM ir_ui_menu_group_rel
-                    WHERE menu_id IN (
-                        SELECT res_id FROM ir_model_data
-                        WHERE module = 'tdb_plm_custom' AND name = 'menu_plm_desktop_token_top'
-                    );
-                    DELETE FROM ir_ui_menu
-                    WHERE id IN (
-                        SELECT res_id FROM ir_model_data
-                        WHERE module = 'tdb_plm_custom' AND name = 'menu_plm_desktop_token_top'
-                    );
-                    DELETE FROM ir_model_data
-                    WHERE module = 'tdb_plm_custom' AND name = 'menu_plm_desktop_token_top';
-
-                    -- Xóa quan hệ nhóm của menu mồ côi trên top bar
-                    DELETE FROM ir_ui_menu_group_rel
-                    WHERE menu_id IN (
-                        SELECT id FROM ir_ui_menu
-                        WHERE parent_id = (SELECT res_id FROM ir_model_data WHERE module = 'plm' AND name = 'plm_menu')
-                          AND (name::text ILIKE '%desktop%token%' OR name::text ILIKE '%quản lý thiết bị%')
-                    );
-
-                    -- Xóa bất kỳ menu mồ côi nào trên top bar (parent_id = plm.plm_menu) có tên Desktop Access Tokens
-                    DELETE FROM ir_ui_menu
-                    WHERE parent_id = (SELECT res_id FROM ir_model_data WHERE module = 'plm' AND name = 'plm_menu')
-                      AND (name::text ILIKE '%desktop%token%' OR name::text ILIKE '%quản lý thiết bị%');
-                """)
-        except Exception as e:
-            _logger.debug(f"[TDB PLM] Xóa menu cũ trong init: {e}")
 
     @api.model
     def register_session_token(self, user_id, session_id, machine_uuid, machine_name, client_ip, cad_version):
