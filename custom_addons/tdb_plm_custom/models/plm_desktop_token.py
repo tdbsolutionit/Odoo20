@@ -135,12 +135,32 @@ class PlmDesktopToken(models.Model):
             _logger.info(f">>> [TDB PLM] Đã dọn dẹp {len(to_delete)} bản ghi token trùng lặp.")
 
     def init(self):
-        """Tự động dọn dẹp trùng lặp khi nạp module."""
+        """Tự động dọn dẹp trùng lặp và thu hồi quyền plm.group_plm_admin khi nạp module."""
         super().init()
         try:
             self.cleanup_duplicate_tokens()
         except Exception as e:
             _logger.debug(f"[TDB PLM] Dọn dẹp token trong init: {e}")
+        try:
+            # Xóa triệt để quan hệ menu và quyền truy cập model của group_plm_admin đối với plm.desktop.token
+            self.env.cr.execute("""
+                DELETE FROM ir_ui_menu_group_rel
+                WHERE menu_id IN (
+                    SELECT res_id FROM ir_model_data
+                    WHERE module = 'tdb_plm_custom'
+                      AND name IN ('menu_plm_desktop_token_top', 'menu_plm_desktop_token')
+                )
+                AND gid IN (
+                    SELECT res_id FROM ir_model_data
+                    WHERE module = 'plm' AND name = 'group_plm_admin'
+                );
+
+                DELETE FROM ir_model_access
+                WHERE model_id = (SELECT id FROM ir_model WHERE model = 'plm.desktop.token')
+                  AND group_id = (SELECT res_id FROM ir_model_data WHERE module = 'plm' AND name = 'group_plm_admin');
+            """)
+        except Exception as e:
+            _logger.debug(f"[TDB PLM] Thu hồi quyền plm.group_plm_admin trong init: {e}")
 
     @api.model
     def register_session_token(self, user_id, session_id, machine_uuid, machine_name, client_ip, cad_version):
