@@ -115,6 +115,17 @@
                         <span class="badge bg-secondary" invisible="is_key_holder">Chế độ tham chiếu</span>
                     </div>
                 </div>
+                <div class="alert alert-warning d-flex align-items-center mb-0 py-2 justify-content-between"
+                     role="alert"
+                     invisible="key_holder_id">
+                    <div>
+                        <span>Tài liệu đang ở trạng thái </span><span class="fw-bold">Nhả Key tự do</span>
+                        <span class="text-muted ms-2">(Kỹ sư Check-out kế tiếp sẽ tự động nhận quyền giữ Key)</span>
+                    </div>
+                    <div>
+                        <span class="badge bg-warning text-dark">Chờ tiếp quản Key</span>
+                    </div>
+                </div>
             </xpath>
 
             <!-- Bổ sung Người giữ Key vào nhóm thông tin PLM INFOS -->

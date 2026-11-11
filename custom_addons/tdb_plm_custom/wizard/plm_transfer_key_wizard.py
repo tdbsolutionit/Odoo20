@@ -38,7 +38,7 @@ class PlmTransferKeyWizard(models.TransientModel):
     transfer_type = fields.Selection(
         [
             ('to_user', 'Chuyển giao cho kỹ sư khác'),
-            ('release', 'Nhả Key tự do (Người check-in tiếp theo sẽ nhận Key)'),
+            ('release', 'Nhả Key tự do (Kỹ sư Check-out kế tiếp sẽ nhận Key)'),
         ],
         string="Hình thức",
         default='to_user',
@@ -132,7 +132,7 @@ class PlmTransferKeyWizard(models.TransientModel):
             )
 
         else:
-            # Nhả Key tự do
+            # Nhả Key tự do (Kỹ sư Check-out kế tiếp sẽ nhận Key)
             doc.sudo().write({
                 'key_holder_id': False,
                 'engineering_writable': False,
@@ -147,7 +147,7 @@ class PlmTransferKeyWizard(models.TransientModel):
                 "Người thực hiện: %s<br/>"
                 "Kỹ sư từng giữ Key: %s<br/>"
                 "Lý do: %s<br/>"
-                "Trạng thái: Đã nhả quyền giữ Key tự do thành công."
+                "Trạng thái: Đã nhả quyền giữ Key tự do (kỹ sư Check-out kế tiếp sẽ nhận Key)."
                 "</p>"
             )) % (self.env.user.name, prev_name, self.reason.strip())
 

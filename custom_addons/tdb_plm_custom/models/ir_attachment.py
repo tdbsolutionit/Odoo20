@@ -279,15 +279,28 @@ class IrAttachment(models.Model):
         """Khóa tài liệu Check-out:
         Cho phép mọi kỹ sư Check-out để lấy file về máy trạm SolidWorks (PWS) phục vụ thiết kế và tham chiếu.
         Quyền Check-in ghi đè được kiểm soát riêng biệt bởi Người giữ Key (key_holder_id).
+        Nếu tài liệu đang ở trạng thái Nhả Key tự do (chưa có người giữ Key), kỹ sư Check-out đầu tiên sẽ tiếp nhận Key!
         """
         self._check_cad_access_token()
         if not user_id:
             user_id = self.env.uid
 
-        # Đảm bảo tài liệu luôn có người giữ Key (người đầu tiên thao tác sẽ giữ Key)
+        # Kỹ sư Check-out đầu tiên khi tài liệu chưa có người giữ Key sẽ tiếp nhận Key độc quyền
         for doc in self:
             if not doc.key_holder_id:
+                user_obj = self.env['res.users'].browse(user_id)
                 doc.sudo().write({'key_holder_id': user_id})
+                doc.message_post(
+                    body=Markup(_(
+                        "<p>"
+                        "Tiếp nhận quyền giữ Key<br/>"
+                        "Kỹ sư tiếp nhận: %s<br/>"
+                        "Trạng thái: Đã nhận quyền giữ Key khi Check-out tài liệu."
+                        "</p>"
+                    )) % user_obj.name,
+                    message_type='notification'
+                )
+                _logger.info(f">>> [TDB PLM] Kỹ sư {user_obj.name} đã tiếp nhận Key tài liệu {doc.name} khi Check-out.")
 
         return super().checkout(hostName, hostPws, showError=showError, user_id=user_id)
 

@@ -7,7 +7,7 @@
             <form string="Bàn giao &amp; Chuyển giao quyền giữ Key">
                 <sheet>
                     <div class="alert alert-warning mb-3 py-2" role="alert">
-                        Chuyển giao quyền Check-in (giữ Key) cho kỹ sư khác hoặc nhả Key tự do để người check-in tiếp theo tiếp quản.
+                        Chuyển giao quyền Check-in (giữ Key) cho kỹ sư khác hoặc nhả Key tự do để kỹ sư Check-out kế tiếp tiếp quản.
                     </div>
                     <group>
                         <group string="Thông tin tài liệu">
