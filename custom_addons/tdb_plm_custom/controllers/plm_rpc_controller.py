@@ -169,30 +169,29 @@ def _cad_common_dispatch(method, params):
                         cr.execute("SELECT to_regclass('public.plm_desktop_token');")
                         row = cr.fetchone()
                         if row and row[0]:
-                            tokens = env['plm.desktop.token'].search([('user_id', '=', uid)], order='id desc')
+                            client_ip = None
+                            try:
+                                from odoo.http import request
+                                if request and hasattr(request, 'httprequest'):
+                                    client_ip = request.httprequest.headers.get('X-Forwarded-For') or request.httprequest.remote_addr
+                                    if client_ip and ',' in client_ip:
+                                        client_ip = client_ip.split(',')[0].strip()
+                            except Exception:
+                                pass
+
+                            machine_name = f"CAD WS ({client_ip})" if client_ip else f"CAD WS ({login})"
+                            machine_uuid = f"WS_{machine_name}"
                             now = fields.Datetime.now()
                             new_session = f"cad_{now.strftime('%Y%m%d%H%M%S')}_{secrets.token_hex(8)}"
-                            if tokens:
-                                tokens.write({
-                                    'expires_at': now + timedelta(days=180),
-                                    'is_revoked': False,
-                                    'session_id': new_session,
-                                    'last_used_date': now,
-                                })
-                                if len(tokens) > 1:
-                                    (tokens - tokens[0]).unlink()
-                            else:
-                                env['plm.desktop.token'].create({
-                                    'name': secrets.token_urlsafe(32),
-                                    'user_id': uid,
-                                    'machine_name': f"CAD WS ({login})",
-                                    'machine_uuid': f"WS_{login}",
-                                    'expires_at': now + timedelta(days=180),
-                                    'is_revoked': False,
-                                    'session_id': new_session,
-                                    'last_used_date': now,
-                                    'issued_at': now,
-                                })
+
+                            env['plm.desktop.token'].register_session_token(
+                                user_id=uid,
+                                session_id=new_session,
+                                machine_uuid=machine_uuid,
+                                machine_name=machine_name,
+                                client_ip=client_ip,
+                                cad_version='SolidWorks 2022'
+                            )
                             cr.commit()
                             _logger.info(
                                 f">>> [TDB PLM] Kỹ sư '{login}' (UID {uid}) đã đăng nhập thành công qua CAD {method}: "

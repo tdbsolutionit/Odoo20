@@ -118,19 +118,28 @@ class PlmDesktopToken(models.Model):
 
     @api.model
     def cleanup_duplicate_tokens(self):
-        """Tự động dọn dẹp các bản ghi token trùng lặp cho cùng một kỹ sư và cùng một máy trạm."""
+        """Tự động dọn dẹp các bản ghi token trùng lặp cho cùng một kỹ sư."""
         all_tokens = self.search([], order='id asc')
         seen = {}
         to_delete = self.browse()
         for tok in all_tokens:
-            key = (tok.user_id.id, tok.machine_uuid or tok.client_ip or tok.machine_name)
-            if key in seen:
-                # Nếu bản ghi trùng là revoked, giữ cờ revoked cho bản ghi đại diện
-                if tok.is_revoked:
-                    seen[key].write({'is_revoked': True})
-                to_delete |= tok
+            uid = tok.user_id.id
+            if uid in seen:
+                existing = seen[uid]
+                # Nếu một trong các bản ghi bị revoked thì giữ cờ revoked
+                if tok.is_revoked or existing.is_revoked:
+                    tok.write({'is_revoked': True})
+                    existing.write({'is_revoked': True})
+
+                # Ưu tiên giữ lại bản ghi có đầy đủ thông tin IP máy trạm
+                if not existing.client_ip and tok.client_ip:
+                    to_delete |= existing
+                    seen[uid] = tok
+                else:
+                    to_delete |= tok
             else:
-                seen[key] = tok
+                seen[uid] = tok
+
         if to_delete:
             to_delete.unlink()
             _logger.info(f">>> [TDB PLM] Đã dọn dẹp {len(to_delete)} bản ghi token trùng lặp.")
@@ -179,14 +188,19 @@ class PlmDesktopToken(models.Model):
         now = fields.Datetime.now()
         expires_at = now + timedelta(days=180)
 
-        # 1. Tìm bản ghi token của CHÍNH KỸ SƯ NÀY trên máy trạm này (tuyệt đối không lấy token của kỹ sư khác)
+        # 1. Tìm bản ghi token của CHÍNH KỸ SƯ NÀY (tìm theo user_id, ưu tiên khớp machine_uuid hoặc client_ip)
         domain = [('user_id', '=', user_id)]
-        if machine_uuid:
+        if machine_uuid and client_ip:
+            domain.extend(['|', ('machine_uuid', '=', machine_uuid), ('client_ip', '=', client_ip)])
+        elif machine_uuid:
             domain.append(('machine_uuid', '=', machine_uuid))
         elif client_ip:
             domain.append(('client_ip', '=', client_ip))
 
         existing_tokens = self.search(domain, order='id desc')
+        if not existing_tokens:
+            # Fallback: tìm theo user_id nếu trước đó RPC đã tạo mà chưa ghi nhận IP
+            existing_tokens = self.search([('user_id', '=', user_id)], order='id desc')
 
         # 2. Nếu token của kỹ sư này trên thiết bị này đang bị thu hồi: TỪ CHỐI CẤP PHIÊN MỚI
         if existing_tokens and any(t.is_revoked for t in existing_tokens):
@@ -199,14 +213,18 @@ class PlmDesktopToken(models.Model):
         vals = {
             'user_id': user_id,
             'session_id': session_id,
-            'machine_uuid': machine_uuid,
-            'machine_name': machine_name,
-            'client_ip': client_ip,
-            'cad_version': cad_version,
             'expires_at': expires_at,
             'last_used_date': now,
             'is_revoked': False,
         }
+        if machine_uuid:
+            vals['machine_uuid'] = machine_uuid
+        if machine_name:
+            vals['machine_name'] = machine_name
+        if client_ip:
+            vals['client_ip'] = client_ip
+        if cad_version:
+            vals['cad_version'] = cad_version
 
         if existing_tokens:
             token_rec = existing_tokens[0]

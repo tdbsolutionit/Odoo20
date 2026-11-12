@@ -2,7 +2,7 @@
 # Copyright 2026 TDB Solution Co., Ltd.
 {
     "name": "TDB PLM Customization - Giao diện & Access Token 180 Ngày SolidWorks",
-    "version": "20.0.1.3.3",
+    "version": "20.0.1.3.4",
     "category": "Manufacturing/Product Lifecycle Management (PLM)",
     "summary": "Tùy biến chuẩn hóa PLM, Document Lock Key Holder, File History và Access Token 180 ngày SolidWorks",
     "description": """
