@@ -118,12 +118,12 @@ class PlmDesktopToken(models.Model):
 
     @api.model
     def cleanup_duplicate_tokens(self):
-        """Tự động dọn dẹp các bản ghi token trùng lặp cho cùng một kỹ sư và máy trạm."""
+        """Tự động dọn dẹp các bản ghi token trùng lặp cho cùng một kỹ sư và cùng một máy trạm."""
         all_tokens = self.search([], order='id asc')
         seen = {}
         to_delete = self.browse()
         for tok in all_tokens:
-            key = (tok.user_id.id, tok.client_ip or tok.machine_name)
+            key = (tok.user_id.id, tok.machine_uuid or tok.client_ip or tok.machine_name)
             if key in seen:
                 # Nếu bản ghi trùng là revoked, giữ cờ revoked cho bản ghi đại diện
                 if tok.is_revoked:
@@ -158,18 +158,20 @@ class PlmDesktopToken(models.Model):
 
     @api.model
     def register_session_token(self, user_id, session_id, machine_uuid, machine_name, client_ip, cad_version):
-        """Cấp/Cập nhật token 180 ngày cho phiên SolidWorks Add-in, gộp bản ghi trùng lặp."""
+        """Cấp/Cập nhật token 180 ngày cho phiên SolidWorks Add-in của từng kỹ sư trên máy trạm."""
         now = fields.Datetime.now()
         expires_at = now + timedelta(days=180)
 
-        # 1. Tìm toàn bộ bản ghi token hiện có của cùng user
-        existing_tokens = self.search([
-            '|',
-            ('user_id', '=', user_id),
-            ('machine_uuid', '=', machine_uuid),
-        ], order='id desc')
+        # 1. Tìm bản ghi token của CHÍNH KỸ SƯ NÀY trên máy trạm này (tuyệt đối không lấy token của kỹ sư khác)
+        domain = [('user_id', '=', user_id)]
+        if machine_uuid:
+            domain.append(('machine_uuid', '=', machine_uuid))
+        elif client_ip:
+            domain.append(('client_ip', '=', client_ip))
 
-        # 2. Nếu bất kỳ bản ghi nào của thiết bị này đang bị thu hồi: TỪ CHỐI CẤP PHIÊN MỚI
+        existing_tokens = self.search(domain, order='id desc')
+
+        # 2. Nếu token của kỹ sư này trên thiết bị này đang bị thu hồi: TỪ CHỐI CẤP PHIÊN MỚI
         if existing_tokens and any(t.is_revoked for t in existing_tokens):
             _logger.warning(
                 f">>> [TDB PLM] Thiết bị '{machine_name}' (IP: {client_ip}) "
@@ -178,6 +180,7 @@ class PlmDesktopToken(models.Model):
             return False
 
         vals = {
+            'user_id': user_id,
             'session_id': session_id,
             'machine_uuid': machine_uuid,
             'machine_name': machine_name,
@@ -191,14 +194,13 @@ class PlmDesktopToken(models.Model):
         if existing_tokens:
             token_rec = existing_tokens[0]
             token_rec.write(vals)
-            # Dọn dẹp các dòng dư thừa nếu có
+            # Dọn dẹp dòng trùng lặp của CÙNG KỸ SƯ NÀY nếu có
             duplicates = existing_tokens - token_rec
             if duplicates:
                 duplicates.unlink()
         else:
             vals.update({
                 'name': secrets.token_urlsafe(32),
-                'user_id': user_id,
                 'issued_at': now,
             })
             token_rec = self.create(vals)
@@ -206,94 +208,53 @@ class PlmDesktopToken(models.Model):
         return token_rec
 
     def action_revoke(self):
-        """Thu hồi quyền kết nối của thiết bị (chặn đứng mọi thao tác kể cả đăng nhập lại)."""
+        """Thu hồi quyền kết nối của thiết bị/kỹ sư được chọn."""
         for rec in self:
-            tokens = self.search([
-                '|',
-                ('user_id', '=', rec.user_id.id),
-                ('machine_uuid', '=', rec.machine_uuid),
-            ]) | rec
-            tokens.write({
+            rec.write({
                 'is_revoked': True,
                 'session_id': False,
             })
-            _logger.info(f">>> [TDB PLM] Đã thu hồi quyền máy trạm '{rec.machine_name}' (IP: {rec.client_ip})")
-
-            # Gộp các dòng trùng lặp thành 1 dòng duy nhất cho sạch giao diện
-            if len(tokens) > 1:
-                (tokens - rec).unlink()
-
+            _logger.info(f">>> [TDB PLM] Đã thu hồi quyền của '{rec.user_id.name}' trên máy '{rec.machine_name}' (IP: {rec.client_ip})")
         return True
 
     def action_unrevoke(self):
-        """Khôi phục quyền truy cập cho thiết bị (cho phép sử dụng tiếp ngay lập tức, không cần đăng nhập lại)."""
+        """Khôi phục quyền truy cập cho thiết bị/kỹ sư được chọn."""
         now = fields.Datetime.now()
         for rec in self:
-            tokens = self.search([
-                '|',
-                ('user_id', '=', rec.user_id.id),
-                ('machine_uuid', '=', rec.machine_uuid),
-            ]) | rec
-            for tok in tokens:
-                vals = {
-                    'is_revoked': False,
-                    'expires_at': now + timedelta(days=180),
-                }
-                if not tok.session_id:
-                    vals['session_id'] = f'unrevoked_{now.strftime("%Y%m%d%H%M%S")}'
-                tok.write(vals)
-                _logger.info(f">>> [TDB PLM] Đã khôi phục quyền cho máy trạm '{tok.machine_name}' (IP: {tok.client_ip}), cho phép dùng tiếp không cần đăng nhập lại.")
-
-            # Gộp các dòng trùng lặp thành 1 dòng duy nhất
-            if len(tokens) > 1:
-                (tokens - rec).unlink()
-
+            vals = {
+                'is_revoked': False,
+                'expires_at': now + timedelta(days=180),
+            }
+            if not rec.session_id:
+                vals['session_id'] = f'unrevoked_{now.strftime("%Y%m%d%H%M%S")}'
+            rec.write(vals)
+            _logger.info(f">>> [TDB PLM] Đã khôi phục quyền cho '{rec.user_id.name}' trên máy '{rec.machine_name}' (IP: {rec.client_ip})")
         return True
 
     def action_set_expired_test(self):
         """Chuyển token sang trạng thái hết hạn để kiểm thử tính năng chặn thiết bị khi hết 180 ngày."""
         yesterday = fields.Datetime.now() - timedelta(days=1)
         for rec in self:
-            tokens = self.search([
-                '|',
-                ('user_id', '=', rec.user_id.id),
-                ('machine_uuid', '=', rec.machine_uuid),
-            ]) | rec
-            for tok in tokens:
-                tok.write({
-                    'expires_at': yesterday,
-                    'session_id': False,
-                    'is_revoked': False,
-                })
-                _logger.info(f">>> [TDB PLM] TEST: Đã chuyển token máy trạm '{tok.machine_name}' sang trạng thái HẾT HẠN.")
-
-            if len(tokens) > 1:
-                (tokens - rec).unlink()
-
+            rec.write({
+                'expires_at': yesterday,
+                'session_id': False,
+                'is_revoked': False,
+            })
+            _logger.info(f">>> [TDB PLM] TEST: Đã chuyển token của '{rec.user_id.name}' trên máy '{rec.machine_name}' sang HẾT HẠN.")
         return True
 
     def action_renew_180_days(self):
         """Admin chủ động gia hạn thêm 180 ngày cho token đã hết hạn."""
         now = fields.Datetime.now()
         for rec in self:
-            tokens = self.search([
-                '|',
-                ('user_id', '=', rec.user_id.id),
-                ('machine_uuid', '=', rec.machine_uuid),
-            ]) | rec
-            for tok in tokens:
-                vals = {
-                    'expires_at': now + timedelta(days=180),
-                    'is_revoked': False,
-                }
-                if not tok.session_id:
-                    vals['session_id'] = f'renewed_{now.strftime("%Y%m%d%H%M%S")}'
-                tok.write(vals)
-                _logger.info(f">>> [TDB PLM] Đã gia hạn 180 ngày cho máy trạm '{tok.machine_name}'.")
-
-            if len(tokens) > 1:
-                (tokens - rec).unlink()
-
+            vals = {
+                'expires_at': now + timedelta(days=180),
+                'is_revoked': False,
+            }
+            if not rec.session_id:
+                vals['session_id'] = f'renewed_{now.strftime("%Y%m%d%H%M%S")}'
+            rec.write(vals)
+            _logger.info(f">>> [TDB PLM] Đã gia hạn 180 ngày cho '{rec.user_id.name}' trên máy '{rec.machine_name}'.")
         return True
 
     def update_last_used(self):
