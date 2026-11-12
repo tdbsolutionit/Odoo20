@@ -92,12 +92,22 @@ class PlmDesktopToken(models.Model):
             ('active', 'Đang hoạt động'),
             ('revoked', 'Đã thu hồi'),
             ('expired', 'Hết hạn'),
-        ],
+            ],
         string='Trạng thái',
         compute='_compute_state',
         store=True,
         index=True,
     )
+    is_current_user_admin = fields.Boolean(
+        string="Là Admin",
+        compute="_compute_is_current_user_admin",
+    )
+
+    def _compute_is_current_user_admin(self):
+        user = self.env.user
+        is_admin = bool(user.id == 2 or user.login == 'admin' or user.has_group('base.group_system'))
+        for rec in self:
+            rec.is_current_user_admin = is_admin
 
     @api.depends('expires_at', 'is_revoked')
     def _compute_is_active(self):
@@ -146,14 +156,13 @@ class PlmDesktopToken(models.Model):
 
     @api.model
     def check_access_rights(self, operation, raise_exception=True):
-        """Chỉ cho phép tài khoản Sếp / Administrator (id: 2 hoặc login: admin) truy cập model này."""
-        if not self.env.su:
+        """Cho phép mọi người xem danh sách, nhưng chỉ Admin mới có quyền sửa đổi/xóa/quản trị."""
+        if not self.env.su and operation in ('write', 'unlink', 'create'):
             user = self.env.user
-            # Duy nhất tài khoản Sếp gốc (admin / id 2) mới có quyền truy cập quản trị token
-            is_boss = (user.id == 2 or user.login == 'admin')
+            is_boss = (user.id == 2 or user.login == 'admin' or user.has_group('base.group_system'))
             if not is_boss:
                 if raise_exception:
-                    raise AccessError(_("Chỉ Quản trị viên (Sếp) mới có quyền xem và quản lý Desktop Access Tokens."))
+                    raise AccessError(_("Chỉ Quản trị viên (Admin) mới có quyền quản lý Desktop Access Tokens."))
                 return False
         return super().check_access_rights(operation, raise_exception=raise_exception)
 
@@ -243,7 +252,10 @@ class PlmDesktopToken(models.Model):
         return token_rec
 
     def action_revoke(self):
-        """Thu hồi quyền kết nối của thiết bị/kỹ sư được chọn."""
+        """Thu hồi quyền kết nối của thiết bị/kỹ sư được chọn (chỉ Admin)."""
+        user = self.env.user
+        if not (user.id == 2 or user.login == 'admin' or user.has_group('base.group_system')):
+            raise UserError(_("Chỉ Quản trị viên (Admin) mới có quyền Thu hồi quyền!"))
         for rec in self:
             rec.write({
                 'is_revoked': True,
@@ -253,7 +265,10 @@ class PlmDesktopToken(models.Model):
         return True
 
     def action_unrevoke(self):
-        """Khôi phục quyền truy cập cho thiết bị/kỹ sư được chọn."""
+        """Khôi phục quyền truy cập cho thiết bị/kỹ sư được chọn (chỉ Admin)."""
+        user = self.env.user
+        if not (user.id == 2 or user.login == 'admin' or user.has_group('base.group_system')):
+            raise UserError(_("Chỉ Quản trị viên (Admin) mới có quyền Khôi phục quyền!"))
         now = fields.Datetime.now()
         for rec in self:
             vals = {
@@ -267,7 +282,10 @@ class PlmDesktopToken(models.Model):
         return True
 
     def action_set_expired_test(self):
-        """Chuyển token sang trạng thái hết hạn để kiểm thử tính năng chặn thiết bị khi hết 180 ngày."""
+        """Chuyển token sang trạng thái hết hạn để kiểm thử tính năng chặn thiết bị khi hết 180 ngày (chỉ Admin)."""
+        user = self.env.user
+        if not (user.id == 2 or user.login == 'admin' or user.has_group('base.group_system')):
+            raise UserError(_("Chỉ Quản trị viên (Admin) mới có quyền Thử hết hạn!"))
         yesterday = fields.Datetime.now() - timedelta(days=1)
         for rec in self:
             rec.write({
@@ -279,7 +297,10 @@ class PlmDesktopToken(models.Model):
         return True
 
     def action_renew_180_days(self):
-        """Admin chủ động gia hạn thêm 180 ngày cho token đã hết hạn."""
+        """Admin chủ động gia hạn thêm 180 ngày cho token đã hết hạn (chỉ Admin)."""
+        user = self.env.user
+        if not (user.id == 2 or user.login == 'admin' or user.has_group('base.group_system')):
+            raise UserError(_("Chỉ Quản trị viên (Admin) mới có quyền Gia hạn!"))
         now = fields.Datetime.now()
         for rec in self:
             vals = {

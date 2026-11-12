@@ -6,9 +6,13 @@
         <field name="model">plm.desktop.token</field>
         <field name="arch" type="xml">
             <list string="Desktop Access Tokens"
+                  create="false"
+                  delete="false"
+                  edit="false"
                   decoration-success="state == 'active'"
                   decoration-danger="state == 'revoked'"
                   decoration-warning="state == 'expired'">
+                <field name="is_current_user_admin" column_invisible="1"/>
                 <field name="user_id" widget="many2one_avatar_user" string="Kỹ sư CAD"/>
                 <field name="machine_name" string="Tên máy trạm"/>
                 <field name="client_ip" string="Địa chỉ IP máy trạm"/>
@@ -21,32 +25,29 @@
                        decoration-danger="state == 'revoked'"
                        decoration-warning="state == 'expired'"
                        string="Trạng thái"/>
+                <!-- Các nút hành động: Khóa chặt, chỉ duy nhất Admin mới nhìn thấy -->
                 <button name="action_revoke"
                         type="object"
                         string="Thu hồi quyền"
                         class="btn-danger btn-sm"
-                        groups="tdb_plm_custom.group_plm_desktop_token_boss"
-                        invisible="state != 'active'"
+                        invisible="state != 'active' or not is_current_user_admin"
                         confirm="Bạn có chắc chắn muốn thu hồi quyền truy cập của thiết bị CAD này? Máy trạm sẽ bị ngắt kết nối ngay lập tức!"/>
                 <button name="action_set_expired_test"
                         type="object"
                         string="Thử hết hạn"
                         class="btn-warning btn-sm"
-                        groups="tdb_plm_custom.group_plm_desktop_token_boss"
-                        invisible="state != 'active'"
+                        invisible="state != 'active' or not is_current_user_admin"
                         confirm="Chuyển token sang trạng thái HẾT HẠN để kiểm thử việc chặn SolidWorks khi hết hạn 180 ngày?"/>
                 <button name="action_unrevoke"
                         type="object"
                         string="Khôi phục"
                         class="btn-success btn-sm"
-                        groups="tdb_plm_custom.group_plm_desktop_token_boss"
-                        invisible="state != 'revoked'"/>
+                        invisible="state != 'revoked' or not is_current_user_admin"/>
                 <button name="action_renew_180_days"
                         type="object"
                         string="Gia hạn 180 ngày"
                         class="btn-primary btn-sm"
-                        groups="tdb_plm_custom.group_plm_desktop_token_boss"
-                        invisible="state != 'expired'"/>
+                        invisible="state != 'expired' or not is_current_user_admin"/>
             </list>
         </field>
     </record>
@@ -56,34 +57,31 @@
         <field name="name">plm.desktop.token.form</field>
         <field name="model">plm.desktop.token</field>
         <field name="arch" type="xml">
-            <form string="Desktop Access Token">
+            <form string="Desktop Access Token" create="false" delete="false">
                 <header>
+                    <field name="is_current_user_admin" invisible="1"/>
                     <button name="action_revoke"
                             type="object"
                             string="Thu hồi quyền"
                             class="btn-danger"
-                            groups="tdb_plm_custom.group_plm_desktop_token_boss"
-                            invisible="state != 'active'"
+                            invisible="state != 'active' or not is_current_user_admin"
                             confirm="Bạn có chắc chắn muốn thu hồi và ngắt kết nối máy trạm CAD này?"/>
                     <button name="action_set_expired_test"
                             type="object"
                             string="Thử hết hạn (Test)"
                             class="btn-warning"
-                            groups="tdb_plm_custom.group_plm_desktop_token_boss"
-                            invisible="state != 'active'"
+                            invisible="state != 'active' or not is_current_user_admin"
                             confirm="Chuyển token sang trạng thái HẾT HẠN để kiểm thử việc chặn SolidWorks khi hết hạn 180 ngày?"/>
                     <button name="action_unrevoke"
                             type="object"
                             string="Khôi phục quyền truy cập"
                             class="btn-success"
-                            groups="tdb_plm_custom.group_plm_desktop_token_boss"
-                            invisible="state != 'revoked'"/>
+                            invisible="state != 'revoked' or not is_current_user_admin"/>
                     <button name="action_renew_180_days"
                             type="object"
                             string="Gia hạn 180 ngày"
                             class="btn-primary"
-                            groups="tdb_plm_custom.group_plm_desktop_token_boss"
-                            invisible="state != 'expired'"/>
+                            invisible="state != 'expired' or not is_current_user_admin"/>
                     <field name="state" widget="badge"
                            decoration-success="state == 'active'"
                            decoration-danger="state == 'revoked'"
@@ -145,12 +143,11 @@
         </field>
     </record>
 
-    <!-- Action: Desktop Tokens (Chỉ dành riêng cho Sếp Admin) -->
+    <!-- Action: Desktop Tokens -->
     <record id="action_plm_desktop_token" model="ir.actions.act_window">
         <field name="name">Desktop Access Tokens (Quản lý thiết bị CAD)</field>
         <field name="res_model">plm.desktop.token</field>
         <field name="view_mode">list,form</field>
-        <field name="groups_id" eval="[(6, 0, [ref('tdb_plm_custom.group_plm_desktop_token_boss')])]"/>
         <field name="context">{}</field>
         <field name="help" type="html">
             <p class="o_view_nocontent_smiling_face">
