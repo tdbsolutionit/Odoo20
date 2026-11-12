@@ -2,9 +2,9 @@
 # Copyright 2026 TDB Solution Co., Ltd.
 {
     "name": "TDB PLM Customization - Giao diện & Access Token 180 Ngày SolidWorks",
-    "version": "20.0.1.3.5",
+    "version": "20.0.1.4.0",
     "category": "Manufacturing/Product Lifecycle Management (PLM)",
-    "summary": "Tùy biến chuẩn hóa PLM, Document Lock Key Holder, File History và Access Token 180 ngày SolidWorks",
+    "summary": "Tùy biến chuẩn hóa PLM, Document Lock Key Holder, File History, Assembly References và Access Token 180 ngày SolidWorks",
     "description": """
 TDB Solution - Module tùy biến phân hệ PLM (Product Lifecycle Management)
 ========================================================================
@@ -17,6 +17,10 @@ Tính năng chính:
    - Quản trị viên / Trưởng phòng có quyền Phá khóa cưỡng chế (Force Unlock) và chuyển giao Key qua Wizard có ghi nhận nhật ký kiểm toán.
 3. Lịch sử phiên bản tệp (Task T4 File History): Tự động lưu snapshot phiên bản cũ (v1, v2,...) khi Check-in.
 4. Tự động cấp Access Token & Session Cookie 180 ngày cho Add-in CAD SolidWorks 2022.
+5. Quản lý file tham chiếu Assembly & Where-Used (Task 5):
+   - Chuẩn hóa quan hệ ir.attachment.relation trên ir.attachment (child_relation_ids & parent_relation_ids).
+   - Core API helpers: get_child_documents, get_where_used_documents, add_child_reference.
+   - Tab trực quan trên Form view Document hiển thị danh sách chi tiết con và nơi sử dụng với Preview, Rev, State, Lock State.
     """,
     "author": "TDB Solution",
     "website": "https://tdbsolution.com",

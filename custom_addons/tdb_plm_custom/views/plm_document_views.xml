@@ -133,7 +133,7 @@
                 <field name="key_holder_id" readonly="1" widget="many2one_avatar_user" string="Người giữ Key"/>
             </xpath>
 
-            <!-- Stat button đếm và xem lịch sử phiên bản tệp -->
+            <!-- Stat button đếm và xem lịch sử phiên bản tệp & quan hệ tham chiếu -->
             <xpath expr="//div[@name='button_box']" position="inside">
                 <button name="action_view_file_history"
                         type="object"
@@ -141,6 +141,20 @@
                         icon="fa-history"
                         invisible="history_count == 0">
                     <field name="history_count" widget="statinfo" string="Lịch sử file"/>
+                </button>
+                <button name="action_view_child_documents"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-cubes"
+                        invisible="child_document_count == 0">
+                    <field name="child_document_count" widget="statinfo" string="File con"/>
+                </button>
+                <button name="action_view_where_used_documents"
+                        type="object"
+                        class="oe_stat_button"
+                        icon="fa-sitemap"
+                        invisible="parent_document_count == 0">
+                    <field name="parent_document_count" widget="statinfo" string="Nơi dùng"/>
                 </button>
             </xpath>
 
@@ -163,6 +177,80 @@
                                     title="Tải snapshot phiên bản này"/>
                         </list>
                     </field>
+                </page>
+
+                <!-- Tab File liên quan (References) & Where Used (Task 5) -->
+                <page string="File liên quan (References)" name="related_documents">
+                    <div class="mb-4">
+                        <h4 class="text-primary mb-2">Danh sách chi tiết con (Components / References)</h4>
+                        <field name="child_relation_ids">
+                            <list string="Chi tiết con liên quan" editable="bottom">
+                                <field name="child_preview" widget="image" options="{'size': [36, 36]}" class="oe_avatar" string="Preview" width="55px" readonly="1"/>
+                                <field name="child_id" string="Tài liệu con" domain="[('is_plm', '=', True)]" required="1"/>
+                                <field name="child_engineering_code" string="Mã kỹ thuật" width="130px" optional="show" readonly="1"/>
+                                <field name="child_revision" string="Phiên bản" width="80px" readonly="1"/>
+                                <field name="child_state"
+                                       string="Trạng thái kỹ thuật"
+                                       widget="badge"
+                                       decoration-info="child_state == 'draft'"
+                                       decoration-primary="child_state == 'confirmed'"
+                                       decoration-success="child_state == 'released'"
+                                       decoration-warning="child_state == 'undermodify'"
+                                       decoration-danger="child_state == 'obsoleted'"
+                                       width="150px"
+                                       readonly="1"/>
+                                <field name="child_lock_state"
+                                       string="Trạng thái khóa"
+                                       widget="badge"
+                                       decoration-danger="child_lock_state == 'locked'"
+                                       decoration-success="child_lock_state == 'unlocked'"
+                                       width="130px"
+                                       readonly="1"/>
+                                <field name="configuration" string="Cấu hình CAD"/>
+                                <field name="link_kind" string="Loại liên kết" width="110px"/>
+                                <button name="action_open_child_document"
+                                        type="object"
+                                        icon="fa-external-link"
+                                        title="Mở chi tiết tài liệu con"
+                                        class="btn btn-sm btn-link"/>
+                            </list>
+                        </field>
+                    </div>
+                    <div>
+                        <h4 class="text-primary mb-2">Nơi sử dụng (Where Used)</h4>
+                        <field name="parent_relation_ids" readonly="1">
+                            <list string="Nơi sử dụng (Where Used)" create="0" delete="0">
+                                <field name="parent_preview" widget="image" options="{'size': [36, 36]}" class="oe_avatar" string="Preview" width="55px"/>
+                                <field name="parent_id" string="Assembly cha" readonly="1"/>
+                                <field name="parent_engineering_code" string="Mã kỹ thuật" width="130px" optional="show" readonly="1"/>
+                                <field name="parent_revision" string="Phiên bản" width="80px" readonly="1"/>
+                                <field name="parent_state"
+                                       string="Trạng thái kỹ thuật"
+                                       widget="badge"
+                                       decoration-info="parent_state == 'draft'"
+                                       decoration-primary="parent_state == 'confirmed'"
+                                       decoration-success="parent_state == 'released'"
+                                       decoration-warning="parent_state == 'undermodify'"
+                                       decoration-danger="parent_state == 'obsoleted'"
+                                       width="150px"
+                                       readonly="1"/>
+                                <field name="parent_lock_state"
+                                       string="Trạng thái khóa"
+                                       widget="badge"
+                                       decoration-danger="parent_lock_state == 'locked'"
+                                       decoration-success="parent_lock_state == 'unlocked'"
+                                       width="130px"
+                                       readonly="1"/>
+                                <field name="configuration" string="Cấu hình CAD" readonly="1"/>
+                                <field name="link_kind" string="Loại liên kết" width="110px" readonly="1"/>
+                                <button name="action_open_parent_document"
+                                        type="object"
+                                        icon="fa-external-link"
+                                        title="Mở chi tiết Assembly cha"
+                                        class="btn btn-sm btn-link"/>
+                            </list>
+                        </field>
+                    </div>
                 </page>
             </xpath>
         </field>

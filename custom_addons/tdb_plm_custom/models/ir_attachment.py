@@ -11,13 +11,14 @@ Mở rộng model ir.attachment cho phân hệ OdooPLM:
 2. Lịch sử phiên bản tệp (File History - Task T4):
    - Tự động lưu 1 snapshot phiên bản duy nhất (v1, v2,...) khi Check-in (có debounce chống trùng lặp).
    - Tự động khởi tạo phiên bản v1 cho các tài liệu đã có file gốc trên hệ thống.
-3. Quản trị vòng đời Access Token 180 ngày cho CAD Client SolidWorks.
-4. Chuẩn hóa nhật ký Chatter bằng văn bản ERP thuần (không icon, không bullet, không gạch đầu dòng).
+3. Quản lý quan hệ file tham chiếu Assembly & Where-Used (Task 5).
+4. Quản trị vòng đời Access Token 180 ngày cho CAD Client SolidWorks.
+5. Chuẩn hóa nhật ký Chatter bằng văn bản ERP thuần (không icon, không bullet, không gạch đầu dòng).
 """
 import logging
 from markupsafe import Markup
 from odoo import models, fields, api, _
-from odoo.exceptions import UserError
+from odoo.exceptions import UserError, ValidationError
 
 _logger = logging.getLogger(__name__)
 
@@ -230,7 +231,129 @@ class IrAttachment(models.Model):
             )
 
     # =========================================================================
-    # 3. KIỂM SOÁT TOKEN 180 NGÀY CHO CAD CLIENT
+    # 3. QUẢN LÝ FILE THAM CHIẾU ASSEMBLY (RELATED REFERENCES & WHERE-USED)
+    # =========================================================================
+    child_relation_ids = fields.One2many(
+        "ir.attachment.relation",
+        "parent_id",
+        string="Chi tiết con liên quan",
+        help="Danh sách các file con mà Assembly này tham chiếu tới."
+    )
+    parent_relation_ids = fields.One2many(
+        "ir.attachment.relation",
+        "child_id",
+        string="Nơi sử dụng (Where Used)",
+        help="Danh sách các Assembly cha đang tham chiếu đến file này."
+    )
+    child_document_count = fields.Integer(
+        string="Số file con liên quan",
+        compute="_compute_relation_counts",
+        store=False,
+        help="Số lượng quan hệ chi tiết con mà tài liệu này tham chiếu tới."
+    )
+    parent_document_count = fields.Integer(
+        string="Số nơi sử dụng",
+        compute="_compute_relation_counts",
+        store=False,
+        help="Số lượng Assembly cha đang sử dụng tài liệu này."
+    )
+
+    @api.depends("child_relation_ids", "parent_relation_ids")
+    def _compute_relation_counts(self):
+        for doc in self:
+            doc.child_document_count = len(doc.child_relation_ids)
+            doc.parent_document_count = len(doc.parent_relation_ids)
+
+    def get_child_documents(self, link_kinds=None):
+        """Trả về Recordset các tài liệu ir.attachment con trực tiếp của tài liệu hiện tại.
+        :param link_kinds: Danh sách loại liên kết (ví dụ: ['HiTree', 'LyTree', 'RfTree']),
+                           hoặc chuỗi đơn. Nếu None, lấy tất cả loại liên kết trực tiếp.
+        :return: Recordset ir.attachment các tài liệu con trực tiếp.
+        """
+        self.ensure_one()
+        relations = self.child_relation_ids
+        if link_kinds is not None:
+            if isinstance(link_kinds, str):
+                link_kinds = [link_kinds]
+            relations = relations.filtered(lambda r: r.link_kind in link_kinds)
+        return relations.mapped("child_id").exists()
+
+    def get_where_used_documents(self):
+        """Trả về Recordset các tài liệu ir.attachment cha đang trực tiếp sử dụng tài liệu này (Where Used).
+        :return: Recordset ir.attachment các tài liệu cha.
+        """
+        self.ensure_one()
+        return self.parent_relation_ids.mapped("parent_id").exists()
+
+    def add_child_reference(self, child_doc_id, configuration="", link_kind="HiTree"):
+        """Thêm liên kết tham chiếu cha-con an toàn giữa tài liệu hiện tại và tài liệu con.
+        :param child_doc_id: ID (int) hoặc Recordset ir.attachment của tài liệu con.
+        :param configuration: Tên cấu hình CAD (mặc định '').
+        :param link_kind: Loại liên kết CAD (HiTree, LyTree, RfTree,... mặc định 'HiTree').
+        :return: Recordset ir.attachment.relation được tạo hoặc đã tồn tại.
+        """
+        self.ensure_one()
+        if not child_doc_id:
+            raise UserError(_("Vui lòng chỉ định tài liệu con cần liên kết."))
+
+        child = self.browse(child_doc_id) if isinstance(child_doc_id, int) else child_doc_id
+        if not child.exists():
+            raise UserError(_("Tài liệu con không tồn tại trên hệ thống."))
+
+        if self.id == child.id:
+            raise UserError(_("Tài liệu không thể tự tham chiếu chính mình làm file con."))
+
+        rel_model = self.env["ir.attachment.relation"]
+        link_kind = link_kind or "HiTree"
+        configuration = configuration or ""
+
+        # Kiểm tra quan hệ trùng lặp theo đúng unique constraint của Omnia: (parent_id, child_id, link_kind)
+        existing = rel_model.search([
+            ("parent_id", "=", self.id),
+            ("child_id", "=", child.id),
+            ("link_kind", "=", link_kind),
+        ], limit=1)
+
+        if existing:
+            if configuration and existing.configuration != configuration:
+                existing.write({"configuration": configuration})
+            return existing
+
+        return rel_model.create({
+            "parent_id": self.id,
+            "child_id": child.id,
+            "configuration": configuration,
+            "link_kind": link_kind,
+        })
+
+    def action_view_child_documents(self):
+        """Mở danh sách các tài liệu con liên quan."""
+        self.ensure_one()
+        child_docs = self.get_child_documents()
+        return {
+            "name": _("Chi tiết con liên quan: %s") % (self.name or self.engineering_code or self.id),
+            "type": "ir.actions.act_window",
+            "res_model": "ir.attachment",
+            "view_mode": "list,form",
+            "domain": [("id", "in", child_docs.ids)],
+            "context": {"default_is_plm": True},
+        }
+
+    def action_view_where_used_documents(self):
+        """Mở danh sách các nơi sử dụng tài liệu này (Where Used)."""
+        self.ensure_one()
+        parent_docs = self.get_where_used_documents()
+        return {
+            "name": _("Nơi sử dụng (Where Used): %s") % (self.name or self.engineering_code or self.id),
+            "type": "ir.actions.act_window",
+            "res_model": "ir.attachment",
+            "view_mode": "list,form",
+            "domain": [("id", "in", parent_docs.ids)],
+            "context": {"default_is_plm": True},
+        }
+
+    # =========================================================================
+    # 4. KIỂM SOÁT TOKEN 180 NGÀY CHO CAD CLIENT
     # =========================================================================
     def _check_cad_access_token(self):
         """Kiểm tra token thiết bị CAD tại tầng ORM:
