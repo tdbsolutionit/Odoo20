@@ -170,6 +170,13 @@
                             <field name="user_id" string="Người thực hiện" widget="many2one_avatar_user" width="160px"/>
                             <field name="create_date" string="Thời điểm lưu" width="160px"/>
                             <field name="description" string="Ghi chú"/>
+                            <button name="action_restore_version"
+                                    type="object"
+                                    string="Khôi phục"
+                                    icon="fa-history"
+                                    class="btn btn-sm btn-link text-warning"
+                                    title="Khôi phục tài liệu về phiên bản này"
+                                    confirm="Bạn có chắc chắn muốn KHÔI PHỤC tài liệu về phiên bản này không? Hệ thống sẽ tạo một phiên bản mới mang nội dung của phiên bản được chọn."/>
                             <button name="action_download_file"
                                     type="object"
                                     string="Tải về"
@@ -318,6 +325,13 @@
                 <field name="user_id" string="Người thực hiện" widget="many2one_avatar_user" width="160px"/>
                 <field name="create_date" string="Thời điểm lưu" width="160px"/>
                 <field name="description" string="Ghi chú"/>
+                <button name="action_restore_version"
+                        type="object"
+                        string="Khôi phục"
+                        icon="fa-history"
+                        class="btn btn-sm btn-link text-warning"
+                        title="Khôi phục tài liệu về phiên bản này"
+                        confirm="Bạn có chắc chắn muốn KHÔI PHỤC tài liệu về phiên bản này không? Hệ thống sẽ tạo một phiên bản mới mang nội dung của phiên bản được chọn."/>
                 <button name="action_download_file"
                         type="object"
                         string="Tải về"
@@ -334,6 +348,11 @@
         <field name="arch" type="xml">
             <form string="Chi tiết phiên bản lịch sử" create="0" delete="1">
                 <header>
+                    <button name="action_restore_version"
+                            type="object"
+                            string="Khôi phục về phiên bản này"
+                            class="btn-warning"
+                            confirm="Bạn có chắc chắn muốn KHÔI PHỤC tài liệu về phiên bản này không? Hệ thống sẽ tạo một phiên bản mới mang nội dung của phiên bản được chọn."/>
                     <button name="action_download_file"
                             type="object"
                             string="Tải file snapshot về máy"

@@ -6,8 +6,13 @@ Phân hệ OdooPLM - Quản lý File History (Lịch sử phiên bản tệp CAD
 2. Đảm bảo tính bất biến (Immutability): Chặn mọi hành vi sửa đổi nội dung tệp hay thông tin lịch sử.
 3. Chỉ Quản trị viên PLM hoặc Quản trị hệ thống mới có quyền xóa bản ghi lịch sử.
 4. Cung cấp action tải về trực tiếp file snapshot của từng phiên bản cũ.
+5. Khôi phục phiên bản (Version Restore):
+   - Cơ chế bảo vệ 2 lớp: Quyền giữ Key cục bộ và bảo vệ Cụm máy cha (Where-Used Protection).
+   - Cơ chế khôi phục bất biến (Append-Only Rollback): Sinh phiên bản tiếp theo mang nội dung cũ mà không mất lịch sử.
+   - Ghi nhận nhật ký kiểm toán (Audit Trail) vào Chatter và thông báo Client Action.
 """
 import logging
+from markupsafe import Markup
 from odoo import models, fields, api, _
 from odoo.exceptions import UserError
 
@@ -121,5 +126,108 @@ class PlmDocumentHistory(models.Model):
             "type": "ir.actions.act_url",
             "url": f"/web/content/plm.document.history/{self.id}/datas/{filename}?download=true",
             "target": "self",
+        }
+
+    def action_restore_version(self):
+        """Khôi phục tài liệu về phiên bản snapshot được chọn (Version Restore).
+        Áp dụng nguyên tắc Top-Down Key Authority và Linear Evolution (Append-Only Rollback):
+        1. Kiểm tra quyền giữ Key cục bộ (Lớp 1 - Local Check):
+           Bắt buộc người thực hiện phải là Người giữ Key của tài liệu hoặc Quản trị viên PLM/Hệ thống.
+        2. Kiểm tra Cụm máy cha (Lớp 2 - Where-Used Protection):
+           Tất cả các Cụm Assembly cha đang sử dụng chi tiết này không được có kỹ sư khác giữ Key.
+        3. Thực hiện Khôi phục (Append-Only Rollback):
+           Ghi đè nội dung file snapshot lên ir.attachment, tự động sinh phiên bản snapshot mới mang dữ liệu cũ.
+        4. Ghi nhận nhật ký kiểm toán (Audit Log) vào Chatter và thông báo Client Action thành công.
+        """
+        self.ensure_one()
+        doc = self.document_id
+        if not doc:
+            raise UserError(_("Không tìm thấy tài liệu gốc liên kết với bản ghi lịch sử này."))
+
+        if not self.datas:
+            raise UserError(_("Bản ghi lịch sử này không có dữ liệu tệp snapshot để khôi phục."))
+
+        is_admin = (
+            self.env.is_admin()
+            or self.env.user.has_group("plm.group_plm_admin")
+            or self.env.user.has_group("base.group_system")
+        )
+
+        # ---------------------------------------------------------------------
+        # 1. KIỂM TRA QUYỀN GIỮ KEY CỤC BỘ (LỚP 1 - LOCAL CHECK)
+        # ---------------------------------------------------------------------
+        if not is_admin and doc.key_holder_id != self.env.user:
+            raise UserError(_(
+                "Bạn không phải Người giữ Key của tài liệu này nên không có quyền khôi phục phiên bản!"
+            ))
+
+        # ---------------------------------------------------------------------
+        # 2. KIỂM TRA CỤM MÁY CHA (LỚP 2 - WHERE-USED PROTECTION)
+        # ---------------------------------------------------------------------
+        if not is_admin and hasattr(doc, "get_where_used_documents"):
+            parent_assemblies = doc.get_where_used_documents()
+            for parent in parent_assemblies:
+                if parent.key_holder_id and parent.key_holder_id != self.env.user:
+                    parent_name = parent.name or parent.engineering_code or str(parent.id)
+                    key_holder_name = parent.key_holder_id.name or _("Kỹ sư khác")
+                    raise UserError(_(
+                        "Không thể khôi phục! Cụm máy cha '%s' hiện đang bị khóa/giữ Key bởi kỹ sư '%s'. "
+                        "Vui lòng liên hệ người giữ Key cụm cha để phối hợp."
+                    ) % (parent_name, key_holder_name))
+
+        # ---------------------------------------------------------------------
+        # 3. THỰC HIỆN KHÔI PHỤC (APPEND-ONLY ROLLBACK)
+        # ---------------------------------------------------------------------
+        old_version_name = self.version or f"v{self.version_number}"
+        write_vals = {
+            "datas": self.datas,
+            "name": self.file_name or doc.name,
+            "history_description": _("Khôi phục từ phiên bản %s") % old_version_name,
+            "desc_modify": _("Khôi phục nội dung từ phiên bản %s") % old_version_name,
+        }
+
+        # Bỏ qua kiểm tra token CAD vì đây là thao tác từ Web
+        # Kích hoạt force_create_snapshot để không bị chặn bởi debounce 10s
+        write_ctx = {
+            "is_web_operation": True,
+            "force_create_snapshot": True,
+        }
+        if is_admin:
+            write_ctx["skip_key_holder_check"] = True
+
+        doc.with_context(**write_ctx).write(write_vals)
+
+        # ---------------------------------------------------------------------
+        # 4. GHI NHẬN NHẬT KÝ KIỂM TOÁN (AUDIT TRAIL) VÀO CHATTER
+        # ---------------------------------------------------------------------
+        audit_body = Markup(_(
+            "<p><b>Khôi phục phiên bản</b>: Đã khôi phục thành công nội dung từ phiên bản <b>%s</b>.</p>"
+        )) % old_version_name
+
+        doc.message_post(
+            body=audit_body,
+            message_type="notification"
+        )
+
+        _logger.info(
+            f"[TDB PLM] Kỹ sư '{self.env.user.name}' đã khôi phục thành công tài liệu ID {doc.id} ({doc.name}) về phiên bản {old_version_name}"
+        )
+
+        # ---------------------------------------------------------------------
+        # 5. PHẢN HỒI THÔNG BÁO CHO NGƯỜI DÙNG (NOTIFICATION BANNER)
+        # ---------------------------------------------------------------------
+        return {
+            "type": "ir.actions.client",
+            "tag": "display_notification",
+            "params": {
+                "title": _("Khôi phục phiên bản"),
+                "message": _("Đã khôi phục thành công tài liệu về phiên bản %s.") % old_version_name,
+                "type": "success",
+                "sticky": False,
+                "next": {
+                    "type": "ir.actions.client",
+                    "tag": "reload",
+                },
+            },
         }
 

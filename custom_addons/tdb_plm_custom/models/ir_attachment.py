@@ -170,7 +170,7 @@ class IrAttachment(models.Model):
             # Debounce: Bỏ qua tạo snapshot trùng lặp nếu vừa tạo trong vòng 10 giây trước
             if last_history and last_history.create_date:
                 time_diff = (now - last_history.create_date).total_seconds()
-                if time_diff < 10:
+                if time_diff < 10 and not self.env.context.get('force_create_snapshot'):
                     _logger.info(f"[TDB PLM] Bỏ qua snapshot trùng lặp (vừa tạo cách đây {time_diff:.1f}s)")
                     continue
 
@@ -643,8 +643,9 @@ class IrAttachment(models.Model):
         has_file_change = ('raw' in vals or 'datas' in vals or 'db_datas' in vals)
 
         if has_file_change and not self.env.context.get('skip_key_holder_check'):
+            is_admin = self.env.is_admin() or self.env.user.has_group('plm.group_plm_admin') or self.env.user.has_group('base.group_system')
             for doc in self:
-                if doc.key_holder_id and doc.key_holder_id != self.env.user:
+                if doc.key_holder_id and doc.key_holder_id != self.env.user and not is_admin:
                     key_holder_name = doc.key_holder_id.name
                     raise UserError(_(
                         "Tài liệu '%s' hiện do kỹ sư '%s' giữ Key. "

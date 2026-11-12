@@ -2,9 +2,9 @@
 # Copyright 2026 TDB Solution Co., Ltd.
 {
     "name": "TDB PLM Customization - Giao diện & Access Token 180 Ngày SolidWorks",
-    "version": "20.0.1.4.1",
+    "version": "20.0.1.5.0",
     "category": "Manufacturing/Product Lifecycle Management (PLM)",
-    "summary": "Tùy biến chuẩn hóa PLM, Document Lock Key Holder, File History, Assembly References và Access Token 180 ngày SolidWorks",
+    "summary": "Tùy biến chuẩn hóa PLM, Document Lock Key Holder, File History, Assembly References, Version Restore và Access Token 180 ngày SolidWorks",
     "description": """
 TDB Solution - Module tùy biến phân hệ PLM (Product Lifecycle Management)
 ========================================================================
@@ -21,6 +21,10 @@ Tính năng chính:
    - Chuẩn hóa quan hệ ir.attachment.relation trên ir.attachment (child_relation_ids & parent_relation_ids).
    - Core API helpers: get_child_documents, get_where_used_documents, add_child_reference.
    - Tab trực quan trên Form view Document hiển thị danh sách chi tiết con và nơi sử dụng với Preview, Rev, State, Lock State.
+6. Khôi phục phiên bản (Version Restore - Append-Only Rollback):
+   - Cơ chế bảo vệ 2 lớp: Quyền giữ Key cục bộ và bảo vệ Cụm máy cha (Where-Used Protection).
+   - Khôi phục an toàn: Tự động sinh phiên bản tiếp theo mang nội dung snapshot cũ mà không mất dữ liệu lịch sử.
+   - Tự động ghi nhận nhật ký kiểm toán (Audit Trail) vào Chatter và thông báo Client Action.
     """,
     "author": "TDB Solution",
     "website": "https://tdbsolution.com",
