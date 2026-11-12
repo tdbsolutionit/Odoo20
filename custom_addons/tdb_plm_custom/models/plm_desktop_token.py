@@ -149,12 +149,29 @@ class PlmDesktopToken(models.Model):
         return super().check_access_rights(operation, raise_exception=raise_exception)
 
     def init(self):
-        """Tự động dọn dẹp trùng lặp khi nạp module."""
+        """Tự động dọn dẹp trùng lặp và cô lập nhóm quyền chỉ cho Sếp khi nạp module."""
         super().init()
         try:
             self.cleanup_duplicate_tokens()
         except Exception as e:
             _logger.debug(f"[TDB PLM] Dọn dẹp token trong init: {e}")
+        try:
+            with self.env.cr.savepoint():
+                # Xóa bất kỳ quan hệ nhóm nào khác ngoài group_plm_desktop_token_boss cho 2 menu này
+                self.env.cr.execute("""
+                    DELETE FROM ir_ui_menu_group_rel
+                    WHERE menu_id IN (
+                        SELECT res_id FROM ir_model_data
+                        WHERE module = 'tdb_plm_custom'
+                          AND name IN ('menu_plm_desktop_token', 'menu_plm_desktop_token_top')
+                    )
+                    AND gid NOT IN (
+                        SELECT res_id FROM ir_model_data
+                        WHERE module = 'tdb_plm_custom' AND name = 'group_plm_desktop_token_boss'
+                    );
+                """)
+        except Exception as e:
+            _logger.debug(f"[TDB PLM] Clean menu groups: {e}")
 
     @api.model
     def register_session_token(self, user_id, session_id, machine_uuid, machine_name, client_ip, cad_version):
