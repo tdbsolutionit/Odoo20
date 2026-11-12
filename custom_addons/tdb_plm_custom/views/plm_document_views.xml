@@ -186,7 +186,7 @@
                         <field name="child_relation_ids">
                             <list string="Chi tiết con liên quan" editable="bottom">
                                 <field name="child_preview" widget="image" options="{'size': [36, 36]}" class="oe_avatar" string="Preview" width="55px" readonly="1"/>
-                                <field name="child_id" string="Tài liệu con" domain="[('is_plm', '=', True)]" required="1"/>
+                                <field name="child_id" string="Tài liệu con" domain="[('is_plm', '=', True), ('id', '!=', parent.id)]" required="1"/>
                                 <field name="child_engineering_code" string="Mã kỹ thuật" width="130px" optional="show" readonly="1"/>
                                 <field name="child_revision" string="Phiên bản" width="80px" readonly="1"/>
                                 <field name="child_state"
@@ -205,6 +205,12 @@
                                        decoration-danger="child_lock_state == 'locked'"
                                        decoration-success="child_lock_state == 'unlocked'"
                                        width="130px"
+                                       readonly="1"/>
+                                <field name="child_key_holder_id"
+                                       string="Người giữ Key"
+                                       widget="many2one_avatar_user"
+                                       width="150px"
+                                       optional="show"
                                        readonly="1"/>
                                 <field name="configuration" string="Cấu hình CAD"/>
                                 <field name="link_kind" string="Loại liên kết" width="110px"/>
@@ -240,6 +246,12 @@
                                        decoration-danger="parent_lock_state == 'locked'"
                                        decoration-success="parent_lock_state == 'unlocked'"
                                        width="130px"
+                                       readonly="1"/>
+                                <field name="parent_key_holder_id"
+                                       string="Người giữ Key"
+                                       widget="many2one_avatar_user"
+                                       width="150px"
+                                       optional="show"
                                        readonly="1"/>
                                 <field name="configuration" string="Cấu hình CAD" readonly="1"/>
                                 <field name="link_kind" string="Loại liên kết" width="110px" readonly="1"/>
