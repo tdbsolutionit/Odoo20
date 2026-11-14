@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- Keep the PLM context without enabling a default CAD update filter. -->
+    <record id="plm.plm_action_document_form" model="ir.actions.act_window">
+        <field name="context">{'odooPLM': True}</field>
+    </record>
+</odoo>
