@@ -61,6 +61,32 @@ class PlmDocumentRelations(models.Model):
     )
 
     # =========================================================================
+    # 3. CHUẨN HÓA HIỂN THỊ CẤU HÌNH CAD (LOẠI BỎ DẤU GẠCH MẶC ĐỊNH '-')
+    # =========================================================================
+    cad_configuration = fields.Char(
+        string="Cấu hình CAD",
+        compute="_compute_cad_configuration",
+        inverse="_inverse_cad_configuration",
+        store=False,
+        help="Cấu hình CAD sạch sẽ, không hiển thị dấu gạch ngang mặc định từ SolidWorks"
+    )
+
+    @api.depends("configuration")
+    def _compute_cad_configuration(self):
+        """Nếu cấu hình CAD là dấu gạch ngang '-' hoặc rỗng từ CAD Add-in thì để trống."""
+        for rec in self:
+            cfg = rec.configuration
+            if not cfg or str(cfg).strip() in ("-", "None", "false", "False", ""):
+                rec.cad_configuration = False
+            else:
+                rec.cad_configuration = str(cfg).strip()
+
+    def _inverse_cad_configuration(self):
+        """Ghi ngược lại trường configuration gốc để đồng bộ với CAD client."""
+        for rec in self:
+            rec.configuration = rec.cad_configuration or "-"
+
+    # =========================================================================
     # 3. RÀNG BUỘC TOÀN VẸN DỮ LIỆU
     # =========================================================================
     @api.constrains('parent_id', 'child_id')

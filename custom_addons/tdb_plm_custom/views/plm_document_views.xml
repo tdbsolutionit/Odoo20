@@ -138,21 +138,21 @@
                 <button name="action_view_file_history"
                         type="object"
                         class="oe_stat_button"
-                        icon="fa-history"
+                        icon="history"
                         invisible="history_count == 0">
                     <field name="history_count" widget="statinfo" string="Lịch sử file"/>
                 </button>
                 <button name="action_view_child_documents"
                         type="object"
                         class="oe_stat_button"
-                        icon="fa-cubes"
+                        icon="account_tree"
                         invisible="child_document_count == 0">
                     <field name="child_document_count" widget="statinfo" string="File con"/>
                 </button>
                 <button name="action_view_where_used_documents"
                         type="object"
                         class="oe_stat_button"
-                        icon="fa-sitemap"
+                        icon="share"
                         invisible="parent_document_count == 0">
                     <field name="parent_document_count" widget="statinfo" string="Nơi dùng"/>
                 </button>
@@ -173,7 +173,7 @@
                             <button name="action_restore_version"
                                     type="object"
                                     string="Khôi phục"
-                                    icon="fa-history"
+                                    icon="history"
                                     class="btn btn-sm btn-link text-warning"
                                     title="Khôi phục tài liệu về phiên bản này"
                                     confirm="Bạn có chắc chắn muốn KHÔI PHỤC tài liệu về phiên bản này không? Hệ thống sẽ tạo một phiên bản mới mang nội dung của phiên bản được chọn."/>
@@ -219,11 +219,11 @@
                                        width="150px"
                                        optional="show"
                                        readonly="1"/>
-                                <field name="configuration" string="Cấu hình CAD"/>
+                                <field name="cad_configuration" string="Cấu hình CAD"/>
                                 <field name="link_kind" string="Loại liên kết" width="110px"/>
                                 <button name="action_open_child_document"
                                         type="object"
-                                        icon="fa-external-link"
+                                        icon="open_in_new"
                                         title="Mở chi tiết tài liệu con"
                                         class="btn btn-sm btn-link"/>
                             </list>
@@ -260,11 +260,11 @@
                                        width="150px"
                                        optional="show"
                                        readonly="1"/>
-                                <field name="configuration" string="Cấu hình CAD" readonly="1"/>
+                                <field name="cad_configuration" string="Cấu hình CAD" readonly="1"/>
                                 <field name="link_kind" string="Loại liên kết" width="110px" readonly="1"/>
                                 <button name="action_open_parent_document"
                                         type="object"
-                                        icon="fa-external-link"
+                                        icon="open_in_new"
                                         title="Mở chi tiết Assembly cha"
                                         class="btn btn-sm btn-link"/>
                             </list>
@@ -328,7 +328,7 @@
                 <button name="action_restore_version"
                         type="object"
                         string="Khôi phục"
-                        icon="fa-history"
+                        icon="history"
                         class="btn btn-sm btn-link text-warning"
                         title="Khôi phục tài liệu về phiên bản này"
                         confirm="Bạn có chắc chắn muốn KHÔI PHỤC tài liệu về phiên bản này không? Hệ thống sẽ tạo một phiên bản mới mang nội dung của phiên bản được chọn."/>
