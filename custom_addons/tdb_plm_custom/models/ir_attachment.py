@@ -216,12 +216,24 @@ class IrAttachment(models.Model):
             version_str = f"v{next_ver_num}"
             creator_user = user_id or self.env.user
 
+            # Xác định tên file chuẩn xác có phần mở rộng CAD rõ ràng
+            cad_filename = doc.cad_name or doc.name or 'document'
+            if '/' in cad_filename:
+                base_part, ext_part = cad_filename.rsplit('/', 1)
+                cad_filename = f"{base_part}.{ext_part.lower()}"
+            elif '.' not in cad_filename:
+                ext = ""
+                if hasattr(doc, 'getFileExtension'):
+                    ext = doc.getFileExtension(doc)
+                if ext:
+                    cad_filename = f"{cad_filename}{ext.lower()}"
+
             History.create({
                 'document_id': doc.id,
                 'version': version_str,
                 'version_number': next_ver_num,
                 'datas': snapshot_datas or False,
-                'file_name': doc.name or 'document',
+                'file_name': cad_filename,
                 'file_size': size_bytes,
                 'user_id': creator_user.id,
                 'description': description or _("Snapshot lưu tại thời điểm Check-in"),

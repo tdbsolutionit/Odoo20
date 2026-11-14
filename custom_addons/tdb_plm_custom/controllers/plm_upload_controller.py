@@ -7,6 +7,8 @@ Controller kế thừa và mở rộng OdooPLM UploadDocument:
 - Tự động chặn và từ chối kết nối (403/401) nếu máy trạm CAD đã bị thu hồi quyền từ xa.
 """
 import logging
+import mimetypes
+import urllib.parse
 from odoo.http import route, request, Response
 from odoo.addons.plm.controllers.main import UploadDocument
 
@@ -145,3 +147,34 @@ class TdbPlmUploadDocument(UploadDocument):
                 _logger.debug(f"[TDB PLM] Không thể kiểm tra token/cập nhật tên máy trong upload: {e}")
 
         return super().upload(mod_file=mod_file, doc_id=doc_id, filename=filename, **kw)
+
+    @route(
+        "/plm/history/download/<int:history_id>",
+        type="http",
+        auth="user",
+        methods=["GET"],
+        csrf=False,
+    )
+    def download_history_file(self, history_id, **kw):
+        """Tải file snapshot lịch sử phiên bản với tên tệp và phần mở rộng CAD chuẩn (chống tự động đổi đuôi sang .bin)."""
+        history = request.env['plm.document.history'].browse(history_id)
+        if not history.exists():
+            return request.not_found()
+
+        raw_bytes = history.get_raw_data()
+        if not raw_bytes:
+            return Response("File snapshot rỗng hoặc không tồn tại dữ liệu.", status=404)
+
+        filename = history.get_clean_filename()
+        mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        quoted_filename = urllib.parse.quote(filename)
+
+        headers = [
+            ('Content-Type', mimetype),
+            ('Content-Disposition', f'attachment; filename="{filename}"; filename*=UTF-8\'\'{quoted_filename}'),
+            ('Content-Length', str(len(raw_bytes))),
+            ('Cache-Control', 'no-cache, no-store, must-revalidate'),
+            ('Pragma', 'no-cache'),
+            ('Expires', '0'),
+        ]
+        return Response(raw_bytes, headers=headers)

@@ -11,6 +11,9 @@ Phân hệ OdooPLM - Quản lý File History (Lịch sử phiên bản tệp CAD
    - Cơ chế khôi phục bất biến (Append-Only Rollback): Sinh phiên bản tiếp theo mang nội dung cũ mà không mất lịch sử.
    - Ghi nhận nhật ký kiểm toán (Audit Trail) vào Chatter và thông báo Client Action.
 """
+import os
+import re
+import base64
 import logging
 from markupsafe import Markup
 from odoo import models, fields, api, _
@@ -118,13 +121,80 @@ class PlmDocumentHistory(models.Model):
             raise UserError(_("Chỉ Quản trị viên PLM mới có quyền xóa bản ghi lịch sử phiên bản tài liệu."))
         return super().unlink()
 
-    def action_download_file(self):
-        """Cho phép tải trực tiếp file snapshot từ danh sách lịch sử."""
+    def init(self):
+        """Khởi tạo bảng và tự động chuẩn hóa tên tệp cho các bản ghi cũ."""
+        super().init()
+        self._fix_existing_history_filenames()
+
+    @api.model
+    def _fix_existing_history_filenames(self):
+        """Tự động chuẩn hóa lại tên file cho các bản ghi lịch sử cũ bị lưu thô có dấu gạch chéo '/' hoặc thiếu đuôi."""
+        try:
+            records = self.sudo().search([])
+            for rec in records:
+                clean_name = rec.get_clean_filename()
+                if clean_name and clean_name != rec.file_name:
+                    self.env.cr.execute(
+                        "UPDATE plm_document_history SET file_name = %s WHERE id = %s",
+                        (clean_name, rec.id)
+                    )
+        except Exception as e:
+            _logger.debug(f"[TDB PLM] Tự động sửa tên tệp lịch sử: {e}")
+
+    def get_raw_data(self):
+        """Lấy dữ liệu nhị phân nguyên bản (bytes) của tệp snapshot."""
         self.ensure_one()
-        filename = self.file_name or f"document_{self.version}"
+        if not self.datas:
+            return b""
+        data = self.datas
+        if isinstance(data, str):
+            try:
+                return base64.b64decode(data)
+            except Exception:
+                return data.encode()
+        elif isinstance(data, (bytes, bytearray)):
+            try:
+                return base64.b64decode(data)
+            except Exception:
+                return bytes(data)
+        return b""
+
+    def get_clean_filename(self):
+        """Xác định tên tệp tải về có phần mở rộng CAD chuẩn xác (không bị .bin)."""
+        self.ensure_one()
+        doc = self.document_id
+        raw_name = self.file_name or (doc and (doc.cad_name or doc.name)) or f"document_{self.version}"
+
+        # 1. Xử lý trường hợp có slash '/' (ví dụ 'yR-000006/SLDASM' -> 'yR-000006.sldasm')
+        if "/" in raw_name:
+            base, ext = raw_name.rsplit("/", 1)
+            raw_name = f"{base}.{ext.lower()}"
+
+        # 2. Kiểm tra nếu chưa có đuôi mở rộng, tìm từ cad_name hoặc getFileExtension
+        base, ext = os.path.splitext(raw_name)
+        if not ext and doc:
+            if doc.cad_name and "." in doc.cad_name:
+                ext = os.path.splitext(doc.cad_name)[1]
+            elif doc.name and "/" in doc.name:
+                ext = "." + doc.name.rsplit("/", 1)[1].lower()
+            elif doc.name and "." in doc.name:
+                ext = "." + doc.name.rsplit(".", 1)[1]
+            elif hasattr(doc, "getFileExtension"):
+                ext = doc.getFileExtension(doc)
+
+            if ext:
+                raw_name = f"{base}{ext}"
+
+        # 3. Làm sạch các ký tự đặc biệt không hợp lệ trong filename Windows
+        clean_name = re.sub(r'[\\/*?:"<>|]', '_', raw_name)
+        return clean_name
+
+    def action_download_file(self):
+        """Cho phép tải trực tiếp file snapshot từ danh sách lịch sử qua endpoint chuyên dụng chống đuôi .bin."""
+        self.ensure_one()
         return {
             "type": "ir.actions.act_url",
-            "url": f"/web/content/plm.document.history/{self.id}/datas/{filename}?download=true",
+            "url": f"/plm/history/download/{self.id}",
             "target": "self",
         }
 
