@@ -43,7 +43,7 @@
             <!-- Người giữ Key & Nút chuyển giao Key -->
             <xpath expr="//field[@name='checkout_user']" position="replace">
                 <field name="is_checkout" column_invisible="1"/>
-                <field name="key_holder_id" string="Người giữ Key" widget="many2one_avatar_user" optional="show"/>
+                <field name="key_holder_id" readonly="1" string="Người giữ Key" widget="many2one_avatar_user" optional="show"/>
                 <field name="lock_state"
                        widget="badge"
                        decoration-danger="lock_state == 'locked'"
@@ -116,7 +116,7 @@
                      role="alert"
                      invisible="not key_holder_id">
                     <div>
-                        <span>Người giữ Key Check-in: </span><field name="key_holder_id" class="fw-bold"/>
+                        <span>Người giữ Key Check-in: </span><field name="key_holder_id" readonly="1" options="{'no_open': True}" class="fw-bold"/>
                         <span class="text-muted ms-2">(Kỹ sư giữ Key được quyền Check-in cập nhật bản vẽ)</span>
                     </div>
                     <div>

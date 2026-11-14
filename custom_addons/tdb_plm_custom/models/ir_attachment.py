@@ -32,6 +32,7 @@ class IrAttachment(models.Model):
     key_holder_id = fields.Many2one(
         "res.users",
         string="Người giữ Key",
+        readonly=True,
         index=True,
         tracking=True,
         help="Kỹ sư giữ quyền Check-in độc quyền cho tài liệu CAD này."
