@@ -52,7 +52,7 @@
                        optional="show"/>
                 <button name="action_open_transfer_key_wizard"
                         type="object"
-                        string="Chuyển giao Key"
+                        string="Chuyển giao / Thu hồi Key"
                         class="btn btn-sm btn-outline-danger"
                         groups="plm.group_plm_admin"/>
             </xpath>
@@ -71,17 +71,17 @@
                 <field name="is_key_holder" invisible="1"/>
                 <field name="is_checkout" invisible="1"/>
 
-                <!-- Nút cho Admin: Cưỡng chế chuyển giao Key (Force Unlock) -->
+                <!-- Nút cho Admin: Cưỡng chế chuyển giao / Thu hồi Key (Force Unlock) -->
                 <button name="action_open_transfer_key_wizard"
                         type="object"
-                        string="Chuyển giao Key (Force Unlock)"
+                        string="Chuyển giao / Thu hồi Key (Force Unlock)"
                         class="btn-danger"
                         groups="plm.group_plm_admin"/>
 
-                <!-- Nút cho Kỹ sư giữ Key (khi không phải Admin): Bàn giao Key -->
+                <!-- Nút cho Kỹ sư giữ Key (khi không phải Admin): Bàn giao / Thu hồi Key -->
                 <button name="action_open_transfer_key_wizard"
                         type="object"
-                        string="Bàn giao Key"
+                        string="Bàn giao / Thu hồi Key"
                         class="btn-warning"
                         invisible="not is_key_holder"
                         groups="!plm.group_plm_admin"/>

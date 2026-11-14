@@ -4,10 +4,10 @@
         <field name="name">plm.transfer.key.wizard.form</field>
         <field name="model">plm.transfer.key.wizard</field>
         <field name="arch" type="xml">
-            <form string="Bàn giao &amp; Chuyển giao quyền giữ Key">
+            <form string="Chuyển giao / Thu hồi quyền giữ Key">
                 <sheet>
                     <div class="alert alert-warning mb-3 py-2" role="alert">
-                        Chuyển giao quyền Check-in (giữ Key) cho kỹ sư khác hoặc nhả Key tự do để kỹ sư Check-out kế tiếp tiếp quản.
+                        Chuyển giao quyền Check-in (giữ Key) cho kỹ sư khác hoặc thu hồi Key để giải phóng quyền thao tác.
                     </div>
                     <group>
                         <group string="Thông tin tài liệu">
@@ -15,7 +15,7 @@
                             <field name="document_name" string="Tài liệu"/>
                             <field name="current_key_holder_id" string="Kỹ sư đang giữ Key" widget="many2one_avatar_user"/>
                         </group>
-                        <group string="Hình thức chuyển giao">
+                        <group string="Hình thức thực hiện">
                             <field name="transfer_type" widget="radio"/>
                             <field name="new_key_holder_id"
                                    string="Kỹ sư nhận Key mới"
@@ -26,14 +26,20 @@
                             <field name="release_all_checkouts" string="Giải phóng toàn bộ Check-out"/>
                         </group>
                     </group>
-                    <group string="Lý do chuyển giao Key">
-                        <field name="reason" placeholder="Nhập lý do chuyển giao hoặc nhả quyền giữ Key..." nolabel="1"/>
+                    <group string="Lý do (Không bắt buộc)">
+                        <field name="reason" placeholder="Nhập lý do chuyển giao hoặc thu hồi Key (không bắt buộc)..." nolabel="1"/>
                     </group>
                 </sheet>
                 <footer>
                     <button name="action_confirm_transfer"
                             string="Xác nhận chuyển giao Key"
                             type="object"
+                            invisible="transfer_type != 'to_user'"
+                            class="btn-danger"/>
+                    <button name="action_confirm_transfer"
+                            string="Xác nhận thu hồi Key"
+                            type="object"
+                            invisible="transfer_type == 'to_user'"
                             class="btn-danger"/>
                     <button string="Hủy bỏ"
                             class="btn-secondary"

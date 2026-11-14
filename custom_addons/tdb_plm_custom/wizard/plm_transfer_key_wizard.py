@@ -38,7 +38,7 @@ class PlmTransferKeyWizard(models.TransientModel):
     transfer_type = fields.Selection(
         [
             ('to_user', 'Chuyển giao cho kỹ sư khác'),
-            ('release', 'Nhả Key tự do (Kỹ sư Check-out kế tiếp sẽ nhận Key)'),
+            ('release', 'Thu hồi Key'),
         ],
         string="Hình thức",
         default='to_user',
@@ -51,8 +51,8 @@ class PlmTransferKeyWizard(models.TransientModel):
         help="Chọn kỹ sư sẽ tiếp quản quyền Check-in tài liệu này."
     )
     reason = fields.Text(
-        string="Lý do chuyển giao",
-        required=True,
+        string="Lý do",
+        required=False,
     )
     release_all_checkouts = fields.Boolean(
         string="Giải phóng toàn bộ phiên Check-out hiện tại",
@@ -81,10 +81,11 @@ class PlmTransferKeyWizard(models.TransientModel):
         is_holder = (doc.key_holder_id == self.env.user)
 
         if not is_admin and not is_holder:
-            raise UserError(_("Bạn không có quyền chuyển giao Key. Chỉ Quản trị viên PLM hoặc người đang giữ Key mới được phép thực hiện."))
+            raise UserError(_("Bạn không có quyền chuyển giao hoặc thu hồi Key. Chỉ Quản trị viên PLM hoặc người đang giữ Key mới được phép thực hiện."))
 
         prev_holder = self.current_key_holder_id or doc.key_holder_id
         prev_name = prev_holder.name if prev_holder else _("Chưa xác định")
+        reason_text = (self.reason or '').strip() or _("Không có lý do")
 
         if self.transfer_type == 'to_user':
             if not self.new_key_holder_id:
@@ -122,7 +123,7 @@ class PlmTransferKeyWizard(models.TransientModel):
                 "Lý do: %s<br/>"
                 "Trạng thái: Đã chuyển giao Key thành công."
                 "</p>"
-            )) % (self.env.user.name, prev_name, new_name, self.reason.strip())
+            )) % (self.env.user.name, prev_name, new_name, reason_text)
 
             doc.message_post(body=audit_msg, message_type='notification')
             _logger.warning(
@@ -131,7 +132,7 @@ class PlmTransferKeyWizard(models.TransientModel):
             )
 
         else:
-            # Nhả Key tự do (Kỹ sư Check-out kế tiếp sẽ nhận Key)
+            # Thu hồi Key (giải phóng quyền giữ Key để người tiếp theo có thể Check-out)
             doc.sudo().write({
                 'key_holder_id': False,
                 'engineering_writable': False,
@@ -142,17 +143,17 @@ class PlmTransferKeyWizard(models.TransientModel):
 
             audit_msg = Markup(_(
                 "<p>"
-                "Nhả quyền giữ Key<br/>"
+                "Thu hồi quyền giữ Key<br/>"
                 "Người thực hiện: %s<br/>"
                 "Kỹ sư từng giữ Key: %s<br/>"
                 "Lý do: %s<br/>"
-                "Trạng thái: Đã nhả quyền giữ Key tự do (kỹ sư Check-out kế tiếp sẽ nhận Key)."
+                "Trạng thái: Đã thu hồi quyền giữ Key thành công."
                 "</p>"
-            )) % (self.env.user.name, prev_name, self.reason.strip())
+            )) % (self.env.user.name, prev_name, reason_text)
 
             doc.message_post(body=audit_msg, message_type='notification')
             _logger.warning(
-                f">>> [TDB PLM RELEASE KEY] {self.env.user.name} đã nhả Key tài liệu {doc.name} (ID {doc.id})"
+                f">>> [TDB PLM REVOKE KEY] {self.env.user.name} đã thu hồi Key tài liệu {doc.name} (ID {doc.id})"
             )
 
         return {
