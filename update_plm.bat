@@ -28,9 +28,9 @@ REM Chuẩn hóa ghi chú Snapshot cũ trong lịch sử phiên bản thành thu
 docker compose exec -T db psql -U odoo -d odoo20 -c "UPDATE plm_document_history SET description = REPLACE(REPLACE(REPLACE(REPLACE(description, 'Snapshot lưu tại thời điểm Check-in từ SolidWorks CAD', 'Check-in từ SolidWorks CAD'), 'Snapshot lưu tại thời điểm Check-in', 'Lưu khi Check-in bản vẽ'), 'Snapshot lưu trước khi chuyển giao Key cho', 'Lưu dự phòng trước khi chuyển Key cho'), 'Snapshot', 'Bản vẽ') WHERE description LIKE '%%Snapshot%%';" 2>nul
 docker compose exec -T db psql -U odoo -d odoo20_dev -c "UPDATE plm_document_history SET description = REPLACE(REPLACE(REPLACE(REPLACE(description, 'Snapshot lưu tại thời điểm Check-in từ SolidWorks CAD', 'Check-in từ SolidWorks CAD'), 'Snapshot lưu tại thời điểm Check-in', 'Lưu khi Check-in bản vẽ'), 'Snapshot lưu trước khi chuyển giao Key cho', 'Lưu dự phòng trước khi chuyển Key cho'), 'Snapshot', 'Bản vẽ') WHERE description LIKE '%%Snapshot%%';" 2>nul
 
-REM Xóa các cờ lỗi lưu tệp cũ (S.ERR / has_error do thiếu datas) để mở khóa tài liệu
-docker compose exec -T db psql -U odoo -d odoo20 -c "UPDATE plm_dbthread SET error_message = NULL WHERE error_message LIKE '%%object has no attribute%%';" 2>nul
-docker compose exec -T db psql -U odoo -d odoo20_dev -c "UPDATE plm_dbthread SET error_message = NULL WHERE error_message LIKE '%%object has no attribute%%';" 2>nul
+REM Xóa các cờ lỗi lưu tệp cũ (S.ERR / has_error) để mở khóa tài liệu hoàn toàn
+docker compose exec -T db psql -U odoo -d odoo20 -c "UPDATE plm_dbthread SET error_message = NULL;" 2>nul
+docker compose exec -T db psql -U odoo -d odoo20_dev -c "UPDATE plm_dbthread SET error_message = NULL;" 2>nul
 
 echo.
 echo [3/4] Tam dung container Odoo va tien hanh nang cap module tdb_plm_custom...

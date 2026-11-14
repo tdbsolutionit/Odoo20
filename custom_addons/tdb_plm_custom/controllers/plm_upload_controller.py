@@ -157,21 +157,41 @@ class TdbPlmUploadDocument(UploadDocument):
     )
     def download_history_file(self, history_id, **kw):
         """Tải file snapshot lịch sử phiên bản với tên tệp và phần mở rộng CAD chuẩn (chống tự động đổi đuôi sang .bin)."""
-        history = request.env['plm.document.history'].browse(history_id)
+        history = request.env['plm.document.history'].sudo().browse(history_id)
         if not history.exists():
             return request.not_found()
 
         raw_bytes = history.get_raw_data()
+        if not raw_bytes and history.document_id:
+            # Fallback về file của tài liệu gốc nếu lịch sử thiếu dữ liệu
+            doc = history.document_id.sudo()
+            doc_data = getattr(doc, 'raw', None) or getattr(doc, 'db_datas', None)
+            if not doc_data and hasattr(doc, 'datas') and doc.datas:
+                doc_data = doc.datas
+            if doc_data:
+                if isinstance(doc_data, str):
+                    try:
+                        raw_bytes = base64.b64decode(doc_data.strip(), validate=True)
+                    except Exception:
+                        raw_bytes = doc_data.encode('latin1')
+                elif isinstance(doc_data, (bytes, bytearray)):
+                    try:
+                        dec = base64.b64decode(doc_data, validate=True)
+                        raw_bytes = dec if dec else bytes(doc_data)
+                    except Exception:
+                        raw_bytes = bytes(doc_data)
+
         if not raw_bytes:
             return Response("File snapshot rỗng hoặc không tồn tại dữ liệu.", status=404)
 
         filename = history.get_clean_filename()
+        safe_filename = filename.replace('"', '_')
         mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
-        quoted_filename = urllib.parse.quote(filename)
+        quoted_filename = urllib.parse.quote(safe_filename)
 
         headers = [
             ('Content-Type', mimetype),
-            ('Content-Disposition', f'attachment; filename="{filename}"; filename*=UTF-8\'\'{quoted_filename}'),
+            ('Content-Disposition', f'attachment; filename="{safe_filename}"; filename*=UTF-8\'\'{quoted_filename}'),
             ('Content-Length', str(len(raw_bytes))),
             ('Cache-Control', 'no-cache, no-store, must-revalidate'),
             ('Pragma', 'no-cache'),

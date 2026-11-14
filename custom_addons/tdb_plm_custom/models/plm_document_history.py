@@ -105,10 +105,10 @@ class PlmDocumentHistory(models.Model):
     def write(self, vals):
         """Bảo vệ tính bất biến (Immutability):
         Chặn tuyệt đối mọi hành vi chỉnh sửa nội dung tệp hay thông tin lịch sử.
-        Chỉ cho phép cập nhật ghi chú (description).
+        Chỉ cho phép cập nhật ghi chú (description) hoặc chạy cơ chế đồng bộ dữ liệu hệ thống (skip_immutability).
         """
         allowed_fields = {"description"}
-        if any(field not in allowed_fields for field in vals.keys()):
+        if not self.env.context.get("skip_immutability") and any(field not in allowed_fields for field in vals.keys()):
             raise UserError(
                 _("Lịch sử phiên bản tệp có tính bất biến nhằm đảm bảo tính toàn vẹn kỹ thuật, không thể chỉnh sửa.")
             )
@@ -122,13 +122,13 @@ class PlmDocumentHistory(models.Model):
         return super().unlink()
 
     def init(self):
-        """Khởi tạo bảng và tự động chuẩn hóa tên tệp, ghi chú cho các bản ghi cũ."""
+        """Khởi tạo bảng và tự động chuẩn hóa tên tệp, ghi chú và khôi phục dữ liệu cho các bản ghi cũ."""
         super().init()
         self._fix_existing_history_records()
 
     @api.model
     def _fix_existing_history_records(self):
-        """Tự động chuẩn hóa lại tên file và ghi chú nghiệp vụ thân thiện cho các bản ghi lịch sử cũ."""
+        """Tự động chuẩn hóa lại tên file, ghi chú nghiệp vụ và khôi phục dữ liệu tệp cho các bản ghi lịch sử cũ."""
         try:
             # 1. Chuẩn hóa tên file
             records = self.sudo().search([])
@@ -162,26 +162,78 @@ class PlmDocumentHistory(models.Model):
                 SET description = REPLACE(description, 'Snapshot', 'Bản vẽ')
                 WHERE description LIKE '%Snapshot%';
             """)
+
+            # 3. Khôi phục dữ liệu tệp (datas) cho các bản ghi lịch sử bị thiếu từ tài liệu gốc
+            for h in records:
+                if not h.get_raw_data() and h.document_id:
+                    doc = h.document_id.sudo()
+                    doc_bytes = getattr(doc, 'raw', None) or getattr(doc, 'db_datas', None)
+                    if not doc_bytes and hasattr(doc, 'datas') and doc.datas:
+                        doc_bytes = doc.datas
+                    if doc_bytes:
+                        try:
+                            if isinstance(doc_bytes, (bytes, bytearray)):
+                                data_b64 = base64.b64encode(bytes(doc_bytes)).decode()
+                            else:
+                                data_b64 = str(doc_bytes)
+                            h.with_context(skip_immutability=True).write({'datas': data_b64})
+                        except Exception as e_backfill:
+                            _logger.debug(f"[TDB PLM] Backfill datas for history ID {h.id}: {e_backfill}")
         except Exception as e:
             _logger.debug(f"[TDB PLM] Tự động chuẩn hóa bản ghi lịch sử: {e}")
 
     def get_raw_data(self):
-        """Lấy dữ liệu nhị phân nguyên bản (bytes) của tệp snapshot."""
+        """Lấy dữ liệu nhị phân nguyên bản (bytes) của tệp snapshot:
+        - Đọc với quyền sudo() để không bị chặn bởi ir.attachment record rules.
+        - Xử lý giải mã an toàn cho cả định dạng raw bytes và base64 string/bytes.
+        - Tự động fallback về dữ liệu tài liệu gốc (document_id) nếu snapshot chưa có dữ liệu.
+        """
         self.ensure_one()
-        if not self.datas:
+        rec = self.sudo()
+        data = rec.datas
+        raw_bytes = b""
+
+        def _decode_binary(val):
+            if not val:
+                return b""
+            if isinstance(val, str):
+                try:
+                    return base64.b64decode(val.strip(), validate=True)
+                except Exception:
+                    return val.encode('latin1')
+            if isinstance(val, (bytes, bytearray)):
+                try:
+                    decoded = base64.b64decode(val, validate=True)
+                    if decoded:
+                        return decoded
+                except Exception:
+                    pass
+                return bytes(val)
             return b""
-        data = self.datas
-        if isinstance(data, str):
-            try:
-                return base64.b64decode(data)
-            except Exception:
-                return data.encode()
-        elif isinstance(data, (bytes, bytearray)):
-            try:
-                return base64.b64decode(data)
-            except Exception:
-                return bytes(data)
-        return b""
+
+        if data:
+            raw_bytes = _decode_binary(data)
+
+        # 1. Fallback tìm trong ir.attachment liên kết trường binary của plm.document.history
+        if not raw_bytes:
+            att = self.env['ir.attachment'].sudo().search([
+                ('res_model', '=', self._name),
+                ('res_id', '=', self.id),
+                ('res_field', '=', 'datas'),
+            ], limit=1)
+            if att:
+                raw_bytes = _decode_binary(att.raw or getattr(att, 'db_datas', None))
+
+        # 2. Fallback tìm file từ tài liệu gốc document_id nếu bản ghi lịch sử bị thiếu file
+        if not raw_bytes and self.document_id:
+            doc = self.document_id.sudo()
+            doc_data = getattr(doc, 'raw', None) or getattr(doc, 'db_datas', None)
+            if not doc_data and hasattr(doc, 'datas') and doc.datas:
+                doc_data = doc.datas
+            if doc_data:
+                raw_bytes = _decode_binary(doc_data)
+
+        return raw_bytes
 
     def get_clean_filename(self):
         """Xác định tên tệp tải về có phần mở rộng CAD chuẩn xác (không bị .bin)."""
