@@ -127,6 +127,120 @@ class PlmDocumentHistory(models.Model):
         self._fix_existing_history_records()
 
     @api.model
+    def _read_attachment_bytes(self, att):
+        """Đọc toàn diện dữ liệu nhị phân (raw bytes) của một bản ghi ir.attachment:
+        1. Stream qua ir.binary (chuẩn Odoo 18).
+        2. Đọc trực tiếp từ trường raw hoặc db_datas.
+        3. Đọc từ file vật lý trên ổ đĩa qua store_fname (dùng _full_path hoặc _get_filestore).
+        4. Đọc từ bảng backup OdooPLM (plm.backupdoc / plm.backup.document).
+        """
+        if not att:
+            return b""
+
+        # 1. Thử stream qua ir.binary
+        try:
+            stream = self.env['ir.binary']._get_stream_from(att, field_name='raw')
+            if stream and getattr(stream, 'size', 0) > 0:
+                data = getattr(stream, 'data', None)
+                if data:
+                    return bytes(data)
+                if hasattr(stream, 'read'):
+                    read_bytes = stream.read()
+                    if read_bytes:
+                        return bytes(read_bytes)
+        except Exception:
+            pass
+
+        # 2. Đọc trực tiếp từ att.raw
+        try:
+            raw_val = getattr(att, 'raw', None)
+            if raw_val:
+                raw_bytes = bytes(raw_val)
+                if raw_bytes.startswith(b'UEsDB') or raw_bytes.startswith(b'0M8R4'):
+                    try:
+                        return base64.b64decode(raw_bytes)
+                    except Exception:
+                        pass
+                return raw_bytes
+        except Exception:
+            pass
+
+        # 3. Đọc từ file vật lý trên ổ đĩa qua store_fname
+        try:
+            if att.store_fname:
+                candidate_paths = []
+                if hasattr(att, '_full_path'):
+                    try:
+                        candidate_paths.append(att._full_path(att.store_fname))
+                    except Exception:
+                        pass
+                filestore = att._get_filestore() if hasattr(att, '_get_filestore') else ''
+                if filestore:
+                    candidate_paths.append(os.path.join(filestore, att.store_fname))
+                for cp in candidate_paths:
+                    if cp and os.path.isfile(cp):
+                        with open(cp, 'rb') as f:
+                            content = f.read()
+                        if content:
+                            return content
+        except Exception:
+            pass
+
+        # 4. Đọc db_datas
+        try:
+            db_d = getattr(att, 'db_datas', None)
+            if db_d:
+                if isinstance(db_d, (bytes, bytearray)):
+                    try:
+                        return base64.b64decode(db_d)
+                    except Exception:
+                        return bytes(db_d)
+                elif isinstance(db_d, str):
+                    try:
+                        return base64.b64decode(db_d.strip())
+                    except Exception:
+                        return db_d.encode('latin1')
+        except Exception:
+            pass
+
+        # 5. Đọc att.datas (nếu có)
+        try:
+            if hasattr(att, 'datas') and att.datas:
+                d_val = att.datas
+                if isinstance(d_val, str):
+                    try:
+                        return base64.b64decode(d_val.strip())
+                    except Exception:
+                        return d_val.encode('latin1')
+                elif isinstance(d_val, (bytes, bytearray)):
+                    try:
+                        return base64.b64decode(d_val)
+                    except Exception:
+                        return bytes(d_val)
+        except Exception:
+            pass
+
+        # 6. Tìm trong bảng backup của OdooPLM
+        try:
+            BackupModel = self.env.get('plm.backupdoc') or self.env.get('plm.backup.document')
+            if BackupModel is not None:
+                bcks = BackupModel.sudo().search([('documentid', '=', att.id)], order='id desc')
+                filestore = att._get_filestore() if hasattr(att, '_get_filestore') else ''
+                for bck in bcks:
+                    fname = getattr(bck, 'existingfile', None)
+                    if fname and filestore:
+                        bp = os.path.join(filestore, fname)
+                        if os.path.isfile(bp):
+                            with open(bp, 'rb') as f:
+                                content = f.read()
+                            if content:
+                                return content
+        except Exception:
+            pass
+
+        return b""
+
+    @api.model
     def _fix_existing_history_records(self):
         """Tự động chuẩn hóa lại tên file, ghi chú nghiệp vụ và khôi phục dữ liệu tệp cho các bản ghi lịch sử cũ."""
         try:
@@ -163,44 +277,28 @@ class PlmDocumentHistory(models.Model):
                 WHERE description LIKE '%Snapshot%';
             """)
 
-            # 3. Khôi phục dữ liệu tệp (datas) cho các bản ghi lịch sử bị thiếu từ tài liệu gốc
+            # 3. Khôi phục dữ liệu tệp (datas) cho các bản ghi lịch sử bị thiếu
             for h in records:
-                if not h.get_raw_data() and h.document_id:
-                    doc = h.document_id.sudo()
-                    doc_bytes = getattr(doc, 'raw', None) or getattr(doc, 'db_datas', None)
-                    if not doc_bytes and hasattr(doc, 'datas') and doc.datas:
-                        doc_bytes = doc.datas
-                    if doc_bytes:
+                if not h.datas:
+                    raw_b = h.get_raw_data()
+                    if raw_b:
                         try:
-                            if isinstance(doc_bytes, (bytes, bytearray)):
-                                data_b64 = base64.b64encode(bytes(doc_bytes)).decode()
-                            else:
-                                data_b64 = str(doc_bytes)
-                            h.with_context(skip_immutability=True).write({'datas': data_b64})
+                            h.with_context(skip_immutability=True).write({
+                                'datas': base64.b64encode(raw_b).decode()
+                            })
                         except Exception as e_backfill:
                             _logger.debug(f"[TDB PLM] Backfill datas for history ID {h.id}: {e_backfill}")
         except Exception as e:
             _logger.debug(f"[TDB PLM] Tự động chuẩn hóa bản ghi lịch sử: {e}")
 
     def get_raw_data(self):
-        """Lấy dữ liệu nhị phân nguyên bản (bytes) của tệp snapshot:
-        - Đọc với quyền sudo() để không bị chặn bởi ir.attachment record rules.
-        - Xử lý giải mã an toàn cho cả định dạng raw bytes và base64 string/bytes.
-        - Tự động fallback về dữ liệu tài liệu gốc (document_id) nếu snapshot chưa có dữ liệu.
-        """
+        """Lấy dữ liệu nhị phân nguyên bản (bytes) của tệp snapshot qua nhiều tầng phục hồi."""
         self.ensure_one()
         rec = self.sudo()
-        data = rec.datas
-        raw_bytes = b""
 
-        def _decode_binary(val):
-            if not val:
-                return b""
-            if isinstance(val, str):
-                try:
-                    return base64.b64decode(val.strip(), validate=True)
-                except Exception:
-                    return val.encode('latin1')
+        # 1. Thử đọc trực tiếp từ trường datas của bản ghi lịch sử
+        if rec.datas:
+            val = rec.datas
             if isinstance(val, (bytes, bytearray)):
                 try:
                     decoded = base64.b64decode(val, validate=True)
@@ -209,31 +307,30 @@ class PlmDocumentHistory(models.Model):
                 except Exception:
                     pass
                 return bytes(val)
-            return b""
+            elif isinstance(val, str):
+                try:
+                    return base64.b64decode(val.strip(), validate=True)
+                except Exception:
+                    return val.encode('latin1')
 
-        if data:
-            raw_bytes = _decode_binary(data)
+        # 2. Tìm trong ir.attachment liên kết trường binary của plm.document.history
+        att = self.env['ir.attachment'].sudo().search([
+            ('res_model', '=', self._name),
+            ('res_id', '=', self.id),
+        ], limit=1)
+        if att:
+            b_data = self._read_attachment_bytes(att)
+            if b_data:
+                return b_data
 
-        # 1. Fallback tìm trong ir.attachment liên kết trường binary của plm.document.history
-        if not raw_bytes:
-            att = self.env['ir.attachment'].sudo().search([
-                ('res_model', '=', self._name),
-                ('res_id', '=', self.id),
-                ('res_field', '=', 'datas'),
-            ], limit=1)
-            if att:
-                raw_bytes = _decode_binary(att.raw or getattr(att, 'db_datas', None))
-
-        # 2. Fallback tìm file từ tài liệu gốc document_id nếu bản ghi lịch sử bị thiếu file
-        if not raw_bytes and self.document_id:
+        # 3. Fallback lấy file từ tài liệu gốc document_id
+        if self.document_id:
             doc = self.document_id.sudo()
-            doc_data = getattr(doc, 'raw', None) or getattr(doc, 'db_datas', None)
-            if not doc_data and hasattr(doc, 'datas') and doc.datas:
-                doc_data = doc.datas
-            if doc_data:
-                raw_bytes = _decode_binary(doc_data)
+            b_data = self._read_attachment_bytes(doc)
+            if b_data:
+                return b_data
 
-        return raw_bytes
+        return b""
 
     def get_clean_filename(self):
         """Xác định tên tệp tải về có phần mở rộng CAD chuẩn xác (không bị .bin)."""

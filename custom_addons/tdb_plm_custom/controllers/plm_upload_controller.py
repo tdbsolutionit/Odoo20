@@ -162,31 +162,55 @@ class TdbPlmUploadDocument(UploadDocument):
             return request.not_found()
 
         raw_bytes = history.get_raw_data()
+
+        # 1. Nếu chưa tìm thấy, mở rộng tìm kiếm qua các phiên bản snapshot khác cùng tài liệu
         if not raw_bytes and history.document_id:
-            # Fallback về file của tài liệu gốc nếu lịch sử thiếu dữ liệu
-            doc = history.document_id.sudo()
-            doc_data = getattr(doc, 'raw', None) or getattr(doc, 'db_datas', None)
-            if not doc_data and hasattr(doc, 'datas') and doc.datas:
-                doc_data = doc.datas
-            if doc_data:
-                if isinstance(doc_data, str):
-                    try:
-                        raw_bytes = base64.b64decode(doc_data.strip(), validate=True)
-                    except Exception:
-                        raw_bytes = doc_data.encode('latin1')
-                elif isinstance(doc_data, (bytes, bytearray)):
-                    try:
-                        dec = base64.b64decode(doc_data, validate=True)
-                        raw_bytes = dec if dec else bytes(doc_data)
-                    except Exception:
-                        raw_bytes = bytes(doc_data)
+            other_histories = request.env['plm.document.history'].sudo().search([
+                ('document_id', '=', history.document_id.id),
+                ('id', '!=', history.id)
+            ], order='version_number desc, id desc')
+            for oh in other_histories:
+                raw_bytes = oh.get_raw_data()
+                if raw_bytes:
+                    break
+
+        # 2. Nếu vẫn chưa tìm thấy, tìm trong các attachment có mã hoặc tên tệp tương đồng
+        if not raw_bytes:
+            search_name = history.file_name or (history.document_id and (history.document_id.name or history.document_id.engineering_code))
+            if search_name:
+                base_code = search_name.split('.')[0].split('/')[0]
+                matching_atts = request.env['ir.attachment'].sudo().search([
+                    '|',
+                    ('name', 'ilike', base_code),
+                    ('engineering_code', 'ilike', base_code),
+                    ('file_size', '>', 0),
+                ], limit=5)
+                for matt in matching_atts:
+                    raw_bytes = history._read_attachment_bytes(matt)
+                    if raw_bytes:
+                        break
 
         if not raw_bytes:
-            return Response("File snapshot rỗng hoặc không tồn tại dữ liệu.", status=404)
+            doc_name = history.file_name or (history.document_id and history.document_id.name) or str(history_id)
+            msg = (
+                f"Tài liệu '{doc_name}' chưa có nội dung tệp CAD vật lý được lưu trữ trên máy chủ Odoo "
+                f"(Dung lượng hiện tại: {history.file_size or 0} bytes). "
+                f"Vui lòng thực hiện Check-in tệp từ máy trạm SolidWorks CAD để cập nhật dữ liệu bản vẽ."
+            )
+            return Response(msg, status=404, headers={'Content-Type': 'text/plain; charset=utf-8'})
+
+        # Tự động lưu bù dữ liệu vào bản ghi lịch sử để các lần tải sau diễn ra tức thì
+        if not history.datas and raw_bytes:
+            try:
+                history.with_context(skip_immutability=True).write({
+                    'datas': base64.b64encode(raw_bytes).decode()
+                })
+            except Exception:
+                pass
 
         filename = history.get_clean_filename()
-        safe_filename = filename.replace('"', '_')
-        mimetype = mimetypes.guess_type(filename)[0] or 'application/octet-stream'
+        safe_filename = filename.replace('"', '_').replace('\r', '').replace('\n', '')
+        mimetype = mimetypes.guess_type(safe_filename)[0] or 'application/octet-stream'
         quoted_filename = urllib.parse.quote(safe_filename)
 
         headers = [

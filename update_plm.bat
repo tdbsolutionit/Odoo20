@@ -45,7 +45,7 @@ docker compose run --rm odoo /opt/odoo/venv/bin/python3 /opt/odoo/src/odoo-bin -
 
 echo.
 echo [4/4] Dang khoi dong lai container Odoo...
-docker compose start odoo 2>nul
+docker compose restart odoo 2>nul || docker compose start odoo 2>nul
 
 echo.
 echo ================================================================================

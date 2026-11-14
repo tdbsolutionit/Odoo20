@@ -227,12 +227,15 @@ class IrAttachment(models.Model):
             snapshot_datas = custom_datas
 
             if not snapshot_datas:
-                doc_raw = getattr(doc, 'raw', None)
-                if doc_raw:
-                    try:
-                        raw_bytes = bytes(doc_raw)
-                    except Exception:
-                        raw_bytes = doc_raw if isinstance(doc_raw, bytes) else b""
+                if hasattr(History, '_read_attachment_bytes'):
+                    raw_bytes = History._read_attachment_bytes(doc)
+                if not raw_bytes:
+                    doc_raw = getattr(doc, 'raw', None)
+                    if doc_raw:
+                        try:
+                            raw_bytes = bytes(doc_raw)
+                        except Exception:
+                            raw_bytes = doc_raw if isinstance(doc_raw, bytes) else b""
 
                 if not raw_bytes:
                     db_d = getattr(doc, 'db_datas', None)
