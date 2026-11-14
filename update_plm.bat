@@ -28,6 +28,10 @@ REM Chuẩn hóa ghi chú Snapshot cũ trong lịch sử phiên bản thành thu
 docker compose exec -T db psql -U odoo -d odoo20 -c "UPDATE plm_document_history SET description = REPLACE(REPLACE(REPLACE(REPLACE(description, 'Snapshot lưu tại thời điểm Check-in từ SolidWorks CAD', 'Check-in từ SolidWorks CAD'), 'Snapshot lưu tại thời điểm Check-in', 'Lưu khi Check-in bản vẽ'), 'Snapshot lưu trước khi chuyển giao Key cho', 'Lưu dự phòng trước khi chuyển Key cho'), 'Snapshot', 'Bản vẽ') WHERE description LIKE '%%Snapshot%%';" 2>nul
 docker compose exec -T db psql -U odoo -d odoo20_dev -c "UPDATE plm_document_history SET description = REPLACE(REPLACE(REPLACE(REPLACE(description, 'Snapshot lưu tại thời điểm Check-in từ SolidWorks CAD', 'Check-in từ SolidWorks CAD'), 'Snapshot lưu tại thời điểm Check-in', 'Lưu khi Check-in bản vẽ'), 'Snapshot lưu trước khi chuyển giao Key cho', 'Lưu dự phòng trước khi chuyển Key cho'), 'Snapshot', 'Bản vẽ') WHERE description LIKE '%%Snapshot%%';" 2>nul
 
+REM Chuẩn hóa tên file lịch sử: Khắc phục tên SOLIDWORKS.* thành tên tài liệu CAD thực tế
+docker compose exec -T db psql -U odoo -d odoo20 -c "UPDATE plm_document_history h SET file_name = REPLACE(a.name, '/', '.') FROM ir_attachment a WHERE h.document_id = a.id AND (h.file_name LIKE 'SOLIDWORKS.%%' OR h.file_name LIKE 'INVENTOR.%%' OR h.file_name IS NULL);" 2>nul
+docker compose exec -T db psql -U odoo -d odoo20_dev -c "UPDATE plm_document_history h SET file_name = REPLACE(a.name, '/', '.') FROM ir_attachment a WHERE h.document_id = a.id AND (h.file_name LIKE 'SOLIDWORKS.%%' OR h.file_name LIKE 'INVENTOR.%%' OR h.file_name IS NULL);" 2>nul
+
 REM Xóa các cờ lỗi lưu tệp cũ (S.ERR / has_error) để mở khóa tài liệu hoàn toàn
 docker compose exec -T db psql -U odoo -d odoo20 -c "UPDATE plm_dbthread SET error_message = NULL;" 2>nul
 docker compose exec -T db psql -U odoo -d odoo20_dev -c "UPDATE plm_dbthread SET error_message = NULL;" 2>nul

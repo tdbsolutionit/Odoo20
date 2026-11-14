@@ -269,8 +269,8 @@ class IrAttachment(models.Model):
             version_str = f"v{next_ver_num}"
             creator_user = user_id or self.env.user
 
-            # Xác định tên file chuẩn xác có phần mở rộng CAD rõ ràng
-            cad_filename = doc.cad_name or doc.name or 'document'
+            # Xác định tên file chuẩn xác từ doc.name hoặc doc.engineering_code (tuyệt đối không dùng doc.cad_name vì là tên phần mềm CAD 'SOLIDWORKS')
+            cad_filename = doc.name or doc.engineering_code or 'document'
             if '/' in cad_filename:
                 base_part, ext_part = cad_filename.rsplit('/', 1)
                 cad_filename = f"{base_part}.{ext_part.lower()}"

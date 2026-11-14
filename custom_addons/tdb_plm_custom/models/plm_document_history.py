@@ -333,22 +333,30 @@ class PlmDocumentHistory(models.Model):
         return b""
 
     def get_clean_filename(self):
-        """Xác định tên tệp tải về có phần mở rộng CAD chuẩn xác (không bị .bin)."""
+        """Xác định tên tệp tải về có tên tài liệu và phần mở rộng CAD chuẩn xác (không bị SOLIDWORKS.xxx hay .bin)."""
         self.ensure_one()
         doc = self.document_id
-        raw_name = self.file_name or (doc and (doc.cad_name or doc.name)) or f"document_{self.version}"
 
-        # 1. Xử lý trường hợp có slash '/' (ví dụ 'yR-000006/SLDASM' -> 'yR-000006.sldasm')
+        # 1. Xác định tên gốc: Ưu tiên doc.name hoặc doc.engineering_code, loại bỏ hoàn toàn tiền tố SOLIDWORKS.xxx
+        raw_name = ""
+        fn = self.file_name or ""
+        fn_upper = fn.upper()
+        if fn and not fn_upper.startswith("SOLIDWORKS.") and not fn_upper.startswith("INVENTOR.") and not fn_upper.startswith("AUTOCAD."):
+            raw_name = fn
+        elif doc:
+            raw_name = doc.name or doc.engineering_code or f"document_{self.version}"
+        else:
+            raw_name = f"document_{self.version}"
+
+        # 2. Xử lý trường hợp có slash '/' (ví dụ 'yfi-000006/SLDASM' -> 'yfi-000006.sldasm')
         if "/" in raw_name:
             base, ext = raw_name.rsplit("/", 1)
             raw_name = f"{base}.{ext.lower()}"
 
-        # 2. Kiểm tra nếu chưa có đuôi mở rộng, tìm từ cad_name hoặc getFileExtension
+        # 3. Kiểm tra nếu chưa có đuôi mở rộng, tìm từ doc.name hoặc getFileExtension
         base, ext = os.path.splitext(raw_name)
         if not ext and doc:
-            if doc.cad_name and "." in doc.cad_name:
-                ext = os.path.splitext(doc.cad_name)[1]
-            elif doc.name and "/" in doc.name:
+            if doc.name and "/" in doc.name:
                 ext = "." + doc.name.rsplit("/", 1)[1].lower()
             elif doc.name and "." in doc.name:
                 ext = "." + doc.name.rsplit(".", 1)[1]
@@ -358,7 +366,7 @@ class PlmDocumentHistory(models.Model):
             if ext:
                 raw_name = f"{base}{ext}"
 
-        # 3. Làm sạch các ký tự đặc biệt không hợp lệ trong filename Windows
+        # 4. Làm sạch các ký tự đặc biệt không hợp lệ trong filename Windows
         clean_name = re.sub(r'[\\/*?:"<>|]', '_', raw_name)
         return clean_name
 
