@@ -500,9 +500,9 @@ class IrAttachment(models.Model):
         is_holder = (self.key_holder_id == self.env.user)
 
         if not is_admin and not is_holder:
-            raise UserError(_("Bạn không có quyền chuyển giao hoặc thu hồi Key. Chỉ Quản trị viên PLM hoặc người đang giữ Key mới được phép thực hiện."))
+            raise UserError(_("Bạn không có quyền chuyển giao Key. Chỉ Quản trị viên PLM hoặc người đang giữ Key mới được phép thực hiện."))
 
-        title = _("Chuyển giao / Thu hồi quyền giữ Key (Force Unlock)") if is_admin else _("Bàn giao / Thu hồi quyền giữ Key")
+        title = _("Chuyển giao / Thu hồi quyền giữ Key (Force Unlock)") if is_admin else _("Bàn giao / Nhả quyền giữ Key")
         return {
             'name': title,
             'type': 'ir.actions.act_window',

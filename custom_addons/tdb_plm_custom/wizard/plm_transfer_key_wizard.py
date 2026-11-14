@@ -38,7 +38,7 @@ class PlmTransferKeyWizard(models.TransientModel):
     transfer_type = fields.Selection(
         [
             ('to_user', 'Chuyển giao cho kỹ sư khác'),
-            ('release', 'Thu hồi Key'),
+            ('release', 'Thu hồi quyền giữ Key (Chuyển sang trạng thái tự do)'),
         ],
         string="Hình thức",
         default='to_user',
@@ -81,11 +81,10 @@ class PlmTransferKeyWizard(models.TransientModel):
         is_holder = (doc.key_holder_id == self.env.user)
 
         if not is_admin and not is_holder:
-            raise UserError(_("Bạn không có quyền chuyển giao hoặc thu hồi Key. Chỉ Quản trị viên PLM hoặc người đang giữ Key mới được phép thực hiện."))
+            raise UserError(_("Bạn không có quyền chuyển giao Key. Chỉ Quản trị viên PLM hoặc người đang giữ Key mới được phép thực hiện."))
 
         prev_holder = self.current_key_holder_id or doc.key_holder_id
         prev_name = prev_holder.name if prev_holder else _("Chưa xác định")
-        reason_text = (self.reason or '').strip() or _("Không có lý do")
 
         if self.transfer_type == 'to_user':
             if not self.new_key_holder_id:
@@ -114,6 +113,7 @@ class PlmTransferKeyWizard(models.TransientModel):
                 )
 
             # 4. Ghi nhận nhật ký kiểm toán vào Chatter
+            reason_text = self.reason.strip() if self.reason else _("Không có ghi chú")
             audit_msg = Markup(_(
                 "<p>"
                 "Chuyển giao quyền giữ Key (Force Unlock)<br/>"
@@ -132,7 +132,7 @@ class PlmTransferKeyWizard(models.TransientModel):
             )
 
         else:
-            # Thu hồi Key (giải phóng quyền giữ Key để người tiếp theo có thể Check-out)
+            # Thu hồi quyền giữ Key (Chuyển sang trạng thái tự do)
             doc.sudo().write({
                 'key_holder_id': False,
                 'engineering_writable': False,
@@ -141,19 +141,20 @@ class PlmTransferKeyWizard(models.TransientModel):
             if self.release_all_checkouts:
                 self.env['plm.checkout'].sudo().search([('documentid', '=', doc.id)]).unlink()
 
+            reason_text = self.reason.strip() if self.reason else _("Không có ghi chú")
             audit_msg = Markup(_(
                 "<p>"
                 "Thu hồi quyền giữ Key<br/>"
                 "Người thực hiện: %s<br/>"
                 "Kỹ sư từng giữ Key: %s<br/>"
                 "Lý do: %s<br/>"
-                "Trạng thái: Đã thu hồi quyền giữ Key thành công."
+                "Trạng thái: Đã thu hồi quyền giữ Key, tài liệu chuyển về trạng thái tự do (kỹ sư Check-out kế tiếp sẽ nhận Key)."
                 "</p>"
             )) % (self.env.user.name, prev_name, reason_text)
 
             doc.message_post(body=audit_msg, message_type='notification')
             _logger.warning(
-                f">>> [TDB PLM REVOKE KEY] {self.env.user.name} đã thu hồi Key tài liệu {doc.name} (ID {doc.id})"
+                f">>> [TDB PLM RELEASE KEY] {self.env.user.name} đã thu hồi Key tài liệu {doc.name} (ID {doc.id})"
             )
 
         return {
