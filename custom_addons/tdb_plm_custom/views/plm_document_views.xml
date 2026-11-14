@@ -202,7 +202,11 @@
                         <field name="child_relation_ids">
                             <list string="Chi tiết con liên quan" editable="bottom">
                                 <field name="child_preview" widget="image" options="{'size': [36, 36]}" class="oe_avatar" string="Preview" width="55px" readonly="1"/>
-                                <field name="child_id" string="Tài liệu con" domain="[('is_plm', '=', True), ('id', '!=', parent.id)]" required="1"/>
+                                <field name="child_id"
+                                       string="Tài liệu con"
+                                       domain="[('is_plm', '=', True), ('id', '!=', parent.id)]"
+                                       context="{'form_view_ref': 'plm.view_attachment_form_plm_hinerit', 'odooPLM': True}"
+                                       required="1"/>
                                 <field name="child_engineering_code" string="Mã kỹ thuật" width="130px" optional="show" readonly="1"/>
                                 <field name="child_revision" string="Phiên bản" width="80px" readonly="1"/>
                                 <field name="child_state"
@@ -243,7 +247,10 @@
                         <field name="parent_relation_ids" readonly="1">
                             <list string="Nơi sử dụng (Where Used)" create="0" delete="0">
                                 <field name="parent_preview" widget="image" options="{'size': [36, 36]}" class="oe_avatar" string="Preview" width="55px"/>
-                                <field name="parent_id" string="Assembly cha" readonly="1"/>
+                                <field name="parent_id"
+                                       string="Assembly cha"
+                                       context="{'form_view_ref': 'plm.view_attachment_form_plm_hinerit', 'odooPLM': True}"
+                                       readonly="1"/>
                                 <field name="parent_engineering_code" string="Mã kỹ thuật" width="130px" optional="show" readonly="1"/>
                                 <field name="parent_revision" string="Phiên bản" width="80px" readonly="1"/>
                                 <field name="parent_state"

@@ -355,26 +355,52 @@ class IrAttachment(models.Model):
         """Mở danh sách các tài liệu con liên quan."""
         self.ensure_one()
         child_docs = self.get_child_documents()
+        list_view = self.env.ref('plm.ir_attachment_list', raise_if_not_found=False)
+        form_view = self.env.ref('plm.view_attachment_form_plm_hinerit', raise_if_not_found=False)
+        views = []
+        if list_view:
+            views.append((list_view.id, 'list'))
+        if form_view:
+            views.append((form_view.id, 'form'))
         return {
             "name": _("Chi tiết con liên quan: %s") % (self.name or self.engineering_code or self.id),
             "type": "ir.actions.act_window",
             "res_model": "ir.attachment",
             "view_mode": "list,form",
+            "views": views or False,
             "domain": [("id", "in", child_docs.ids)],
-            "context": {"default_is_plm": True},
+            "context": {
+                "odooPLM": True,
+                "default_is_plm": True,
+                "form_view_ref": "plm.view_attachment_form_plm_hinerit",
+                "list_view_ref": "plm.ir_attachment_list",
+            },
         }
 
     def action_view_where_used_documents(self):
         """Mở danh sách các nơi sử dụng tài liệu này (Where Used)."""
         self.ensure_one()
         parent_docs = self.get_where_used_documents()
+        list_view = self.env.ref('plm.ir_attachment_list', raise_if_not_found=False)
+        form_view = self.env.ref('plm.view_attachment_form_plm_hinerit', raise_if_not_found=False)
+        views = []
+        if list_view:
+            views.append((list_view.id, 'list'))
+        if form_view:
+            views.append((form_view.id, 'form'))
         return {
             "name": _("Nơi sử dụng (Where Used): %s") % (self.name or self.engineering_code or self.id),
             "type": "ir.actions.act_window",
             "res_model": "ir.attachment",
             "view_mode": "list,form",
+            "views": views or False,
             "domain": [("id", "in", parent_docs.ids)],
-            "context": {"default_is_plm": True},
+            "context": {
+                "odooPLM": True,
+                "default_is_plm": True,
+                "form_view_ref": "plm.view_attachment_form_plm_hinerit",
+                "list_view_ref": "plm.ir_attachment_list",
+            },
         }
 
     # =========================================================================

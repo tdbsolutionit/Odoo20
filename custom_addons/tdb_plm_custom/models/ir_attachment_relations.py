@@ -103,30 +103,44 @@ class PlmDocumentRelations(models.Model):
     # 4. ACTION HELPERS ĐIỀU HƯỚNG NHANH TỪ BẢNG QUAN HỆ
     # =========================================================================
     def action_open_child_document(self):
-        """Mở chi tiết Form view của tài liệu con."""
+        """Mở chi tiết Form view PLM của tài liệu con."""
         self.ensure_one()
         if not self.child_id:
             return False
+        form_view = self.env.ref('plm.view_attachment_form_plm_hinerit', raise_if_not_found=False)
         return {
-            'name': self.child_id.name or self.child_id.engineering_code or _("Tài liệu con"),
+            'name': self.child_id.name or self.child_id.engineering_code or _("Tài liệu kỹ thuật"),
             'type': 'ir.actions.act_window',
             'res_model': 'ir.attachment',
             'res_id': self.child_id.id,
             'view_mode': 'form',
+            'views': [(form_view.id, 'form')] if form_view else False,
             'target': 'current',
+            'context': {
+                'odooPLM': True,
+                'default_is_plm': True,
+                'form_view_ref': 'plm.view_attachment_form_plm_hinerit',
+            },
         }
 
     def action_open_parent_document(self):
-        """Mở chi tiết Form view của Assembly cha."""
+        """Mở chi tiết Form view PLM của Assembly cha."""
         self.ensure_one()
         if not self.parent_id:
             return False
+        form_view = self.env.ref('plm.view_attachment_form_plm_hinerit', raise_if_not_found=False)
         return {
             'name': self.parent_id.name or self.parent_id.engineering_code or _("Assembly cha"),
             'type': 'ir.actions.act_window',
             'res_model': 'ir.attachment',
             'res_id': self.parent_id.id,
             'view_mode': 'form',
+            'views': [(form_view.id, 'form')] if form_view else False,
             'target': 'current',
+            'context': {
+                'odooPLM': True,
+                'default_is_plm': True,
+                'form_view_ref': 'plm.view_attachment_form_plm_hinerit',
+            },
         }
 
