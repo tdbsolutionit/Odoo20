@@ -70,6 +70,7 @@
             <xpath expr="//header" position="inside">
                 <field name="is_key_holder" invisible="1"/>
                 <field name="is_checkout" invisible="1"/>
+                <field name="is_checked_out_by_me" invisible="1"/>
 
                 <!-- Nút cho Admin: Cưỡng chế chuyển giao / Thu hồi Key (Force Unlock) -->
                 <button name="action_open_transfer_key_wizard"
@@ -86,19 +87,27 @@
                         invisible="not is_key_holder"
                         groups="!plm.group_plm_admin"/>
 
-                <!-- Nút Check-out: Mọi kỹ sư đều có thể bấm khi chưa check-out -->
+                <!-- Nút Check-out: Mọi kỹ sư đều có thể bấm khi người đó CHƯA Check-out -->
                 <button name="action_web_checkout"
                         type="object"
                         string="Check-out"
                         class="btn-secondary"
-                        invisible="is_checkout == True"/>
+                        invisible="is_checked_out_by_me == True"/>
 
-                <!-- Nút Check-in: Chỉ hiển thị cho người đang Check-out VÀ đang giữ Key -->
+                <!-- Nút Check-in: Chỉ hiển thị cho người đang giữ Key VÀ đã Check-out -->
                 <button name="action_web_checkin"
                         type="object"
                         string="Check-in"
                         class="btn-primary"
-                        invisible="is_checkout == False or not is_key_holder"/>
+                        invisible="is_checked_out_by_me == False or not is_key_holder"/>
+
+                <!-- Nút Hủy Check-out: Cho phép người dùng hiện tại hủy phiên Check-out của mình -->
+                <button name="action_web_undo_checkout"
+                        type="object"
+                        string="Hủy Check-out"
+                        class="btn-outline-secondary"
+                        invisible="is_checked_out_by_me == False"
+                        confirm="Bạn có chắc chắn muốn HỦY Check-out tài liệu này không?"/>
             </xpath>
 
             <!-- Banner thông tin Người giữ Key -->

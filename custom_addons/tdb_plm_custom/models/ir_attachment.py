@@ -41,6 +41,12 @@ class IrAttachment(models.Model):
         compute="_compute_is_key_holder",
         store=False
     )
+    is_checked_out_by_me = fields.Boolean(
+        string="Tôi đã Check-out",
+        compute="_compute_is_checked_out_by_me",
+        store=False,
+        help="Đánh dấu tài liệu này đã được người dùng hiện tại Check-out hay chưa."
+    )
     lock_state = fields.Selection(
         [
             ('unlocked', 'Sẵn sàng'),
@@ -68,10 +74,17 @@ class IrAttachment(models.Model):
         store=False
     )
 
+    @api.depends_context('uid')
     @api.depends('key_holder_id')
     def _compute_is_key_holder(self):
         for doc in self:
-            doc.is_key_holder = (doc.key_holder_id == self.env.user)
+            doc.is_key_holder = (doc.key_holder_id.id == self.env.uid)
+
+    @api.depends_context('uid')
+    @api.depends('checkout_ids', 'checkout_ids.userid')
+    def _compute_is_checked_out_by_me(self):
+        for doc in self:
+            doc.is_checked_out_by_me = any(co.userid.id == self.env.uid for co in doc.checkout_ids)
 
     @api.depends('checkout_ids', 'key_holder_id')
     def _compute_lock_state(self):
@@ -493,6 +506,25 @@ class IrAttachment(models.Model):
         # _check_in() đã tự động tạo 1 snapshot duy nhất và xóa checkout
         self.with_context(is_web_operation=True)._check_in()
 
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
+
+    def action_web_undo_checkout(self):
+        """Hủy Check-out: Giải phóng phiên khóa Check-out của chính người dùng hiện tại mà không lưu thay đổi."""
+        self.ensure_one()
+        checkout_records = self.env['plm.checkout'].sudo().search([
+            ('documentid', '=', self.id),
+            ('userid', '=', self.env.uid)
+        ])
+        if checkout_records:
+            checkout_records.with_context(skip_checkin_audit=True).unlink()
+            self.write({'engineering_writable': False})
+            self.message_post(
+                body=Markup(_("<p>Hủy Check-out<br/>Người thực hiện: %s</p>")) % self.env.user.name,
+                message_type='notification'
+            )
         return {
             'type': 'ir.actions.client',
             'tag': 'reload',
