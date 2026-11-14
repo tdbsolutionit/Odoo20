@@ -16,14 +16,24 @@ _logger = logging.getLogger(__name__)
 class TdbPlmCheckout(models.Model):
     _inherit = "plm.checkout"
 
+    # Ghi đè ràng buộc _documentid gốc của Omnia PLM để cho phép nhiều kỹ sư cùng Check-out (chỉ chặn 1 kỹ sư check-out 2 lần cùng 1 tài liệu)
+    _documentid = models.Constraint(
+        "unique (documentid, userid)",
+        "Tài liệu này đã được bạn Check-out trên máy trạm!"
+    )
+
     def init(self):
         super().init()
         # Cho phép nhiều kỹ sư cùng Check-out để lấy file về máy trạm tham chiếu
-        self.env.cr.execute("""
-            ALTER TABLE plm_checkout DROP CONSTRAINT IF EXISTS plm_checkout_documentid_uniq;
-            ALTER TABLE plm_checkout DROP CONSTRAINT IF EXISTS plm_checkout__documentid;
-            CREATE UNIQUE INDEX IF NOT EXISTS plm_checkout_doc_user_uniq ON plm_checkout (documentid, userid);
-        """)
+        try:
+            self.env.cr.execute("""
+                ALTER TABLE plm_checkout DROP CONSTRAINT IF EXISTS plm_checkout_documentid;
+                ALTER TABLE plm_checkout DROP CONSTRAINT IF EXISTS plm_checkout__documentid;
+                ALTER TABLE plm_checkout DROP CONSTRAINT IF EXISTS plm_checkout_documentid_uniq;
+                CREATE UNIQUE INDEX IF NOT EXISTS plm_checkout_doc_user_uniq ON plm_checkout (documentid, userid);
+            """)
+        except Exception as e:
+            _logger.info(f"[TDB PLM] Drop old checkout unique constraint: {e}")
 
     def action_force_unlock(self):
         """Phá khóa cưỡng chế / Chuyển giao Key ngay trên danh sách hoặc form bản ghi plm.checkout."""
