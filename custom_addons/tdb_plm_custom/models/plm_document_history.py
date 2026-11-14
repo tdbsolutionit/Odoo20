@@ -273,7 +273,9 @@ class PlmDocumentHistory(models.Model):
         # 3. THỰC HIỆN KHÔI PHỤC (APPEND-ONLY ROLLBACK)
         # ---------------------------------------------------------------------
         old_version_name = self.version or f"v{self.version_number}"
+        raw_bytes = self.get_raw_data()
         write_vals = {
+            "raw": raw_bytes,
             "datas": self.datas,
             "name": self.file_name or doc.name,
             "history_description": _("Khôi phục từ phiên bản %s") % old_version_name,

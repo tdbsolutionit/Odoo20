@@ -108,6 +108,13 @@
                         class="btn-outline-secondary"
                         invisible="is_checked_out_by_me == False"
                         confirm="Bạn có chắc chắn muốn HỦY Check-out tài liệu này không?"/>
+
+                <!-- Nút Xóa cờ lỗi lưu tệp (Clear Error / S.ERR) khi tài liệu bị kẹt cờ has_error -->
+                <button name="action_clear_error"
+                        type="object"
+                        string="Xóa cờ lỗi (Clear Error)"
+                        class="btn-outline-danger"
+                        invisible="has_error == False"/>
             </xpath>
 
             <!-- Banner thông tin Người giữ Key -->

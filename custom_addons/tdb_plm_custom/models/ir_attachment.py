@@ -74,6 +74,42 @@ class IrAttachment(models.Model):
         store=False
     )
 
+    # Trường datas tương thích ngược cho Odoo 18 / phân hệ DMS / CAD Client
+    datas = fields.Binary(
+        string="Tệp đính kèm (base64)",
+        compute="_compute_datas",
+        inverse="_inverse_datas",
+        store=False,
+        help="Trường tương thích ngược cho các phân hệ (DMS, SolidWorks CAD,...) truy cập attachment.datas"
+    )
+
+    def _compute_datas(self):
+        for attach in self:
+            if attach.raw:
+                import base64
+                attach.datas = base64.b64encode(bytes(attach.raw)).decode()
+            elif attach.db_datas:
+                import base64
+                attach.datas = base64.b64encode(bytes(attach.db_datas)).decode()
+            else:
+                attach.datas = False
+
+    def _inverse_datas(self):
+        for attach in self:
+            if attach.datas:
+                import base64
+                data = attach.datas
+                if isinstance(data, str):
+                    try:
+                        raw_bytes = base64.b64decode(data)
+                    except Exception:
+                        raw_bytes = data.encode()
+                else:
+                    raw_bytes = bytes(data)
+                attach.raw = raw_bytes
+            else:
+                attach.raw = False
+
     @api.depends_context('uid')
     @api.depends('key_holder_id')
     def _compute_is_key_holder(self):
@@ -540,17 +576,42 @@ class IrAttachment(models.Model):
     def action_web_undo_checkout(self):
         """Hủy Check-out: Giải phóng phiên khóa Check-out của chính người dùng hiện tại mà không lưu thay đổi."""
         self.ensure_one()
+        # Dọn dẹp lỗi dbthread cũ nếu có để không bị kẹt trạng thái has_error
+        try:
+            key = f"{self.engineering_code}_{self.engineering_revision}"
+            threads = self.env['plm.dbthread'].sudo().search([('name', '=', key)])
+            if threads:
+                threads.write({'error_message': False})
+        except Exception as e:
+            _logger.debug(f"[TDB PLM] Clear dbthread error: {e}")
+
         checkout_records = self.env['plm.checkout'].sudo().search([
             ('documentid', '=', self.id),
             ('userid', '=', self.env.uid)
         ])
         if checkout_records:
-            checkout_records.with_context(skip_checkin_audit=True).unlink()
+            checkout_records.with_context(skip_error_check=True, skip_checkin_audit=True).unlink()
             self.write({'engineering_writable': False})
             self.message_post(
                 body=Markup(_("<p>Hủy Check-out<br/>Người thực hiện: %s</p>")) % self.env.user.name,
                 message_type='notification'
             )
+        return {
+            'type': 'ir.actions.client',
+            'tag': 'reload',
+        }
+
+    def action_clear_error(self):
+        """Xóa trạng thái lỗi lưu tệp (has_error / S.ERR) để mở khóa tài liệu."""
+        self.ensure_one()
+        try:
+            key = f"{self.engineering_code}_{self.engineering_revision}"
+            threads = self.env['plm.dbthread'].sudo().search([('name', '=', key)])
+            if threads:
+                threads.write({'error_message': False})
+        except Exception as e:
+            _logger.info(f"[TDB PLM] Clear dbthread error: {e}")
+        self.invalidate_recordset(['has_error'])
         return {
             'type': 'ir.actions.client',
             'tag': 'reload',

@@ -35,6 +35,15 @@ class TdbPlmCheckout(models.Model):
         except Exception as e:
             _logger.info(f"[TDB PLM] Drop old checkout unique constraint: {e}")
 
+    def unlink(self):
+        """Cho phép Hủy Check-out hoặc Phá khóa kể cả khi tài liệu đang bị cờ has_error."""
+        if self.env.context.get('skip_error_check') or self.env.context.get('skip_checkin_audit'):
+            for checkObj in self:
+                if checkObj.documentid:
+                    checkObj.documentid.engineering_writable = False
+            return super(models.Model, self).unlink()
+        return super().unlink()
+
     def action_force_unlock(self):
         """Phá khóa cưỡng chế / Chuyển giao Key ngay trên danh sách hoặc form bản ghi plm.checkout."""
         self.ensure_one()
