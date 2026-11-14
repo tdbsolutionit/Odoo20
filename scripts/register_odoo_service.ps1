@@ -40,6 +40,27 @@ Write-Host "Config       : $ConfigFile"
 Write-Host "Task Name    : $TaskName"
 Write-Host "================================================================================"
 
+# 1.1 Dam bao PostgreSQL dang chay va khoi dong tu dong cung Windows
+$pgService = Get-Service -Name "*postgres*" -ErrorAction SilentlyContinue
+if ($pgService) {
+    $pgService | Set-Service -StartupType Automatic -ErrorAction SilentlyContinue
+    if ($pgService.Status -ne "Running") {
+        $pgService | Start-Service -ErrorAction SilentlyContinue
+        Write-Host "  [OK] Da khoi dong dich vu PostgreSQL." -ForegroundColor Green
+    } else {
+        Write-Host "  [OK] Dich vu PostgreSQL dang chay binh thuong." -ForegroundColor Green
+    }
+}
+
+# 1.2 Giai phong port: Tat cac tien trinh python dang chay thu cong odoo-bin (tranh trung port)
+try {
+    Get-CimInstance Win32_Process -Filter "Name LIKE 'python%.exe'" -ErrorAction SilentlyContinue |
+        Where-Object { $_.CommandLine -like "*odoo-bin*" } |
+        ForEach-Object { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue }
+} catch {
+    # Bo qua neu khong query duoc WMI
+}
+
 # 2. Dinh nghia hanh dong chay Odoo
 $action = New-ScheduledTaskAction `
     -Execute $PythonExe `
