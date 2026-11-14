@@ -181,7 +181,7 @@
                                     type="object"
                                     string="Tải về"
                                     class="btn btn-sm btn-secondary"
-                                    title="Tải snapshot phiên bản này"/>
+                                    title="Tải bản vẽ phiên bản này về máy"/>
                         </list>
                     </field>
                 </page>
@@ -336,7 +336,7 @@
                         type="object"
                         string="Tải về"
                         class="btn btn-sm btn-secondary"
-                        title="Tải snapshot phiên bản này"/>
+                        title="Tải bản vẽ phiên bản này về máy"/>
             </list>
         </field>
     </record>
@@ -355,7 +355,7 @@
                             confirm="Bạn có chắc chắn muốn KHÔI PHỤC tài liệu về phiên bản này không? Hệ thống sẽ tạo một phiên bản mới mang nội dung của phiên bản được chọn."/>
                     <button name="action_download_file"
                             type="object"
-                            string="Tải file snapshot về máy"
+                            string="Tải bản vẽ về máy"
                             class="btn-primary"/>
                 </header>
                 <sheet>

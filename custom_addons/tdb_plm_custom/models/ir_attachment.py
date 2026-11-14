@@ -133,7 +133,7 @@ class IrAttachment(models.Model):
             if count == 0 and doc.is_plm and (doc.raw or (doc.file_size and doc.file_size > 0)):
                 try:
                     doc._create_document_history_snapshot(
-                        description=_("Phiên bản gốc tải lên lần đầu"),
+                        description=_("Bản vẽ gốc ban đầu"),
                         user_id=doc.create_uid or self.env.user
                     )
                     count = len(doc.history_ids)
@@ -236,7 +236,7 @@ class IrAttachment(models.Model):
                 'file_name': cad_filename,
                 'file_size': size_bytes,
                 'user_id': creator_user.id,
-                'description': description or _("Snapshot lưu tại thời điểm Check-in"),
+                'description': description or _("Lưu khi Check-in bản vẽ"),
             })
             _logger.info(
                 f"[TDB PLM] Đã tạo snapshot phiên bản {version_str} cho tài liệu ID {doc.id} ({doc.name}), size: {size_bytes} B"
@@ -460,7 +460,7 @@ class IrAttachment(models.Model):
         for doc in self:
             # 1. Tạo snapshot lịch sử phiên bản duy nhất
             doc._create_document_history_snapshot(
-                description=_("Snapshot lưu tại thời điểm Check-in"),
+                description=_("Lưu khi Check-in bản vẽ"),
                 user_id=self.env.user
             )
 
@@ -579,7 +579,7 @@ class IrAttachment(models.Model):
 
         if target_doc:
             target_doc._create_document_history_snapshot(
-                description=_("Snapshot lưu tại thời điểm Check-in từ SolidWorks CAD"),
+                description=_("Check-in từ SolidWorks CAD"),
                 user_id=self.env.user
             )
 
@@ -628,7 +628,7 @@ class IrAttachment(models.Model):
                 if docId:
                     docId._check_key_holder_permission()
                     docId._create_document_history_snapshot(
-                        description=_("Snapshot lưu tại thời điểm Check-in từ CAD Client"),
+                        description=_("Check-in từ SolidWorks CAD"),
                         user_id=self.env.user
                     )
         except Exception as e:
@@ -672,7 +672,7 @@ class IrAttachment(models.Model):
                     if getattr(doc, 'is_plm', False):
                         prev_user = doc.write_uid or doc.create_uid or self.env.user
                         doc._create_document_history_snapshot(
-                            description=history_desc or _("Tự động lưu snapshot trước khi cập nhật file mới"),
+                            description=history_desc or _("Lưu bản vẽ trước khi cập nhật"),
                             user_id=prev_user
                         )
 

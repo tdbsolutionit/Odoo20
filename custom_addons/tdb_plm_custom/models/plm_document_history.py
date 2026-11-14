@@ -52,15 +52,15 @@ class PlmDocumentHistory(models.Model):
         help="Số thứ tự số học dùng để tính toán phiên bản tiếp theo."
     )
     datas = fields.Binary(
-        string="Tệp snapshot",
+        string="Tệp bản vẽ",
         attachment=True,
         readonly=True,
-        help="Dữ liệu tệp tại thời điểm snapshot."
+        help="Dữ liệu tệp tại thời điểm lưu phiên bản."
     )
     file_name = fields.Char(
         string="Tên tệp",
         readonly=True,
-        help="Tên file đính kèm tại thời điểm snapshot."
+        help="Tên file đính kèm tại thời điểm lưu phiên bản."
     )
     file_size = fields.Integer(
         string="Dung lượng (Bytes)",
@@ -83,11 +83,11 @@ class PlmDocumentHistory(models.Model):
     create_date = fields.Datetime(
         string="Thời điểm lưu",
         readonly=True,
-        help="Thời điểm hệ thống tạo snapshot lịch sử."
+        help="Thời điểm hệ thống lưu phiên bản lịch sử."
     )
     description = fields.Text(
-        string="Ghi chú thay đổi",
-        help="Ghi chú hoặc lý do thay đổi tệp."
+        string="Ghi chú",
+        help="Ghi chú nghiệp vụ hoặc lý do thay đổi tệp."
     )
 
     @api.depends("file_size")
@@ -122,14 +122,15 @@ class PlmDocumentHistory(models.Model):
         return super().unlink()
 
     def init(self):
-        """Khởi tạo bảng và tự động chuẩn hóa tên tệp cho các bản ghi cũ."""
+        """Khởi tạo bảng và tự động chuẩn hóa tên tệp, ghi chú cho các bản ghi cũ."""
         super().init()
-        self._fix_existing_history_filenames()
+        self._fix_existing_history_records()
 
     @api.model
-    def _fix_existing_history_filenames(self):
-        """Tự động chuẩn hóa lại tên file cho các bản ghi lịch sử cũ bị lưu thô có dấu gạch chéo '/' hoặc thiếu đuôi."""
+    def _fix_existing_history_records(self):
+        """Tự động chuẩn hóa lại tên file và ghi chú nghiệp vụ thân thiện cho các bản ghi lịch sử cũ."""
         try:
+            # 1. Chuẩn hóa tên file
             records = self.sudo().search([])
             for rec in records:
                 clean_name = rec.get_clean_filename()
@@ -138,8 +139,31 @@ class PlmDocumentHistory(models.Model):
                         "UPDATE plm_document_history SET file_name = %s WHERE id = %s",
                         (clean_name, rec.id)
                     )
+
+            # 2. Thay thế các thuật ngữ snapshot khó hiểu bằng ngôn ngữ kỹ thuật cơ khí rõ ràng
+            self.env.cr.execute("""
+                UPDATE plm_document_history
+                SET description = REPLACE(description, 'Snapshot lưu tại thời điểm Check-in từ SolidWorks CAD', 'Check-in từ SolidWorks CAD')
+                WHERE description LIKE '%Snapshot lưu tại thời điểm Check-in từ SolidWorks CAD%';
+
+                UPDATE plm_document_history
+                SET description = REPLACE(description, 'Snapshot lưu tại thời điểm Check-in', 'Lưu khi Check-in bản vẽ')
+                WHERE description LIKE '%Snapshot lưu tại thời điểm Check-in%';
+
+                UPDATE plm_document_history
+                SET description = REPLACE(description, 'Snapshot lưu trước khi chuyển giao Key cho', 'Lưu dự phòng trước khi chuyển Key cho')
+                WHERE description LIKE '%Snapshot lưu trước khi chuyển giao Key cho%';
+
+                UPDATE plm_document_history
+                SET description = REPLACE(description, 'Tự động lưu snapshot trước khi cập nhật file mới', 'Lưu bản vẽ trước khi cập nhật')
+                WHERE description LIKE '%Tự động lưu snapshot trước khi cập nhật file mới%';
+
+                UPDATE plm_document_history
+                SET description = REPLACE(description, 'Snapshot', 'Bản vẽ')
+                WHERE description LIKE '%Snapshot%';
+            """)
         except Exception as e:
-            _logger.debug(f"[TDB PLM] Tự động sửa tên tệp lịch sử: {e}")
+            _logger.debug(f"[TDB PLM] Tự động chuẩn hóa bản ghi lịch sử: {e}")
 
     def get_raw_data(self):
         """Lấy dữ liệu nhị phân nguyên bản (bytes) của tệp snapshot."""

@@ -108,7 +108,7 @@ class PlmTransferKeyWizard(models.TransientModel):
             # 3. Tạo snapshot dự phòng nếu tài liệu đang có file
             if doc.raw or (doc.file_size and doc.file_size > 0):
                 doc._create_document_history_snapshot(
-                    description=_("Snapshot lưu trước khi chuyển giao Key cho %s") % new_name,
+                    description=_("Lưu dự phòng trước khi chuyển Key cho %s") % new_name,
                     user_id=self.env.user
                 )
 
