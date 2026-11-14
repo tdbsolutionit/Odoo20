@@ -188,8 +188,8 @@
 
                 <!-- Tab File liên quan (References) & Where Used (Task 5) -->
                 <page string="File liên quan (References)" name="related_documents">
-                    <div class="mb-4">
-                        <h4 class="text-primary mb-2">Danh sách chi tiết con (Components / References)</h4>
+                    <div class="pt-3 pb-2 mb-4">
+                        <separator string="Danh sách chi tiết con (Components / References)"/>
                         <field name="child_relation_ids">
                             <list string="Chi tiết con liên quan" editable="bottom">
                                 <field name="child_preview" widget="image" options="{'size': [36, 36]}" class="oe_avatar" string="Preview" width="55px" readonly="1"/>
@@ -229,8 +229,8 @@
                             </list>
                         </field>
                     </div>
-                    <div>
-                        <h4 class="text-primary mb-2">Nơi sử dụng (Where Used)</h4>
+                    <div class="pt-4 pb-2">
+                        <separator string="Nơi sử dụng (Where Used)"/>
                         <field name="parent_relation_ids" readonly="1">
                             <list string="Nơi sử dụng (Where Used)" create="0" delete="0">
                                 <field name="parent_preview" widget="image" options="{'size': [36, 36]}" class="oe_avatar" string="Preview" width="55px"/>
