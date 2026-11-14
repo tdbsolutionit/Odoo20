@@ -1,0 +1,476 @@
+# Translation of Odoo Server.
+# This file contains the translation of the following modules:
+# 	* activity_validation
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: Odoo Server 19.0+e\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-09-30 06:06+0000\n"
+"PO-Revision-Date: 2025-09-30 06:06+0000\n"
+"Last-Translator: \n"
+"Language-Team: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: \n"
+"Plural-Forms: \n"
+
+#. module: activity_validation
+#: model:ir.actions.report,print_report_name:activity_validation.bom_activity_product_procduct_report_action
+#: model:ir.actions.report,print_report_name:activity_validation.bom_activity_product_template_report_action
+msgid "'BOM_Activity_Hierarchy_' + object.name"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.report_product_product_bom
+msgid "<strong>Activity Info</strong>"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.report_product_product_bom
+msgid "<strong>Activity State</strong>"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.report_product_product_bom
+msgid "<strong>Assigned</strong>"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.report_product_product_bom
+msgid "<strong>Due Date</strong>"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.report_product_product_bom
+msgid "<strong>Engineering Code</strong>"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.report_product_product_bom
+msgid "<strong>Engineering Revision</strong>"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.report_product_product_bom
+msgid "<strong>From</strong>"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.report_product_product_bom
+msgid "<strong>Image</strong>"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.report_product_product_bom
+msgid "<strong>Name</strong>"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.actions.act_window,name:activity_validation.plm_action_view_activities
+#: model:ir.ui.menu,name:activity_validation.plm_menu_activities
+#: model_terms:ir.ui.view,arch_db:activity_validation.plm_activity_search
+msgid "Activities"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model,name:activity_validation.model_mail_activity
+#: model_terms:ir.ui.view,arch_db:activity_validation.plm_message_activity_done
+msgid "Activity"
+msgstr "活動"
+
+#. module: activity_validation
+#: model:ir.model,name:activity_validation.model_mail_activity_type
+#: model_terms:ir.ui.view,arch_db:activity_validation.plm_activity_search
+msgid "Activity Type"
+msgstr "活動タイプ"
+
+#. module: activity_validation
+#: model:res.groups,name:activity_validation.group_force_activity_validation_user
+msgid "Activity User"
+msgstr ""
+
+#. module: activity_validation
+#: model:res.groups,name:activity_validation.group_force_activity_validation_user_readonly
+msgid "Activity User Readonly"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model,name:activity_validation.model_mail_activity_children_rel
+msgid "Activity children relation"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model,name:activity_validation.model_mail_activity_children_rel_shedule
+msgid "Activity children relation shedule"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model,name:activity_validation.model_mail_activity_schedule
+msgid "Activity schedule plan Wizard"
+msgstr "活動スケジュール計画ウィザード"
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel__activity_user_id
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel_shedule__activity_user_id
+msgid "Assigned to"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.actions.report,name:activity_validation.bom_activity_product_procduct_report_action
+#: model:ir.actions.report,name:activity_validation.bom_activity_product_template_report_action
+#: model_terms:ir.ui.view,arch_db:activity_validation.report_product_product_bom
+msgid "BoM Activity Overview"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-javascript
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: code:addons/activity_validation/static/src/xml/mail_activity.xml:0
+#: model:ir.model.fields.selection,name:activity_validation.selection__mail_activity__plm_state__cancel
+#: model:ir.model.fields.selection,name:activity_validation.selection__mail_activity_schedule__plm_state__cancel
+#: model_terms:ir.ui.view,arch_db:activity_validation.mail_activity_view_form_popup_inherit
+#: model_terms:ir.ui.view,arch_db:activity_validation.plm_mail_activity_schedule_view_form_inherit
+msgid "Cancel"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity__change_activity_type
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_schedule__change_activity_type
+msgid "Change Activity Type"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model.fields.selection,name:activity_validation.selection__mail_activity__plm_state__eco
+#: model:ir.model.fields.selection,name:activity_validation.selection__mail_activity_schedule__plm_state__eco
+msgid "Change Order"
+msgstr ""
+
+#. module: activity_validation
+#: model:mail.activity.type,name:activity_validation.mail_activity_change_request
+msgid "Change Request"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel__mail_children_activity_id
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel_shedule__mail_children_activity_id
+msgid "Child Activity"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.mail_activity_children_rel_list
+msgid "Children activities"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel__create_uid
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel_shedule__create_uid
+msgid "Created by"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel__create_date
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel_shedule__create_date
+msgid "Created on"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity__default_plm_activity
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_schedule__default_plm_activity
+msgid "Default Plm Activity"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity__display_name
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel__display_name
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel_shedule__display_name
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_schedule__display_name
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_type__display_name
+#: model:ir.model.fields,field_description:activity_validation.field_product_product__display_name
+#: model:ir.model.fields,field_description:activity_validation.field_res_users__display_name
+msgid "Display Name"
+msgstr "表示名"
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model.fields.selection,name:activity_validation.selection__mail_activity__plm_state__done
+#: model:ir.model.fields.selection,name:activity_validation.selection__mail_activity_schedule__plm_state__done
+#: model_terms:ir.ui.view,arch_db:activity_validation.mail_activity_view_form_popup_inherit
+#: model_terms:ir.ui.view,arch_db:activity_validation.plm_mail_activity_schedule_view_form_inherit
+msgid "Done"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.mail_activity_view_form_popup_inherit
+#: model_terms:ir.ui.view,arch_db:activity_validation.plm_mail_activity_schedule_view_form_inherit
+msgid "Draft"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.mail_activity_view_form_popup_inherit
+#: model_terms:ir.ui.view,arch_db:activity_validation.plm_mail_activity_schedule_view_form_inherit
+msgid "ECO"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity__eco_child_ids
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_schedule__eco_child_ids
+msgid "ECO Activities"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity__mail_parent_eco_activity_id
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_schedule__mail_parent_eco_activity_id
+msgid "ECO Parent Activity"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.plm_activity_search
+msgid "ECR / ECO"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity__children_ids
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_schedule__children_ids
+msgid "ECR Activities"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model.fields.selection,name:activity_validation.selection__mail_activity__plm_state__exception
+#: model:ir.model.fields.selection,name:activity_validation.selection__mail_activity_schedule__plm_state__exception
+#: model_terms:ir.ui.view,arch_db:activity_validation.mail_activity_view_form_popup_inherit
+#: model_terms:ir.ui.view,arch_db:activity_validation.plm_mail_activity_schedule_view_form_inherit
+msgid "Exception"
+msgstr ""
+
+#. module: activity_validation
+#: model:res.groups,name:activity_validation.group_force_activity_validation_admin
+msgid "Force Activity Validation"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity__has_parent_eco
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_schedule__has_parent_eco
+msgid "Has parent ECO"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity__has_parent
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_schedule__has_parent
+msgid "Has parent ECR"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity__id
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel__id
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel_shedule__id
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_schedule__id
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_type__id
+#: model:ir.model.fields,field_description:activity_validation.field_product_product__id
+#: model:ir.model.fields,field_description:activity_validation.field_res_users__id
+msgid "ID"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model.fields.selection,name:activity_validation.selection__mail_activity__plm_state__in_progress
+#: model:ir.model.fields.selection,name:activity_validation.selection__mail_activity_schedule__plm_state__in_progress
+msgid "In Progress"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity__is_eco
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_schedule__is_eco
+msgid "Is ECO"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel__write_uid
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel_shedule__write_uid
+msgid "Last Updated by"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel__write_date
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel_shedule__write_date
+msgid "Last Updated on"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-javascript
+#: code:addons/activity_validation/static/src/xml/mail_activity.xml:0
+msgid "Mark Done"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity__name
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel__name
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel_shedule__name
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_schedule__name
+msgid "Name"
+msgstr ""
+
+#. module: activity_validation
+#: model:res.groups.privilege,name:activity_validation.res_groups_privilege_odooplm
+msgid "OdooPLM"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.mail_activity_view_form_popup_inherit
+#: model_terms:ir.ui.view,arch_db:activity_validation.plm_mail_activity_schedule_view_form_inherit
+msgid "Open Releted Ent"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_product_product__opened_activities
+msgid "Opened Activities"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel__mail_parent_activity_id
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel_shedule__mail_parent_activity_id
+msgid "Parent Activity"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity__plm_state
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel__plm_state
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel_shedule__plm_state
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_schedule__plm_state
+msgid "Plm State"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model,name:activity_validation.model_product_product
+msgid "Product Product"
+msgstr "プロダクトバリアント"
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.mail_activity_view_form_popup_inherit
+#: model_terms:ir.ui.view,arch_db:activity_validation.plm_mail_activity_schedule_view_form_inherit
+msgid "Progress"
+msgstr ""
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.report_product_product_bom
+msgid "Reference:"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-javascript
+#: code:addons/activity_validation/static/src/xml/mail_activity.xml:0
+msgid "State:"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity_type.py:0
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_type__activity_user_ids
+msgid "Template Documents"
+msgstr ""
+
+#. module: activity_validation
+#: model:ir.model,name:activity_validation.model_res_users
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel__user_id
+#: model:ir.model.fields,field_description:activity_validation.field_mail_activity_children_rel_shedule__user_id
+msgid "User"
+msgstr "ユーザ"
+
+#. module: activity_validation
+#: model_terms:ir.ui.view,arch_db:activity_validation.plm_message_activity_done
+msgid "View:"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+msgid "You cannot move to Done because there are pending ECO activities."
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+msgid ""
+"You cannot move to ECO or to Done because there are pending ECR activities."
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+msgid "cancel"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+msgid "done"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+#: model:ir.model.fields.selection,name:activity_validation.selection__mail_activity__plm_state__draft
+#: model:ir.model.fields.selection,name:activity_validation.selection__mail_activity_schedule__plm_state__draft
+msgid "draft"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+msgid "eco"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+msgid "exception"
+msgstr ""
+
+#. module: activity_validation
+#. odoo-python
+#: code:addons/activity_validation/models/mail_activity.py:0
+#: code:addons/activity_validation/models/mail_activity_shedule.py:0
+msgid "in_progress"
+msgstr ""

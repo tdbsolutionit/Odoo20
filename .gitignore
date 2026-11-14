@@ -58,6 +58,9 @@ addons/*
 # Whitelist các module cộng đồng & VAS Việt Nam trong addons/:
 !addons/dms/
 !addons/plm/
+!addons/plm_workflow_custom_action/
+!addons/activity_validation/
+!addons/plm_auto_engcode/
 !addons/vn_core/
 !addons/l10n_vn_vas_reports/
 !addons/l10n_vn_stock_reports/
